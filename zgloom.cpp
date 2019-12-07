@@ -8,8 +8,9 @@
 #include "crmfile.h"
 #include "iffhandler.h"
 #include "renderer.h"
-
+#include "objectgraphics.h"
 #include <iostream>
+#include "gamelogic.h"
 
 Uint32 my_callbackfunc(Uint32 interval, void *param)
 {
@@ -32,13 +33,44 @@ Uint32 my_callbackfunc(Uint32 interval, void *param)
 	return(interval);
 }
 
+void LoadPic(std::string name, SDL_Surface* render8)
+{
+	std::vector<uint8_t> pic;
+	CrmFile picfile;
+	CrmFile palfile;
+
+	picfile.Load(name.c_str());
+	palfile.Load((name+".pal").c_str());
+
+	// is this some sort of weird AGA/ECS backwards compatible palette encoding? 4 MSBs, then LSBs?
+	for (uint32_t c = 0; c < palfile.size / 4; c++)
+	{
+		SDL_Color col;
+		col.a = 0xFF;
+		col.r = palfile.data[c * 4 + 0] & 0xf;
+		col.g = palfile.data[c * 4 + 1] >> 4;
+		col.b = palfile.data[c * 4 + 1] & 0xF;
+
+		col.r <<= 4;
+		col.g <<= 4;
+		col.b <<= 4;
+
+		col.r |= palfile.data[c * 4 + 2] & 0xf;
+		col.g |= palfile.data[c * 4 + 3] >> 4;
+		col.b |= palfile.data[c * 4 + 3] & 0xF;
+
+		SDL_SetPaletteColors(render8->format->palette, &col, c, 1);
+	}
+	IffHandler::DecodeIff(picfile.data, pic);
+
+	std::copy(pic.begin(), pic.begin() + 320 * 240, (uint8_t*)(render8->pixels));
+}
+
 
 int main(int argc, char* argv[])
 {
 	GloomMap gmap;
 	Script script;
-	CrmFile blackmagic;
-	CrmFile blackmagicpal;
 
 	if (SDL_Init(SDL_INIT_EVERYTHING) != 0)
 	{
@@ -70,59 +102,75 @@ int main(int argc, char* argv[])
 	SDL_Surface* render8 = SDL_CreateRGBSurface(0, 320, 240, 8, 0, 0, 0, 0);
 	SDL_Surface* render32 = SDL_CreateRGBSurface(0, 320, 240, 32, 0x00FF0000, 0x0000FF00, 0x000000FF, 0xFF000000);
 
-	std::vector<uint8_t> pic;
-	blackmagic.Load("pics/gothic");
-	blackmagicpal.Load("pics/gothic.pal");
+	ObjectGraphics objgraphics;
 
-	// is this some sort of weird AGA/ECS backwards compatible palette encoding? 4 MSBs, then LSBs?
-	for (uint32_t c = 0; c < blackmagicpal.size / 4; c++)
-	{
-		SDL_Color col;
-		col.a = 0xFF;
-		col.r = blackmagicpal.data[c * 4 + 0]&0xf;
-		col.g = blackmagicpal.data[c * 4 + 1]>>4;
-		col.b = blackmagicpal.data[c * 4 + 1]&0xF;
-
-		col.r <<= 4;
-		col.g <<= 4;
-		col.b <<= 4;
-
-		col.r |= blackmagicpal.data[c * 4 + 2] & 0xf;
-		col.g |= blackmagicpal.data[c * 4 + 3] >> 4;
-		col.b |= blackmagicpal.data[c * 4 + 3] & 0xF;
-
-		SDL_SetPaletteColors(render8->format->palette, &col, c, 1);
-	}
-	IffHandler::DecodeIff(blackmagic.data, pic);
-
-	gmap.Load("maps/map1_1");
-	gmap.SetFlat(1);
-	gmap.DumpDebug();
+	//gmap.Load("maps/map4_2", &objgraphics);
+	//gmap.SetFlat(1);
+	//gmap.DumpDebug();
 
 	Renderer renderer;
+	GameLogic logic;
+	Camera cam;
 
-	renderer.Init(render32, &gmap);
+	//renderer.Init(render32, &gmap, &objgraphics);
+	//logic.Init(&gmap, &cam);
 
 	SDL_AddTimer(1000 / 50, my_callbackfunc, NULL);
 
-	std::copy(pic.begin(), pic.begin()+320*240, (uint8_t*)(render8->pixels));
-
 	SDL_Event sEvent;
 
-	const Uint8 *keystate = SDL_GetKeyboardState(NULL);
 	bool done = true;
 
-	Camera cam;
-
-	cam.x.SetInt(0x1000);
-	cam.z.SetInt(0x1000);
-	cam.rot = 0;
-
-	cam.y = 120;
-	int16_t camdir = 1;
+	bool showscreen = false;
+	bool waiting = false;
+	bool playing = false;
 
 	while (done)
 	{
+		if ((playing == false) && (waiting == false))
+		{
+			std::string scriptstring;
+			Script::ScriptOp sop;
+
+			sop = script.NextLine(scriptstring);
+
+			switch (sop)
+			{
+				case Script::SOP_SETPICT:
+				{
+					scriptstring.insert(0, "pics/");
+					LoadPic(scriptstring, render8);
+					break;
+				}
+				case Script::SOP_LOADFLAT:
+				{
+					//improve this, only supports 9 flats
+					gmap.SetFlat(scriptstring[0] - '0');
+					break;
+				}
+				case Script::SOP_DRAW:
+				{
+					showscreen = true;
+					break;
+				}
+				case Script::SOP_WAIT:
+				{
+					waiting = true;
+					break;
+				}
+				case Script::SOP_PLAY:
+				{
+					scriptstring.insert(0, "maps/");
+					gmap.Load(scriptstring.c_str(), &objgraphics);
+					renderer.Init(render32, &gmap, &objgraphics);
+					logic.Init(&gmap, &cam);
+					showscreen = false;
+					playing = true;
+
+				}
+			}
+		}
+
 		while (SDL_PollEvent(&sEvent))
 		{
 			if (sEvent.type == SDL_WINDOWEVENT)
@@ -133,54 +181,30 @@ int main(int argc, char* argv[])
 				}
 			}
 
-			Quick inc;
-
-			inc.SetVal(0x70000);
-
-			Quick camrots[4];
-
-			GloomMaths::GetCamRot(cam.rot, camrots);			
+			if ((sEvent.type == SDL_KEYDOWN) || (sEvent.type == SDL_MOUSEBUTTONDOWN))
+			{
+				waiting = false;
+			}
 
 			if (sEvent.type == SDL_USEREVENT)
 			{
-				//printf("t\n");
-				if (keystate[SDL_SCANCODE_UP])
+				if (playing)
 				{
-					// U 
-					cam.x = cam.x + camrots[1]*inc;
-					cam.z = cam.z + camrots[0]*inc;
-					cam.y += camdir;
+					if (logic.Update(&cam))
+					{
+						playing = false;
+					}
 				}
-				if (keystate[SDL_SCANCODE_DOWN])
-				{
-					// D
-					cam.x = cam.x - camrots[1] * inc;
-					cam.z = cam.z - camrots[0] * inc;
-					cam.y += camdir;
-				}
-				if (keystate[SDL_SCANCODE_LEFT])
-				{
-					//L
-					//cam.x = cam.x - inc;
-					cam.rot++;
-				}
-				if (keystate[SDL_SCANCODE_RIGHT])
-				{
-					//R
-					//cam.x = cam.x + inc;
-					cam.rot--;
-				}
-
-				if (cam.y > 136) camdir = -1;
-				if (cam.y < 120) camdir =  1;
 			}
 		}
 
 		SDL_FillRect(render32, NULL, 0);
-		renderer.Render(&cam);
 
-		//sRenderer.Draw();
-		//SDL_BlitSurface(render8, NULL, render32, NULL);
+		if (playing) renderer.Render(&cam);
+		if (showscreen)
+		{
+			SDL_BlitSurface(render8, NULL, render32, NULL);
+		}
 		SDL_UpdateTexture(rendertex, NULL, render32->pixels, render32->pitch);
 		SDL_RenderClear(ren);
 		SDL_RenderCopy(ren, rendertex, NULL, NULL);

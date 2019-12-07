@@ -4,6 +4,7 @@
 #include "gloommap.h"
 #include "gloommaths.h"
 #include "quick.h"
+#include "objectgraphics.h"
 
 #include "SDL.h"
 
@@ -43,7 +44,7 @@ public:
 class Renderer
 {
 	public:
-		void Init(SDL_Surface* nrendersurface, GloomMap* ngloommap);
+		void Init(SDL_Surface* nrendersurface, GloomMap* ngloommap, ObjectGraphics* nObjectGraphics);
 		void Render(Camera* Camera);
 
 	private:
@@ -54,16 +55,19 @@ class Renderer
 		void DrawMap();
 		int16_t CastColumn(int32_t x, int16_t& zone, Quick& t);
 		void DrawColumn(int32_t x, int32_t ystart, int32_t h, int32_t t, int32_t z);
-		void DrawFlat(int32_t ceilend[], int32_t floorstart[], Camera* camera);
+		void DrawFlat(std::vector<int32_t>& ceilend, std::vector<int32_t>& floorstart, Camera* camera);
+		void Renderer::DrawObjects(Camera* camera);
 		SDL_Surface* rendersurface;
 		GloomMap* gloommap;
+		ObjectGraphics* objectgraphics;
 		std::vector<Wall> walls;
-		static const int32_t renderwidth = 320;
-		static const int32_t renderheight = 240;
-		static const int32_t halfrenderwidth = 160;
-		static const int32_t halfrenderheight = 120;
+		int32_t renderwidth = 320;
+		int32_t renderheight = 240;
+		int32_t halfrenderwidth = 160;
+		int32_t halfrenderheight = 120;
 		static const uint32_t focshift = 7;
-		Quick castgrads[renderwidth];
+		std::vector<Quick> castgrads;
+		std::vector<int32_t> zbuff;
 
 		// I'm not sure how gloom does screen dimming, I've implemented my own lookup tables
 		int32_t darkpalettes[16][16];

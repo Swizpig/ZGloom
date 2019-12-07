@@ -15,9 +15,13 @@ class CrmFile
 
 		bool Load(const char* name)
 		{
+			if (data) free(data);
+
 			FILE *file;
 			int filesize;
+			int headroom;
 			uint8_t *indata;
+			uint8_t *outdata;
 			char header[14];
 
 			/*  open input file  */
@@ -25,7 +29,7 @@ class CrmFile
 
 			if (file == 0)
 			{
-				//printf("Could not open input file\n");
+				printf("Could not open input file %s\n", name);
 				return false;
 			}
 
@@ -36,7 +40,10 @@ class CrmFile
 
 			/*  check if file is valid  */
 			if (filesize > 14)
+			{
+				headroom = GetSecDist(header);
 				size = GetSize(header);
+			}
 			if (filesize <= 14 || size == 0)
 			{
 				//printf("Not a valid CrM2 file\n");
@@ -52,6 +59,7 @@ class CrmFile
 			/*  allocate memory to hold header and decrunched data  */
 			indata = static_cast<uint8_t*>(malloc(size + 14));
 			data = static_cast<uint8_t*>(malloc(size));
+			outdata = static_cast<uint8_t*>(malloc(size + headroom));
 
 			if (indata == 0)
 			{
@@ -62,14 +70,18 @@ class CrmFile
 
 			/*  read file  */
 			rewind(file);
-			fread(indata, filesize, 1, file);
+			fread(indata, 1, filesize, file);
 			fclose(file);
 
 			/*  decrunch!  */
-			Decrunch(indata);
 
-			std::copy(indata + 14, indata+14+size, data);
+			// in place decrunch is broken for some files with minsecdist.
+			//OverlapCheck(indata);
+			Decrunch(indata, outdata);
+
+			std::copy(outdata, outdata+size, data);
 			free(indata);
+			free(outdata);
 
 			return true;
 		}

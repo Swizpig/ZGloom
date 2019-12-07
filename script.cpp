@@ -38,3 +38,43 @@ Script::Script()
 		numlines++;
 	}
 }
+
+Script::ScriptOp Script::NextLine(std::string& name)
+{
+	while ((lines[line].length() == 0) ||(lines[line][0] == ';'))
+	{
+		line++;
+	}
+
+	if (lines[line].substr(0, 5) == "pict_")
+	{
+		name = lines[line].substr(5, std::string::npos);
+		line++;
+		return SOP_SETPICT;
+	}
+	if (lines[line].substr(0, 5) == "tile_")
+	{
+		name = lines[line].substr(5, std::string::npos);
+		line++;
+		return SOP_LOADFLAT;
+	}
+	if (lines[line].substr(0, 5) == "play_")
+	{
+		name = lines[line].substr(5, std::string::npos);
+		line++;
+		return SOP_PLAY;
+	}
+	if (lines[line].substr(0, 5) == "draw_")
+	{
+		line++;
+		return SOP_DRAW;
+	}
+	if (lines[line].substr(0, 5) == "wait_")
+	{
+		line++;
+		return SOP_WAIT;
+	}
+
+	line++;
+	return SOP_NOP;
+}

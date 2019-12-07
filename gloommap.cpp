@@ -10,6 +10,69 @@ static uint32_t Get32(const uint8_t* p)
 	return (static_cast<uint16_t>(p[0])) << 24 | (static_cast<uint16_t>(p[1]) << 16) | (static_cast<uint16_t>(p[2])) << 8 | (static_cast<uint16_t>(p[3]) << 0);
 }
 
+void Event::Load(const uint8_t* data, uint32_t evnum, std::vector<Object>& objects, std::vector<Door>& doors)
+{
+	uint16_t op;
+
+	do
+	{
+		op = Get16(data); data += 2;
+
+		switch (op)
+		{
+			case ET_ADDMONSTER:
+				Object o;
+				o.t = Get16(data); data += 2;
+				o.x = Get16(data); data += 2;
+				o.y = Get16(data); data += 2;
+				o.z = Get16(data); data += 2;
+				o.rot = (uint8_t)Get16(data); data += 2;
+				// whats all this? Does the editor use a different coordinate system to the game itself?
+				o.rot = (192 - o.rot + 128) & 255;
+
+				o.ev = evnum;
+
+				if (o.t != 3) // dunno. unused "weapon" type?
+				{
+					objects.push_back(o);
+				}
+				break;
+			case ET_OPENDOOR:
+				Door door;
+				door.zone = Get16(data); data+=2;
+				door.eventnum = evnum;
+				doors.push_back(door);
+				break;
+
+			case ET_TELEPORT:
+				//TODO
+				data += 8;
+				break;
+				
+			case ET_LOADOBJECTS:
+				// ignore - we'll load everything
+				int16_t temp;
+				do
+				{
+					temp = Get16(data); data += 2;
+				} while (temp >= 0);
+				break;
+
+			case ET_CHANGETEXTURE:
+				//TODO
+				data += 4;
+				break;
+
+			case ET_ROTATEPOLY:
+				//TODO
+				data += 8;
+				break;
+
+		}
+	} while (op != 0);
+
+}
+
 
 void Zone::Load(const uint8_t* data)
 {
@@ -132,12 +195,32 @@ void Texture::DumpDebug(const char* name)
 	fclose(file);
 }
 
-bool GloomMap::Load(const char* name)
+bool GloomMap::Load(const char* name, ObjectGraphics* nobj)
 {
+	doors.clear();
+	objects.clear();
+	mapobjects.clear();
+	objects.clear();
+
+	objectlogic = nobj;
+
+	for (auto zonetype = 0; zonetype < 2; zonetype++)
+	{
+		for (auto z = 0; z < 32; z++)
+		{
+			for (auto x = 0; x < 32; x++)
+			{
+				collisionpolys[zonetype][x][z].clear();
+			}
+		}
+	}
+
 	if (!rawdata.Load(name))
 	{
 		return false;
 	}
+
+	uint32_t eventpointers[numevents];
 
 	uint32_t gridoff;
 	uint32_t polyoff;
@@ -150,6 +233,41 @@ bool GloomMap::Load(const char* name)
 	polypnt = Get32(rawdata.data + 8);
 	anims   = Get32(rawdata.data +12);
 	txtnames= Get32(rawdata.data +16);
+
+	for (auto e = 0; e < numevents; e++)
+	{
+		eventpointers[e] = Get32(rawdata.data + 20 + e * 4);
+	}
+
+	for (auto zonetype = 0; zonetype < 2; zonetype++)
+	{
+		for (auto z = 0; z < 32; z++)
+		{
+			for (auto x = 0; x < 32; x++)
+			{
+				gridnums[zonetype][x][z] = (Get16(rawdata.data + gridoff + (x + z * 32) * 8 + zonetype * 4) + 1) & 0xFFFF;
+				polyoffsets[zonetype][x][z] = Get16(rawdata.data + gridoff + (x + z * 32) * 8 + zonetype * 4 + 2);
+
+				collisionpolys[zonetype][x][z].resize(gridnums[zonetype][x][z]);
+
+				for (uint32_t poly = 0; poly < gridnums[zonetype][x][z]; poly++)
+				{
+					collisionpolys[zonetype][x][z][poly] = Get16(rawdata.data + polypnt + polyoffsets[zonetype][x][z] * 2 + poly * 2);
+				}
+			}
+		}
+	}
+
+#if 1
+	for (auto z = 0; z < 32; z++)
+	{
+		for (auto x = 0; x < 32; x++)
+		{
+			printf("%c", gridnums[0][x][31-z] ? ('0' + gridnums[0][x][31-z]) : ' ');
+		}
+		printf("\n");
+	}
+#endif
 
 	zones.resize((polypnt - polyoff) / Zone::ZoneSize);
 
@@ -191,6 +309,22 @@ bool GloomMap::Load(const char* name)
 			textures[t].Load(texturenames[t].c_str());
 		}
 	}
+
+	for (auto e = 0; e < numevents; e++)
+	{
+		// this starts at 1. 
+		events[e].Load(rawdata.data + eventpointers[e], e + 1, objects, doors);
+	}
+
+	//set up the object sideband
+
+	for (auto &o : objects)
+	{
+		o.frame = objectlogic->objectlogic[o.t].frame;
+		o.framespeed = objectlogic->objectlogic[o.t].framespeed;
+	}
+
+	ExecuteEvent(1);
 
 	return true;
 }
@@ -291,4 +425,29 @@ void GloomMap::DumpDebug()
 
 	floor.DumpDebug("floor.ppm");
 	ceil.DumpDebug("roof.ppm");
+}
+
+void GloomMap::ExecuteEvent(uint32_t e)
+{
+	// add objects?
+
+	for (auto o : objects)
+	{
+		if (o.ev == e)
+		{
+			MapObject mo(o);
+
+			mapobjects.push_back(mo);
+		}
+	}
+
+	// doors. TODO: Add animation
+	for (auto d : doors)
+	{
+		if (d.eventnum == e)
+		{
+			zones[d.zone].x1 = zones[d.zone].x2 = -1;
+			zones[d.zone].z1 = zones[d.zone].z2 = -1;
+		}
+	}
 }

@@ -22,21 +22,70 @@ static unsigned int d0l, d1l, d2l, d3l, d4l, d5l, d6l, d7l;
 #define obuflen     1248
 
 
+
+void OverlapCheck(void *in)
+{
+	a0 = (unsigned char*)in;
+	a1 = (unsigned char*)in + 14;
+
+	a0 += 4;//skip "CRM2"
+
+	d0l = d0 = 0;
+
+	d0l = d0 = readw(a0); a0 += 2; //MinSecDist
+	d1l = d1 = readl(a0); a0 += 4; //DestLen
+	d2l = d2 = readl(a0); a0 += 4; //SrcLen
+
+	a2 = a0 + d0l;
+	if (a2 <= a1) goto NoCopy;
+
+	a2 = a0;
+	a0 = a1;
+
+	a0 -= d0l;
+
+	a3 = a0;
+	d7 = d2;
+	d7l = d2;
+	
+	d7 >>= 2;
+	d7l >>= 2;
+
+CopyLoop:
+	*a3 = *a2;
+	a2 += 4;
+	a3 += 4;
+
+	d7--;
+	d7l--;
+
+	if (d7l > 0) goto CopyLoop;
+
+	*a3 = *a2;
+	a2 += 4;
+	a3 += 4; //in case of ...
+NoCopy:
+	a2 = a0;
+	Decrunch(in, nullptr);
+}
+
+
 /*  decrunches data in place. must point to enough space to hold the
     decrunched data + the 14 byte header  */
 
-void* Decrunch(void *in)
+void* Decrunch(void *in, void* out)
 {
     unsigned char tabbs[1248] = {0};
 
     /*  Literal translation of the 68K assembly LZ-Huffman decruncher  */
 
-    a0 = (unsigned char*)in+6;
-    a1 = (unsigned char*)in+14;
+	a0 = (unsigned char*)in + 6;
+	a1 = (unsigned char*)out;
 
-    d1 = d1l = readl(a0); a0 += 4;
-    d2 = d2l = readl(a0); a0 += 4;
-    a2 = a0;
+	d1 = d1l = readl(a0); a0 += 4;
+	d2 = d2l = readl(a0); a0 += 4;
+	a2 = a0;
+
     a6 = tabbs+2;
 
     a1 += d1l;
@@ -88,6 +137,7 @@ decrloop:
     d4 = readw(orealtab-2+a0+(int)d1);
     if(d4 < 0x8000)
         goto sequence;
+
     *(--a1) = d4;
     d5--;
     if(d5 != 0xffff)
@@ -142,7 +192,14 @@ unsigned int GetSize(void *data)
     return readl(data) == 'CrM2' ? readl((unsigned char*)data+6) : 0;
 }
 
+/*  returns MinSecDist, headroom needed for some files */
+unsigned int GetSecDist(void *data)
+{
+	if (data == 0)
+		return 0;
 
+	return readl(data) == 'CrM2' ? readw((unsigned char*)data + 4) : 0;
+}
 
 
 static void writew(void *data, unsigned short w)

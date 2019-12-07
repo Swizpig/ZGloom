@@ -2,17 +2,18 @@
 #include <cstdint>
 #include "quick.h"
 #include "gloommaths.h"
+#include "objectgraphics.h"
 
 static void debugVline(int x, int y1, int y2, SDL_Surface* s, uint32_t c)
 {
-	if ((x < 0) || (x >= 320)) return;
+	if ((x < 0) || (x >= s->w)) return;
 	if (y2 < y1) std::swap(y1, y2);
 
 	for (int y = y1; y <= y2; y++)
 	{
-		if ((y >= 0) && (y < 240))
+		if ((y >= 0) && (y < s->h))
 		{
-			((uint32_t*)(s->pixels))[x + 320 * y] = c;
+			((uint32_t*)(s->pixels))[x + s->pitch/4 * y] = c;
 		}
 	}	
 }
@@ -52,7 +53,6 @@ static void debugline(int x1, int y1, int x2, int y2, SDL_Surface* s, uint32_t c
 		ly = y;
 		fy += m;
 	}
-
 }
 
 bool Renderer::PointInFront(int16_t fx, int16_t fz, Wall& z)
@@ -149,10 +149,18 @@ bool Renderer::OriginSide(int16_t fx, int16_t fz, int16_t bx, int16_t bz)
 	return (ftobx*ftooz - ftobz*ftoox) > 0;
 }
 
-void Renderer::Init(SDL_Surface* nrendersurface, GloomMap* ngloommap)
+void Renderer::Init(SDL_Surface* nrendersurface, GloomMap* ngloommap, ObjectGraphics* nobjectgraphics)
 {
 	rendersurface = nrendersurface;
+	renderwidth = rendersurface->w;
+	renderheight = rendersurface->h;
+	halfrenderwidth = renderwidth / 2;
+	halfrenderheight = renderheight / 2;
 	gloommap = ngloommap;
+	objectgraphics = nobjectgraphics;
+
+	castgrads.resize(renderwidth);
+	zbuff.resize(renderwidth);
 
 	walls.resize(gloommap->GetZones().size());
 
@@ -178,15 +186,18 @@ void Renderer::Init(SDL_Surface* nrendersurface, GloomMap* ngloommap)
 	}
 }
 
-void Renderer::DrawFlat(int32_t ceilend[], int32_t floorstart[], Camera* camera)
+void Renderer::DrawFlat(std::vector<int32_t>& ceilend, std::vector<int32_t>& floorstart, Camera* camera)
 {
+	//TODO
+	// skip over invalid runs for performance
+	// work out why tz needs a weird +32 to align properly
 	Flat& ceil = gloommap->GetCeil();
 	Flat& floor = gloommap->GetFloor();
 
 	Quick camrots[4];
 
-	int32_t maxend = *std::max_element(ceilend, ceilend + renderwidth);
-	int32_t minstart = *std::min_element(floorstart, floorstart + renderwidth);
+	int32_t maxend = *std::max_element(ceilend.begin(), ceilend.end());
+	int32_t minstart = *std::min_element(floorstart.begin(), floorstart.end());
 
 	if (minstart <= halfrenderheight) minstart = halfrenderheight + 1;
 	if (maxend >= halfrenderheight) maxend = halfrenderheight - 1;
@@ -227,14 +238,14 @@ void Renderer::DrawFlat(int32_t ceilend[], int32_t floorstart[], Camera* camera)
 			if (y < ceilend[x])
 			{
 				auto ix = qx.GetInt() & 0x7F;
-				auto iz = qz.GetInt() & 0x7F;
+				auto iz = (qz.GetInt()+32) & 0x7F;
 
 				uint8_t r = ceil.palette[ceil.data[ix][iz]][0];
 				uint8_t g = ceil.palette[ceil.data[ix][iz]][1];
 				uint8_t b = ceil.palette[ceil.data[ix][iz]][2];
 
 				// dim it
-				auto p = z / 256; if (p > 15) p = 15;
+				auto p = z / 128; if (p > 15) p = 15;
 				r = darkpalettes[p][r >> 4];
 				g = darkpalettes[p][g >> 4];
 				b = darkpalettes[p][b >> 4];
@@ -287,14 +298,14 @@ void Renderer::DrawFlat(int32_t ceilend[], int32_t floorstart[], Camera* camera)
 			if (y >= floorstart[x])
 			{
 				auto ix = qx.GetInt() & 0x7F;
-				auto iz = qz.GetInt() & 0x7F;
+				auto iz = (qz.GetInt()+32) & 0x7F;
 
 				uint8_t r = floor.palette[floor.data[ix][iz]][0];
 				uint8_t g = floor.palette[floor.data[ix][iz]][1];
 				uint8_t b = floor.palette[floor.data[ix][iz]][2];
 
 				// dim it
-				auto p = z / 256; if (p > 15) p = 15;
+				auto p = z / 128; if (p > 15) p = 15;
 				r = darkpalettes[p][r >> 4];
 				g = darkpalettes[p][g >> 4];
 				b = darkpalettes[p][b >> 4];
@@ -321,6 +332,9 @@ void Renderer::DrawColumn(int32_t x, int32_t ystart, int32_t h, int32_t t, int32
 	
 	if (t < 0) t = 0;
 	//if (t >= 1280) t = 1279;
+
+	if (h == 0) return;
+	if (h > 65535) return; // this overflows a quick! Can happen in high res
 
 	uint32_t* surface = (uint32_t*)(rendersurface->pixels);
 
@@ -354,7 +368,7 @@ void Renderer::DrawColumn(int32_t x, int32_t ystart, int32_t h, int32_t t, int32
 			uint8_t b = gloommap->GetTextures()[t / 1280].palette[colour][2];
 
 			// dim it
-			auto p = z / 256; if (p > 15) p = 15;
+			auto p = z / 128; if (p > 15) p = 15;
 			r = darkpalettes[p][r >> 4];
 			g = darkpalettes[p][g >> 4];
 			b = darkpalettes[p][b >> 4];
@@ -367,6 +381,139 @@ void Renderer::DrawColumn(int32_t x, int32_t ystart, int32_t h, int32_t t, int32
 		}
 
 		tstart = tstart + tscale;
+	}
+}
+
+bool zcompare(const MapObject& first, const MapObject& second)
+{
+	return first.rotz > second.rotz;
+}
+
+void Renderer::DrawObjects(Camera* camera)
+{
+	Quick x, z, temp;
+	Quick cammatrix[4];
+	int32_t ix, iz, iy;
+
+	GloomMaths::GetCamRot(-camera->rot, cammatrix);
+
+	uint32_t* surface = (uint32_t*)(rendersurface->pixels);
+
+	for (auto &o : gloommap->GetMapObjects())
+	{
+		// don't draw the player!
+		if ((o.t > 1) && (o.t != 3))
+		{
+			x = o.x;
+			z = o.z;
+
+			x = x - camera->x;
+			z = z - camera->z;
+
+			temp = x;
+			x = (x * cammatrix[0]) + (z * cammatrix[1]);
+			z = (temp * cammatrix[2]) + (z * cammatrix[3]);
+
+			o.rotx = x.GetInt();
+			o.rotz = z.GetInt();
+		}
+	}
+
+	// z sort
+
+	//std::sort(gloommap->GetMapObjects().begin(), gloommap->GetMapObjects().end(), zcompare);
+
+	gloommap->GetMapObjects().sort(zcompare);
+
+	for (auto o:gloommap->GetMapObjects())
+	{
+		// don't draw the player!
+		if ((o.t > 1) && (o.t != 3))
+		{
+			ix = o.rotx;
+			iz = o.rotz;
+			iy = o.y;
+			iy -= camera->y;
+
+			if (iz > 0)
+			{
+				ix <<= focshift;
+				ix /= iz;
+
+				iy <<= focshift;
+				iy /= iz;
+
+				if (1)//o.t == ObjectGraphics::OLT_MARINE)
+				{
+					std::vector<Shape>* s = objectgraphics->objectlogic[o.t].shape;
+
+					uint16_t column = 0;
+
+					auto scale = 2;
+					auto shapewidth = (*s)[o.frame>>16].w;
+					auto shapeheight = (*s)[o.frame>>16].h;
+
+					int h = ((shapeheight * scale) << focshift) / iz;
+					int w = ((shapewidth * scale) << focshift) / iz;
+
+					if ((w > 0) && (h > 0))
+					{
+
+						Quick temp;
+
+						Quick dx;
+						Quick dy;
+						Quick tx, ty;
+
+						tx.SetInt(0);
+						ty.SetInt(0);
+
+						dx.SetInt(shapewidth);
+						dy.SetInt(shapeheight);
+
+						temp.SetInt(w);
+						dx = dx / temp;
+
+						temp.SetInt(h);
+						dy = dy / temp;
+
+						int32_t ystart = halfrenderheight - iy - h;
+
+						if ((ix + halfrenderwidth + w / 2) > 0)
+						{
+							for (int32_t sx = ix + halfrenderwidth - w / 2; sx < (ix + halfrenderwidth + w / 2); sx++)
+							{
+								if (sx >= renderwidth) break;
+								ty.SetInt(0);
+
+								for (int32_t sy = ystart; sy < (ystart + h); sy++)
+								{
+									if ((sx >= 0) && (iz > zbuff[sx])) break;
+									if (sy >= renderheight) break;
+
+									if ((sx >= 0) && (sy >= 0))
+									{
+										auto col = (*s)[o.frame >> 16].data[ty.GetInt() + tx.GetInt()*shapeheight];
+
+										if (col != 1)
+										{
+											surface[sx + sy*renderwidth] = col;
+										}
+									}
+
+									ty = ty + dy;
+								}
+								tx = tx + dx;
+							}
+						}
+					}
+				}
+				else
+				{
+					debugVline(ix + halfrenderwidth, 0, halfrenderheight - iy, rendersurface, 0xFFFFFF);
+				}
+			}
+		}
 	}
 }
 
@@ -428,6 +575,9 @@ int16_t Renderer::CastColumn(int32_t x, int16_t& zone, Quick& t)
 void Renderer::Render(Camera* camera)
 {
 	SDL_LockSurface(rendersurface);
+
+	std::fill(zbuff.begin(), zbuff.end(), 30000);
+
 	for (size_t z = 0; z < walls.size(); z++)
 	{
 		Zone zone = gloommap->GetZones()[z];
@@ -563,10 +713,13 @@ void Renderer::Render(Camera* camera)
 		if (walls[z].wl_rsx >= renderwidth) walls[z].wl_rsx = renderwidth - 1;
 	}
 
-	ClipWalls();
+	//ClipWalls();
 
-	int32_t ceilend[renderwidth];
-	int32_t floorstart[renderwidth];
+	std::vector<int32_t> ceilend;
+	std::vector<int32_t> floorstart;
+
+	ceilend.resize(renderwidth);
+	floorstart.resize(renderwidth);
 
 	for (int32_t x = 0; x < renderwidth; x++)
 	{
@@ -585,11 +738,15 @@ void Renderer::Render(Camera* camera)
 
 			scale.SetInt(gloommap->GetZones()[hitzone].sc/2);
 
+			// not sure how this, well, scales
+			if (scale.GetInt() == 0) scale.SetInt(1);
+
 			texpos = texpos*scale;
 
 			int32_t finaltexpos = gloommap->GetZones()[hitzone].t[texpos.GetInt()] * 64 + texpos.GetFrac() / (0x10000/64);
 
 			DrawColumn(x, ystart, h, finaltexpos, z);
+			zbuff[x] = z;
 			//debugVline(x, 120 - h/2, 120 + h/2, rendersurface, 0xFFFF0000 + 255 - z / 16);
 		}
 		else
@@ -600,6 +757,7 @@ void Renderer::Render(Camera* camera)
 	}
 
 	DrawFlat(ceilend, floorstart, camera);
+	DrawObjects(camera);
 
 #if 1
 	//DEBUG
