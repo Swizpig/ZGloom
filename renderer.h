@@ -54,7 +54,7 @@ class Renderer
 		void ClipWalls();
 		void DrawMap();
 		int16_t CastColumn(int32_t x, int16_t& zone, Quick& t);
-		void DrawColumn(int32_t x, int32_t ystart, int32_t h, int32_t t, int32_t z);
+		void DrawColumn(int32_t x, int32_t ystart, int32_t h, Column* texturedata, int32_t z, int32_t palused);
 		void DrawFlat(std::vector<int32_t>& ceilend, std::vector<int32_t>& floorstart, Camera* camera);
 		void Renderer::DrawObjects(Camera* camera);
 		SDL_Surface* rendersurface;

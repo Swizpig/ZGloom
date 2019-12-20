@@ -7,6 +7,24 @@
 #include "quick.h"
 #include "objectgraphics.h"
 
+//texture animation
+
+class Anim
+{
+	public:
+		int16_t frames;
+		int16_t first;
+		int16_t delay;
+		int16_t current;
+};
+
+class TextureChange
+{
+	public:
+	uint32_t zone;
+	uint32_t newtexture;
+	uint16_t ev;
+};
 
 class Object
 {
@@ -23,7 +41,7 @@ class Object
 	uint32_t framespeed;
 };
 
-// an object actuall in play
+// an object actually in play
 
 class MapObject
 {
@@ -72,7 +90,7 @@ class Event
 		ET_ROTATEPOLY = 6
 	};
 
-	void Load(const uint8_t* data, uint32_t evnum, std::vector<Object>& objects, std::vector<Door>& doors);
+	void Load(const uint8_t* data, uint32_t evnum, std::vector<Object>& objects, std::vector<Door>& doors, std::vector<TextureChange>& tchanges);
 };
 
 class Zone
@@ -142,10 +160,14 @@ class GloomMap
 		void SetFlat(char f);
 		void DumpDebug();
 		std::vector<Zone>& GetZones() { return zones; };
+		std::vector<Anim>& GetAnims() { return anims; };
 		Texture* GetTextures(){ return textures; };
+		std::vector<TextureChange>& GetTChange(){ return tchanges; };
 		Flat& GetCeil() { return ceil; };
 		Flat& GetFloor() { return floor; };
 		std::list<MapObject>& GetMapObjects() { return mapobjects; };
+		Column** GetTexPointers(){ return texturepointers;};
+		Column** GetTexPointersOrig(){ return texturepointersorig; };
 		std::vector<uint32_t>& GetCollisions(int zt, int x, int z) {return collisionpolys[zt][x][z];};
 		void ExecuteEvent(uint32_t e);
 
@@ -164,8 +186,14 @@ class GloomMap
 
 		std::vector<Object> objects;
 		std::vector<Door> doors;
+		std::vector<Anim> anims;
+		std::vector<TextureChange> tchanges;
 
 		std::list<MapObject> mapobjects;
+
+		// texture pointers, used for remapping anims. 160 = 20 * 8;
+		Column* texturepointers[160];
+		Column* texturepointersorig[160];
 
 		// collision grid, for both walls and events
 

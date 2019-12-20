@@ -10,7 +10,7 @@ static uint32_t Get32(const uint8_t* p)
 	return (static_cast<uint16_t>(p[0])) << 24 | (static_cast<uint16_t>(p[1]) << 16) | (static_cast<uint16_t>(p[2])) << 8 | (static_cast<uint16_t>(p[3]) << 0);
 }
 
-void Event::Load(const uint8_t* data, uint32_t evnum, std::vector<Object>& objects, std::vector<Door>& doors)
+void Event::Load(const uint8_t* data, uint32_t evnum, std::vector<Object>& objects, std::vector<Door>& doors, std::vector<TextureChange>& tchanges)
 {
 	uint16_t op;
 
@@ -59,8 +59,11 @@ void Event::Load(const uint8_t* data, uint32_t evnum, std::vector<Object>& objec
 				break;
 
 			case ET_CHANGETEXTURE:
-				//TODO
-				data += 4;
+				TextureChange tc;
+				tc.zone = Get16(data); data += 2;
+				tc.newtexture = Get16(data); data += 2;
+				tc.ev = evnum;
+				tchanges.push_back(tc);
 				break;
 
 			case ET_ROTATEPOLY:
@@ -201,6 +204,8 @@ bool GloomMap::Load(const char* name, ObjectGraphics* nobj)
 	objects.clear();
 	mapobjects.clear();
 	objects.clear();
+	anims.clear();
+	tchanges.clear();
 
 	objectlogic = nobj;
 
@@ -225,13 +230,13 @@ bool GloomMap::Load(const char* name, ObjectGraphics* nobj)
 	uint32_t gridoff;
 	uint32_t polyoff;
 	uint32_t polypnt;
-	uint32_t anims;
+	uint32_t animpnt;
 	uint32_t txtnames;
 
 	gridoff = Get32(rawdata.data + 0);
 	polyoff = Get32(rawdata.data + 4);
 	polypnt = Get32(rawdata.data + 8);
-	anims   = Get32(rawdata.data +12);
+	animpnt = Get32(rawdata.data + 12);
 	txtnames= Get32(rawdata.data +16);
 
 	for (auto e = 0; e < numevents; e++)
@@ -258,7 +263,7 @@ bool GloomMap::Load(const char* name, ObjectGraphics* nobj)
 		}
 	}
 
-#if 1
+#if 0
 	for (auto z = 0; z < 32; z++)
 	{
 		for (auto x = 0; x < 32; x++)
@@ -313,7 +318,7 @@ bool GloomMap::Load(const char* name, ObjectGraphics* nobj)
 	for (auto e = 0; e < numevents; e++)
 	{
 		// this starts at 1. 
-		events[e].Load(rawdata.data + eventpointers[e], e + 1, objects, doors);
+		events[e].Load(rawdata.data + eventpointers[e], e + 1, objects, doors, tchanges);
 	}
 
 	//set up the object sideband
@@ -324,7 +329,53 @@ bool GloomMap::Load(const char* name, ObjectGraphics* nobj)
 		o.framespeed = objectlogic->objectlogic[o.t].framespeed;
 	}
 
+	// load wall anims
+
+	if (animpnt)
+	{
+		uint32_t a = 0;
+
+		while (1)
+		{
+			Anim thisanim;
+
+			thisanim.frames = Get16(rawdata.data + animpnt + a * 8);
+
+			if (thisanim.frames)
+			{
+				thisanim.first = Get16(rawdata.data + animpnt + a * 8 + 2);
+				thisanim.delay = Get16(rawdata.data + animpnt + a * 8 + 4);
+				thisanim.current = Get16(rawdata.data + animpnt + a * 8 + 6);
+
+				anims.push_back(thisanim);
+				a++;
+			}
+			else
+			{
+				break;
+			}
+		}
+	}
+
 	ExecuteEvent(1);
+
+	// set up the texture pointers
+
+	int texturestotal = 0;
+
+	for (int t = 0; t < 8; t++)
+	{
+		texturestotal += textures[t].columns.size() / 64;
+	}
+
+	for (auto i = 0; i < 160; i++)
+	{
+		if (i<texturestotal)
+		{
+			texturepointers[i] = &(textures[i / 20].columns[64 * (i % 20)]);
+			texturepointersorig[i] = &(textures[i / 20].columns[64 * (i % 20)]);
+		}
+	}
 
 	return true;
 }
@@ -448,6 +499,16 @@ void GloomMap::ExecuteEvent(uint32_t e)
 		{
 			zones[d.zone].x1 = zones[d.zone].x2 = -1;
 			zones[d.zone].z1 = zones[d.zone].z2 = -1;
+		}
+	}
+
+	// texture changes
+
+	for (auto t : tchanges)
+	{
+		if (t.ev == e)
+		{
+			zones[t.zone].t[0] = t.newtexture;
 		}
 	}
 }

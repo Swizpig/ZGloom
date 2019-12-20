@@ -323,15 +323,12 @@ void Renderer::DrawFlat(std::vector<int32_t>& ceilend, std::vector<int32_t>& flo
 	}
 }
 
-void Renderer::DrawColumn(int32_t x, int32_t ystart, int32_t h, int32_t t, int32_t z)
+void Renderer::DrawColumn(int32_t x, int32_t ystart, int32_t h, Column* texturedata, int32_t z, int32_t palused)
 {
 	Quick temp;
 	Quick tscale;
 	Quick tstart;
 	int32_t yend = ystart + h;
-	
-	if (t < 0) t = 0;
-	//if (t >= 1280) t = 1279;
 
 	if (h == 0) return;
 	if (h > 65535) return; // this overflows a quick! Can happen in high res
@@ -359,13 +356,14 @@ void Renderer::DrawColumn(int32_t x, int32_t ystart, int32_t h, int32_t t, int32
 
 		if (row>63) row = 63;
 
-		if (gloommap->GetTextures()[t / 1280].columns.size())
+		//if (gloommap->GetTextures()[t / 1280].columns.size())
 		{
-			uint8_t colour = gloommap->GetTextures()[t / 1280].columns[t % 1280].data[row];
+			uint8_t colour = texturedata->data[row];
 
-			uint8_t r = gloommap->GetTextures()[t / 1280].palette[colour][0];
-			uint8_t g = gloommap->GetTextures()[t / 1280].palette[colour][1];
-			uint8_t b = gloommap->GetTextures()[t / 1280].palette[colour][2];
+			// TODO: Select correct palette
+			uint8_t r = gloommap->GetTextures()[palused].palette[colour][0];
+			uint8_t g = gloommap->GetTextures()[palused].palette[colour][1];
+			uint8_t b = gloommap->GetTextures()[palused].palette[colour][2];
 
 			// dim it
 			auto p = z / 128; if (p > 15) p = 15;
@@ -738,14 +736,35 @@ void Renderer::Render(Camera* camera)
 
 			scale.SetInt(gloommap->GetZones()[hitzone].sc/2);
 
+			// scale is sometimes -ve? What? Possibly reflected texture? I've cobbled this together in a nasty way, don't understand the underlying logic
+			if (gloommap->GetZones()[hitzone].sc < 0)
+			{
+				scale.SetInt(1);
+			}
+
 			// not sure how this, well, scales
 			if (scale.GetInt() == 0) scale.SetInt(1);
 
 			texpos = texpos*scale;
 
-			int32_t finaltexpos = gloommap->GetZones()[hitzone].t[texpos.GetInt()] * 64 + texpos.GetFrac() / (0x10000/64);
+			auto textouse  = texpos.GetInt();
 
-			DrawColumn(x, ystart, h, finaltexpos, z);
+			if (textouse < 0) textouse = 0;
+			if (textouse > 7) textouse = 7;
+
+			int basetexture = gloommap->GetZones()[hitzone].t[textouse];
+			int column = texpos.GetFrac() / (0x10000 / 64);
+
+			// EMPIRICAL F-F-F-F-FUDGE
+
+			if (gloommap->GetZones()[hitzone].sc < 0)
+			{
+				column /= -gloommap->GetZones()[hitzone].sc*2;
+			}
+
+			Column** tc = gloommap->GetTexPointers();
+
+			DrawColumn(x, ystart, h, tc[basetexture] + column, z, basetexture/20);
 			zbuff[x] = z;
 			//debugVline(x, 120 - h/2, 120 + h/2, rendersurface, 0xFFFF0000 + 255 - z / 16);
 		}

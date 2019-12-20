@@ -6,6 +6,7 @@ void GameLogic::Init(GloomMap* gmapin, Camera* cam)
 	gmap = gmapin;
 
 	camdir = 1;
+	std::fill(animframe, animframe + 160, 0);
 
 	for (auto o : gmap->GetMapObjects())
 	{
@@ -197,11 +198,11 @@ bool GameLogic::Update(Camera* cam)
 	{
 		//L
 		//TODO: Rotation acceleration
-		if (keystate[SDL_SCANCODE_LALT])
+		if (keystate[SDL_SCANCODE_LSHIFT])
 		{
 			//strafe
-			newx = cam->x + camrotstrafe[1] * inc;
-			newz = cam->z + camrotstrafe[0] * inc;
+			newx = newx + camrotstrafe[1] * inc;
+			newz = newz + camrotstrafe[0] * inc;
 		}
 		else
 		{
@@ -211,11 +212,11 @@ bool GameLogic::Update(Camera* cam)
 	if (keystate[SDL_SCANCODE_RIGHT])
 	{
 		//R
-		if (keystate[SDL_SCANCODE_LALT])
+		if (keystate[SDL_SCANCODE_LSHIFT])
 		{
 			//strafe
-			newx = cam->x - camrotstrafe[1] * inc;
-			newz = cam->z - camrotstrafe[0] * inc;
+			newx = newx - camrotstrafe[1] * inc;
+			newz = newz - camrotstrafe[0] * inc;
 		}
 		else
 		{
@@ -262,6 +263,33 @@ bool GameLogic::Update(Camera* cam)
 			{
 				gmap->GetZones()[closestzone].ev = -1;
 			}
+		}
+	}
+
+	//update the anims
+
+	Column** tp = gmap->GetTexPointers();
+	Column** to = gmap->GetTexPointersOrig();
+
+	for (auto& a : gmap->GetAnims())
+	{
+		a.current--;
+
+		if (a.current < 0)
+		{
+			a.current = a.delay;
+
+			int curframe = animframe[a.first];
+
+			curframe++;
+			if (curframe >= a.frames)
+			{
+				curframe = 0;
+			}
+
+			animframe[a.first] = curframe;
+
+			tp[a.first] = to[a.first + curframe];
 		}
 	}
 

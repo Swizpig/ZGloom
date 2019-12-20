@@ -2,6 +2,7 @@
 //
 
 #include "SDL.h"
+#include "xmp/include/xmp.h"
 
 #include "gloommap.h"
 #include "script.h"
@@ -31,6 +32,13 @@ Uint32 my_callbackfunc(Uint32 interval, void *param)
 
 	SDL_PushEvent(&event);
 	return(interval);
+}
+static int playingaudio;
+
+static void fill_audio(void *udata, Uint8 *stream, int len)
+{
+	if (xmp_play_buffer((xmp_context)udata, stream, len, 0) < 0)
+		playingaudio = 0;
 }
 
 void LoadPic(std::string name, SDL_Surface* render8)
@@ -72,11 +80,22 @@ int main(int argc, char* argv[])
 	GloomMap gmap;
 	Script script;
 
+	xmp_context ctx;
+
+	ctx = xmp_create_context();
+
 	if (SDL_Init(SDL_INIT_EVERYTHING) != 0)
 	{
 		std::cout << "SDL_Init Error: " << SDL_GetError() << std::endl;
 		return 1;
 	}
+
+
+	CrmFile titlemusic;
+	CrmFile intermissionmusic;
+
+	titlemusic.Load("sfxs/med1");
+	intermissionmusic.Load("sfxs/med2");
 
 	SDL_Window* win = SDL_CreateWindow("ZGloom", 100, 100, 800, 600, SDL_WINDOW_SHOWN /*| SDL_WINDOW_FULLSCREEN*/);
 	if (win == nullptr)
@@ -103,17 +122,9 @@ int main(int argc, char* argv[])
 	SDL_Surface* render32 = SDL_CreateRGBSurface(0, 320, 240, 32, 0x00FF0000, 0x0000FF00, 0x000000FF, 0xFF000000);
 
 	ObjectGraphics objgraphics;
-
-	//gmap.Load("maps/map4_2", &objgraphics);
-	//gmap.SetFlat(1);
-	//gmap.DumpDebug();
-
 	Renderer renderer;
 	GameLogic logic;
 	Camera cam;
-
-	//renderer.Init(render32, &gmap, &objgraphics);
-	//logic.Init(&gmap, &cam);
 
 	SDL_AddTimer(1000 / 50, my_callbackfunc, NULL);
 
@@ -151,6 +162,27 @@ int main(int argc, char* argv[])
 				case Script::SOP_DRAW:
 				{
 					showscreen = true;
+
+					SDL_AudioSpec a;
+
+					a.freq = 44100;
+					a.format = AUDIO_S16;
+					a.channels = 2;
+					a.samples = 2048;
+					a.callback = fill_audio;
+					a.userdata = ctx;
+
+					if (SDL_OpenAudio(&a, NULL) < 0) {
+						std::cout << "openaudio error" << SDL_GetError() << std::endl;
+						return -1;
+					}
+
+					xmp_load_module_from_memory(ctx, intermissionmusic.data, intermissionmusic.size);
+
+					xmp_start_player(ctx, 44100, 0);
+
+					SDL_PauseAudio(0);
+					playingaudio = 1;
 					break;
 				}
 				case Script::SOP_WAIT:
@@ -183,7 +215,14 @@ int main(int argc, char* argv[])
 
 			if ((sEvent.type == SDL_KEYDOWN) || (sEvent.type == SDL_MOUSEBUTTONDOWN))
 			{
-				waiting = false;
+				if (waiting)
+				{
+					waiting = false;
+					playingaudio = 0;
+					xmp_end_player(ctx);
+					xmp_release_module(ctx);
+					SDL_CloseAudio();
+				}
 			}
 
 			if (sEvent.type == SDL_USEREVENT)
@@ -210,6 +249,8 @@ int main(int argc, char* argv[])
 		SDL_RenderCopy(ren, rendertex, NULL, NULL);
 		SDL_RenderPresent(ren);
 	}
+
+	xmp_free_context(ctx);
 
 	SDL_FreeSurface(render8);
 	SDL_FreeSurface(render32);
