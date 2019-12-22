@@ -163,26 +163,29 @@ int main(int argc, char* argv[])
 				{
 					showscreen = true;
 
-					SDL_AudioSpec a;
+					if (intermissionmusic.data)
+					{
+						SDL_AudioSpec a;
 
-					a.freq = 44100;
-					a.format = AUDIO_S16;
-					a.channels = 2;
-					a.samples = 2048;
-					a.callback = fill_audio;
-					a.userdata = ctx;
+						a.freq = 44100;
+						a.format = AUDIO_S16;
+						a.channels = 2;
+						a.samples = 2048;
+						a.callback = fill_audio;
+						a.userdata = ctx;
 
-					if (SDL_OpenAudio(&a, NULL) < 0) {
-						std::cout << "openaudio error" << SDL_GetError() << std::endl;
-						return -1;
+						if (SDL_OpenAudio(&a, NULL) < 0) {
+							std::cout << "openaudio error" << SDL_GetError() << std::endl;
+							return -1;
+						}
+
+						xmp_load_module_from_memory(ctx, intermissionmusic.data, intermissionmusic.size);
+
+						xmp_start_player(ctx, 44100, 0);
+
+						SDL_PauseAudio(0);
+						playingaudio = 1;
 					}
-
-					xmp_load_module_from_memory(ctx, intermissionmusic.data, intermissionmusic.size);
-
-					xmp_start_player(ctx, 44100, 0);
-
-					SDL_PauseAudio(0);
-					playingaudio = 1;
 					break;
 				}
 				case Script::SOP_WAIT:
@@ -192,6 +195,10 @@ int main(int argc, char* argv[])
 				}
 				case Script::SOP_PLAY:
 				{
+					cam.x.SetInt(0);
+					cam.y = 120;
+					cam.z.SetInt(0);
+					cam.rot = 0;
 					scriptstring.insert(0, "maps/");
 					gmap.Load(scriptstring.c_str(), &objgraphics);
 					renderer.Init(render32, &gmap, &objgraphics);
@@ -218,10 +225,13 @@ int main(int argc, char* argv[])
 				if (waiting)
 				{
 					waiting = false;
-					playingaudio = 0;
-					xmp_end_player(ctx);
-					xmp_release_module(ctx);
-					SDL_CloseAudio();
+					if (intermissionmusic.data)
+					{
+						playingaudio = 0;
+						xmp_end_player(ctx);
+						xmp_release_module(ctx);
+						SDL_CloseAudio();
+					}
 				}
 			}
 

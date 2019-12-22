@@ -83,14 +83,20 @@ void Renderer::DrawMap()
 	int16_t scale = 16;
 	int16_t sx1, sx2, sz1, sz2;
 
+	int z = 0;
 	for (auto w : walls)
 	{
-		sx1 = 160 + w.wl_lx / scale;
-		sz1 = 120 - w.wl_lz / scale;
-		sx2 = 160 + w.wl_rx / scale;
-		sz2 = 120 - w.wl_rz / scale;
+		if (gloommap->GetZones()[z].ztype == 1)
+		{
+			sx1 = 160 + w.wl_lx / scale;
+			sz1 = 120 - w.wl_lz / scale;
+			sx2 = 160 + w.wl_rx / scale;
+			sz2 = 120 - w.wl_rz / scale;
 
-		debugline(sx1, sz1, sx2, sz2, rendersurface, 0xFFFFFF00);
+			debugline(sx1, sz1, sx2, sz2, rendersurface, 0xFFFFFF00);
+		}
+
+		++z;
 	}
 }
 
@@ -191,6 +197,11 @@ void Renderer::DrawFlat(std::vector<int32_t>& ceilend, std::vector<int32_t>& flo
 	//TODO
 	// skip over invalid runs for performance
 	// work out why tz needs a weird +32 to align properly
+	if (!gloommap->HasFlat())
+	{
+		return;
+	}
+
 	Flat& ceil = gloommap->GetCeil();
 	Flat& floor = gloommap->GetFloor();
 
@@ -367,6 +378,7 @@ void Renderer::DrawColumn(int32_t x, int32_t ystart, int32_t h, Column* textured
 
 			// dim it
 			auto p = z / 128; if (p > 15) p = 15;
+
 			r = darkpalettes[p][r >> 4];
 			g = darkpalettes[p][g >> 4];
 			b = darkpalettes[p][b >> 4];
@@ -447,9 +459,34 @@ void Renderer::DrawObjects(Camera* camera)
 
 					uint16_t column = 0;
 
+					int frametouse = 0;
+
+					if (o.render == 8)
+					{
+						// rotatable!
+						/*
+						bsr	calcangle2
+						add	#16, d0
+						sub	ob_rot(a5), d0
+						lsr	#5, d0
+						and	#7, d0
+						*/
+						uint16_t ang = GloomMaths::CalcAngle(o.x.GetInt(), o.z.GetInt(), camera->x.GetInt(), camera->z.GetInt());
+
+						ang += 16;
+						//ang -= o.rot;
+						ang >>= 5;
+						ang &= 7;
+						frametouse = ang;
+					}
+					else
+					{
+						frametouse = o.frame >> 16;
+					}
+
 					auto scale = 2;
-					auto shapewidth = (*s)[o.frame>>16].w;
-					auto shapeheight = (*s)[o.frame>>16].h;
+					auto shapewidth = (*s)[frametouse].w;
+					auto shapeheight = (*s)[frametouse].h;
 
 					int h = ((shapeheight * scale) << focshift) / iz;
 					int w = ((shapewidth * scale) << focshift) / iz;
@@ -491,7 +528,7 @@ void Renderer::DrawObjects(Camera* camera)
 
 									if ((sx >= 0) && (sy >= 0))
 									{
-										auto col = (*s)[o.frame >> 16].data[ty.GetInt() + tx.GetInt()*shapeheight];
+										auto col = (*s)[frametouse].data[ty.GetInt() + tx.GetInt()*shapeheight];
 
 										if (col != 1)
 										{
@@ -605,6 +642,13 @@ void Renderer::Render(Camera* camera)
 			walls[z].wl_rz = ((x2 * cammatrix[2]) + (z2 * cammatrix[3])).GetInt();
 			walls[z].wl_nz = std::min(walls[z].wl_lz, walls[z].wl_rz);
 			walls[z].wl_fz = std::max(walls[z].wl_lz, walls[z].wl_rz);
+
+			// a vain attempt to stop z fighting on the doors
+			if (zone.open)
+			{
+				walls[z].wl_rz += 12;
+				walls[z].wl_lz += 12;
+			}
 
 			walls[z].len = zone.ln;
 

@@ -1,4 +1,5 @@
 #include "gloommap.h"
+#include "gloommaths.h"
 
 static uint16_t Get16(const uint8_t* p)
 {
@@ -99,6 +100,8 @@ void Zone::Load(const uint8_t* data)
 
 	sc = Get16(data); data += 2;
 	ev = Get16(data); data += 2;
+
+	open = 0;
 }
 
 void Zone::DumpDebug(FILE* fFile)
@@ -206,8 +209,11 @@ bool GloomMap::Load(const char* name, ObjectGraphics* nobj)
 	objects.clear();
 	anims.clear();
 	tchanges.clear();
+	activedoors.clear();
 
 	objectlogic = nobj;
+
+	GloomMaths::SeedRnd(0xa3f7);
 
 	for (auto zonetype = 0; zonetype < 2; zonetype++)
 	{
@@ -327,6 +333,7 @@ bool GloomMap::Load(const char* name, ObjectGraphics* nobj)
 	{
 		o.frame = objectlogic->objectlogic[o.t].frame;
 		o.framespeed = objectlogic->objectlogic[o.t].framespeed;
+		o.render = objectlogic->objectlogic[o.t].render;
 	}
 
 	// load wall anims
@@ -377,11 +384,15 @@ bool GloomMap::Load(const char* name, ObjectGraphics* nobj)
 		}
 	}
 
+	DumpDebug();
+
 	return true;
 }
 
 void GloomMap::SetFlat(char f)
 {
+	hasflat = true;
+
 	std::string name = "txts/floor";
 
 	name += f + '0';
@@ -474,13 +485,19 @@ void GloomMap::DumpDebug()
 		}
 	}
 
-	floor.DumpDebug("floor.ppm");
-	ceil.DumpDebug("roof.ppm");
+	if (hasflat)
+	{
+		floor.DumpDebug("floor.ppm");
+		ceil.DumpDebug("roof.ppm");
+	}
 }
 
 void GloomMap::ExecuteEvent(uint32_t e)
 {
 	// add objects?
+	
+	// DEMOS events seem off by one? 
+	// e++;
 
 	for (auto o : objects)
 	{
@@ -497,8 +514,28 @@ void GloomMap::ExecuteEvent(uint32_t e)
 	{
 		if (d.eventnum == e)
 		{
-			zones[d.zone].x1 = zones[d.zone].x2 = -1;
-			zones[d.zone].z1 = zones[d.zone].z2 = -1;
+			//zones[d.zone].x1 = zones[d.zone].x2 = -1;
+			//zones[d.zone].z1 = zones[d.zone].z2 = -1;
+			ActiveDoor ad;
+
+			/*
+			NOTE MOVE LONGS: This should copy Z's as well?
+
+			move.l	a1, do_poly(a0)
+			move.l	zo_lx(a1), do_lx(a0)
+			move.l	zo_rx(a1), do_rx(a0)
+			clr	do_frac(a0)
+			move	#$100, do_fracadd(a0)
+			*/
+			ad.do_poly = d.zone;
+			ad.do_lx = zones[d.zone].x1;
+			ad.do_rx = zones[d.zone].x2;
+			ad.do_lz = zones[d.zone].z1;
+			ad.do_rz = zones[d.zone].z2;
+			ad.do_frac = 0;
+			ad.do_fracadd = 0x100;
+
+			activedoors.push_back(ad);
 		}
 	}
 

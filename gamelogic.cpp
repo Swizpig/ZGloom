@@ -54,6 +54,120 @@ bool GameLogic::AdjustPos(int32_t& overshoot, Quick& x, Quick& z, int32_t r, int
 	return Collision(false, x.GetInt(), z.GetInt(), r, overshoot, closestzone);
 }
 
+void GameLogic::DoDoor()
+{
+	for (auto &d : gmap->GetActiveDoors())
+	{
+
+		/*
+		dodoors
+		lea	doors(pc), a5
+		;
+		.loop
+		move.l(a5), a5
+		tst.l(a5)
+		beq.done
+		;
+		move.l	do_poly(a5), a0
+		move	do_fracadd(a5), d0
+		add		d0, do_frac(a5)
+		move	do_frac(a5), d0
+		move	d0, d1
+		add		d1, d1
+		move	d1, zo_open(a0); copy frac
+		;
+		*/
+		Zone& zone = gmap->GetZones()[d.do_poly];
+
+		d.do_frac += d.do_fracadd;
+		zone.open = d.do_frac * 2;
+
+		/*
+			move	do_rx(a5), d1
+			sub		do_lx(a5), d1; width
+			move	d1, d2
+			muls	d0, d2
+			lsl.l	#2, d2
+			swap	d2
+			move	do_lx(a5), d3
+			sub		d2, d3
+			move	d3, zo_lx(a0)
+			add		d1, d3
+			move	d3, zo_rx(a0)
+			;
+
+		*/
+
+		int32_t width = d.do_rx - d.do_lx;
+		int32_t origwidth = width;
+		width *= d.do_frac;
+		width <<= 2;
+		width >>= 16;
+		zone.x1 = d.do_lx - width;
+		zone.x2 = zone.x1 + origwidth;
+
+		/*
+			move	do_rz(a5), d1
+			sub		do_lz(a5), d1
+			move	d1, d2
+			muls	d0, d2
+			lsl.l	#2, d2
+			swap	d2
+			move	do_lz(a5), d3
+			sub		d2, d3
+			move	d3, zo_lz(a0)
+			add		d1, d3
+			move	d3, zo_rz(a0)
+		*/
+
+		width = d.do_rz - d.do_lz;
+		origwidth = width;
+		width *= d.do_frac;
+		width <<= 2;
+		width >>= 16;
+		zone.z1 = d.do_lz - width;
+		zone.z2 = zone.z1 + origwidth;
+
+		/*
+			;
+			tst		d0
+			beq.s	.kill
+			cmp		#$4000, d0
+			bne.s	.loop
+			;
+			.kill
+			move.l	a5, a0
+			killitem	doors
+			move.l	a0, a5
+			bra.loop
+			;
+			.done
+			rts
+			*/
+	}
+
+	//kill pass
+
+	auto i = gmap->GetActiveDoors().begin();
+
+	while (i != gmap->GetActiveDoors().end())
+	{
+		if (i->do_frac == 0x4000)
+		{
+			gmap->GetZones()[i->do_poly].x1 = -1;
+			gmap->GetZones()[i->do_poly].x2 = -1;
+			gmap->GetZones()[i->do_poly].z1 = -1;
+			gmap->GetZones()[i->do_poly].z2 = -1;
+
+			i = gmap->GetActiveDoors().erase(i);
+		}
+		else
+		{
+			++ i;
+		}
+	}
+}
+
 bool GameLogic::Collision(bool event, int32_t x, int32_t z, int32_t r, int32_t& overshoot, int32_t& closestzone)
 {
 	// do 3x3 square
@@ -265,6 +379,9 @@ bool GameLogic::Update(Camera* cam)
 			}
 		}
 	}
+
+	// move any doors
+	DoDoor();
 
 	//update the anims
 

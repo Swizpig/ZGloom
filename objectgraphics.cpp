@@ -100,6 +100,8 @@ void ObjectGraphics::LoadGraphic(const char* name, std::vector<Shape>& shape)
 
 	file.Load(name);
 
+	if (!file.data) return;
+
 	uint32_t frames;
 
 	frames = Get16(file.data + 2) << Get16(file.data + 0);
@@ -201,6 +203,31 @@ ObjectGraphics::ObjectGraphics()
 	objectlogic[OLT_DEATHHEAD].frame = 0x8000;
 	objectlogic[OLT_TROLL].frame = 0x0	  ;
 
+	// how many rotation frames
+	objectlogic[OLT_PLAYER1].render = 8;
+	objectlogic[OLT_PLAYER2].render = 8;
+	objectlogic[OLT_HEALTH].render = 1;
+	objectlogic[OLT_WEAPON].render = 1;
+	objectlogic[OLT_THERMO].render = 1;
+	objectlogic[OLT_INFRA].render = 1;
+	objectlogic[OLT_INVISI].render = 1;
+	objectlogic[OLT_INVINC].render = 1;
+	objectlogic[OLT_DRAGON].render = 8;
+	objectlogic[OLT_BOUNCY].render = 1;
+	objectlogic[OLT_MARINE].render = 8;
+	objectlogic[OLT_BALDY].render = 8;
+	objectlogic[OLT_TERRA].render = 8;
+	objectlogic[OLT_GHOUL].render = 8;
+	objectlogic[OLT_PHANTOM].render = 8;
+	objectlogic[OLT_DEMON].render = 8;
+	objectlogic[OLT_WEAPON1].render = 1;
+	objectlogic[OLT_WEAPON2].render = 1;
+	objectlogic[OLT_WEAPON3].render = 1;
+	objectlogic[OLT_WEAPON4].render = 1;
+	objectlogic[OLT_WEAPON5].render = 1;
+	objectlogic[OLT_LIZARD].render = 8;
+	objectlogic[OLT_DEATHHEAD].render = 8;
+	objectlogic[OLT_TROLL].render = 8;
 
 	return;
 }

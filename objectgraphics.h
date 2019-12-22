@@ -21,6 +21,7 @@ class ObjectLogic
 	std::vector<Shape>* shape;
 	uint32_t frame;
 	uint32_t framespeed;
+	uint32_t render; // "is 8 frame rotatable sprite", basically
 };
 
 class ObjectGraphics

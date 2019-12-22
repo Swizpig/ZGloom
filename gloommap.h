@@ -39,6 +39,7 @@ class Object
 
 	uint32_t frame;
 	uint32_t framespeed;
+	uint32_t render;
 };
 
 // an object actually in play
@@ -57,6 +58,8 @@ class MapObject
 	uint32_t frame;
 	uint32_t framespeed;
 
+	uint32_t render;
+
 	MapObject(Object m)
 	{
 		x.SetInt(m.x);
@@ -66,6 +69,8 @@ class MapObject
 
 		frame = m.frame;
 		framespeed = m.framespeed;
+
+		render = m.render;
 	}
 };
 
@@ -74,6 +79,18 @@ class Door
 	public:
 		uint32_t zone;
 		uint32_t eventnum;
+};
+
+class ActiveDoor
+{
+	public:
+		uint32_t do_poly; //door polygon
+		int16_t do_lx;
+		int16_t do_lz;
+		int16_t do_rx;
+		int16_t do_rz;
+		int16_t do_frac;
+		int16_t	do_fracadd;
 };
 
 class Event
@@ -125,6 +142,7 @@ class Zone
 	int8_t t[8]; //8 textures to use!
 	int16_t	sc;
 	int16_t ev;
+	int16_t open;
 };
 
 class Column
@@ -163,13 +181,16 @@ class GloomMap
 		std::vector<Anim>& GetAnims() { return anims; };
 		Texture* GetTextures(){ return textures; };
 		std::vector<TextureChange>& GetTChange(){ return tchanges; };
+		bool HasFlat() { return hasflat; };
 		Flat& GetCeil() { return ceil; };
 		Flat& GetFloor() { return floor; };
 		std::list<MapObject>& GetMapObjects() { return mapobjects; };
+		std::list<ActiveDoor>& GetActiveDoors() { return activedoors; };
 		Column** GetTexPointers(){ return texturepointers;};
 		Column** GetTexPointersOrig(){ return texturepointersorig; };
 		std::vector<uint32_t>& GetCollisions(int zt, int x, int z) {return collisionpolys[zt][x][z];};
 		void ExecuteEvent(uint32_t e);
+		GloomMap() { hasflat = false; };
 
 	private:
 		static const int numevents = 24;
@@ -181,6 +202,7 @@ class GloomMap
 		Flat ceil;
 		std::string texturenames[8];
 		Event events[numevents];
+		bool hasflat;
 
 		ObjectGraphics* objectlogic;
 
@@ -188,6 +210,7 @@ class GloomMap
 		std::vector<Door> doors;
 		std::vector<Anim> anims;
 		std::vector<TextureChange> tchanges;
+		std::list<ActiveDoor> activedoors;
 
 		std::list<MapObject> mapobjects;
 
