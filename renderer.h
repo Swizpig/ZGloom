@@ -8,6 +8,8 @@
 
 #include "SDL.h"
 
+class GloomMap;
+
 class Camera
 {
 	public:

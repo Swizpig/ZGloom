@@ -126,7 +126,7 @@ int main(int argc, char* argv[])
 	GameLogic logic;
 	Camera cam;
 
-	SDL_AddTimer(1000 / 50, my_callbackfunc, NULL);
+	SDL_AddTimer(1000 / 25, my_callbackfunc, NULL);
 
 	SDL_Event sEvent;
 

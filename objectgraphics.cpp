@@ -229,5 +229,55 @@ ObjectGraphics::ObjectGraphics()
 	objectlogic[OLT_DEATHHEAD].render = 8;
 	objectlogic[OLT_TROLL].render = 8;
 
+	objectlogic[OLT_PLAYER1].movspeed = 0xd0000	 ;
+	objectlogic[OLT_PLAYER2].movspeed = 0xd0000	 ;
+	objectlogic[OLT_HEALTH].movspeed = 0		 ;
+	objectlogic[OLT_WEAPON].movspeed = 0		 ;
+	objectlogic[OLT_THERMO].movspeed = 0		 ;
+	objectlogic[OLT_INFRA].movspeed = 0			 ;
+	objectlogic[OLT_INVISI].movspeed = 0		 ;
+	objectlogic[OLT_INVINC].movspeed = 0		 ;
+	objectlogic[OLT_DRAGON].movspeed = 0xc0000	 ;
+	objectlogic[OLT_BOUNCY].movspeed = 0		 ;
+	objectlogic[OLT_MARINE].movspeed = 0x60000	 ;
+	objectlogic[OLT_BALDY].movspeed = 0x40000	 ;
+	objectlogic[OLT_TERRA].movspeed = 0x20000	 ;
+	objectlogic[OLT_GHOUL].movspeed = 0x80000	 ;
+	objectlogic[OLT_PHANTOM].movspeed = 0xa0000	 ;
+	objectlogic[OLT_DEMON].movspeed = 0x70000	 ;
+	objectlogic[OLT_WEAPON1].movspeed = 0		 ;
+	objectlogic[OLT_WEAPON2].movspeed = 0		 ;
+	objectlogic[OLT_WEAPON3].movspeed = 0		 ;
+	objectlogic[OLT_WEAPON4].movspeed = 0		 ;
+	objectlogic[OLT_WEAPON5].movspeed = 0		 ;
+	objectlogic[OLT_LIZARD].movspeed = 0x60000	 ;
+	objectlogic[OLT_DEATHHEAD].movspeed = 0xc0000 ;
+	objectlogic[OLT_TROLL].movspeed = 0x60000	 ;
+
+	objectlogic[OLT_PLAYER1].framespeed = 0x6000;
+	objectlogic[OLT_PLAYER2].framespeed = 0x6000;
+	objectlogic[OLT_HEALTH].framespeed = 0x0;
+	objectlogic[OLT_WEAPON].framespeed = 0x08000;
+	objectlogic[OLT_THERMO].framespeed = 0x0;
+	objectlogic[OLT_INFRA].framespeed = 0x0;
+	objectlogic[OLT_INVISI].framespeed = 0x0;
+	objectlogic[OLT_INVINC].framespeed = 0x0;
+	objectlogic[OLT_DRAGON].framespeed = 0x4000;
+	objectlogic[OLT_BOUNCY].framespeed = 0x0;
+	objectlogic[OLT_MARINE].framespeed = 0x6000;
+	objectlogic[OLT_BALDY].framespeed = 0x4000;
+	objectlogic[OLT_TERRA].framespeed = 0x6000;
+	objectlogic[OLT_GHOUL].framespeed = 0x0;
+	objectlogic[OLT_PHANTOM].framespeed = 0xa000;
+	objectlogic[OLT_DEMON].framespeed = 0x7000;
+	objectlogic[OLT_WEAPON1].framespeed = 0x08000;
+	objectlogic[OLT_WEAPON2].framespeed = 0x08000;
+	objectlogic[OLT_WEAPON3].framespeed = 0x08000;
+	objectlogic[OLT_WEAPON4].framespeed = 0x08000;
+	objectlogic[OLT_WEAPON5].framespeed = 0x08000;
+	objectlogic[OLT_LIZARD].framespeed = 0x4000;
+	objectlogic[OLT_DEATHHEAD].framespeed = 0x6000;
+	objectlogic[OLT_TROLL].framespeed = 0x4000;
+
 	return;
 }

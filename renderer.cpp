@@ -474,10 +474,10 @@ void Renderer::DrawObjects(Camera* camera)
 						uint16_t ang = GloomMaths::CalcAngle(o.x.GetInt(), o.z.GetInt(), camera->x.GetInt(), camera->z.GetInt());
 
 						ang += 16;
-						//ang -= o.rot;
+						ang -= o.rot;
 						ang >>= 5;
 						ang &= 7;
-						frametouse = ang;
+						frametouse = ang | (((o.frame >> 16) & 3) << 3);
 					}
 					else
 					{

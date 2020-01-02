@@ -1,5 +1,6 @@
 #include "gloommap.h"
 #include "gloommaths.h"
+#include "monsterlogic.h"
 
 static uint16_t Get16(const uint8_t* p)
 {
@@ -334,6 +335,7 @@ bool GloomMap::Load(const char* name, ObjectGraphics* nobj)
 		o.frame = objectlogic->objectlogic[o.t].frame;
 		o.framespeed = objectlogic->objectlogic[o.t].framespeed;
 		o.render = objectlogic->objectlogic[o.t].render;
+		o.movspeed = objectlogic->objectlogic[o.t].movspeed;
 	}
 
 	// load wall anims
@@ -505,11 +507,13 @@ void GloomMap::ExecuteEvent(uint32_t e)
 		{
 			MapObject mo(o);
 
+			CalcVecs(mo);
+
 			mapobjects.push_back(mo);
 		}
 	}
 
-	// doors. TODO: Add animation
+	// doors.
 	for (auto d : doors)
 	{
 		if (d.eventnum == e)
@@ -547,5 +551,36 @@ void GloomMap::ExecuteEvent(uint32_t e)
 		{
 			zones[t.zone].t[0] = t.newtexture;
 		}
+	}
+}
+
+MapObject::MapObject(Object m)
+{
+	x.SetInt(m.x);
+	y = m.y;
+	z.SetInt(m.z);
+	t = m.t;
+
+	frame = m.frame;
+	framespeed = m.framespeed;
+
+	render = m.render;
+	rot = m.rot;
+	movspeed = m.movspeed;
+
+	switch (t)
+	{
+		case ObjectGraphics::OLT_MARINE:
+			logic = &MonsterLogic;
+			break;
+		case ObjectGraphics::OLT_WEAPON1:
+		case ObjectGraphics::OLT_WEAPON2:
+		case ObjectGraphics::OLT_WEAPON3:
+		case ObjectGraphics::OLT_WEAPON4:
+		case ObjectGraphics::OLT_WEAPON5:
+			logic = &WeaponLogic;
+			break;
+		default:
+			logic = &NullLogic;
 	}
 }

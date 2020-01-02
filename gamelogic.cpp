@@ -1,5 +1,6 @@
 #include "gamelogic.h"
 #include "renderer.h"
+#include "monsterlogic.h"
 
 void GameLogic::Init(GloomMap* gmapin, Camera* cam)
 {
@@ -412,6 +413,11 @@ bool GameLogic::Update(Camera* cam)
 
 	if (cam->y > 136) camdir = -1;
 	if (cam->y < 120) camdir = 1;
+
+	for (auto &o : gmap->GetMapObjects())
+	{
+		o.logic(o, this);
+	}
 
 	return done;
 }

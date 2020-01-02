@@ -3,6 +3,9 @@
 #include <cstdint>
 #include <vector>
 
+//#include "gloommap.h"
+//#include "gamelogic.h"
+
 class Shape
 {
 	public:
@@ -22,6 +25,9 @@ class ObjectLogic
 	uint32_t frame;
 	uint32_t framespeed;
 	uint32_t render; // "is 8 frame rotatable sprite", basically
+	int32_t movspeed;
+
+	//void (*logic)(MapObject&, GameLogic*);
 };
 
 class ObjectGraphics

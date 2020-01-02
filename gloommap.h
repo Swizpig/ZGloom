@@ -40,9 +40,12 @@ class Object
 	uint32_t frame;
 	uint32_t framespeed;
 	uint32_t render;
+	int32_t movspeed;
 };
 
 // an object actually in play
+
+class GameLogic;
 
 class MapObject
 {
@@ -60,18 +63,17 @@ class MapObject
 
 	uint32_t render;
 
-	MapObject(Object m)
-	{
-		x.SetInt(m.x);
-		y = m.y;
-		z.SetInt(m.z);
-		t = m.t;
+	uint32_t rot;
+	uint32_t oldrot;
+	int32_t movspeed;
+	int32_t xvec;
+	int32_t zvec;
 
-		frame = m.frame;
-		framespeed = m.framespeed;
+	void(*logic)(MapObject&, GameLogic*);
+	void(*oldlogic)(MapObject&, GameLogic*);
+	void(*oldlogic2)(MapObject&, GameLogic*);
 
-		render = m.render;
-	}
+	MapObject(Object m);
 };
 
 class Door
