@@ -23,5 +23,7 @@ class GameLogic
 
 		int32_t FindSegDist(int32_t x, int32_t z, Zone& zone);
 		void DoDoor();
+		void DoRot();
+		void Rotter(int16_t x, int16_t z, int16_t&nx, int16_t& nz, int16_t camrots[4]);
 		uint32_t animframe[160];
 };

@@ -169,6 +169,152 @@ void GameLogic::DoDoor()
 	}
 }
 
+void  GameLogic::DoRot()
+{
+	std::vector<ActiveRotPoly>&rotpolys = gmap->GetActiveRotPolys();
+	std::vector<Zone>&zones = gmap->GetZones();
+
+	for (auto& r: rotpolys)
+	{
+		if (r.speed)
+		{
+			r.rot += r.speed;
+
+			if (r.flags & 1)
+			{
+				// Morph
+				if (r.rot < 0)
+				{
+					if (r.flags & 3)
+					{
+						r.speed = -r.speed;
+					}
+					else
+					{
+						r.speed = 0;
+					}
+				}
+				else if (r.rot > 0x4000)
+				{
+					if (r.flags & 3)
+					{
+						r.speed = -r.speed;
+					}
+					else
+					{
+						r.speed = 0;
+					}
+				}
+
+				for (int vertex = 0; vertex < r.num; vertex++)
+				{
+					auto thiszone = r.first + vertex;
+					auto prevzone = thiszone - 1;
+
+					if (vertex == 0) prevzone = r.first + r.num - 1;
+
+					/*
+						.loop	movem(a3) + , d0 - d3, (vx, vz, ox, oz, d4 is rot)
+						muls	d4, d0
+						lsl.l	#2, d0
+						swap	d0
+						add	d2, d0
+						muls	d4, d1
+						lsl.l	#2, d1
+						swap	d1
+						add	d3, d1
+						movem	d0 - d1, zo_lx(a2)
+						movem	d0 - d1, zo_rx(a1)
+						move.l	a2, a1
+					*/
+					int32_t vx = r.vx[vertex];
+					vx *= r.rot;
+					vx <<= 2;
+					vx >>= 16;
+					vx += r.ox[vertex];
+
+					int32_t vz= r.vz[vertex];
+					vz *= r.rot;
+					vz <<= 2;
+					vz >>= 16;
+					vz += r.oz[vertex];
+
+					zones[thiszone].x1 = vx;
+					zones[thiszone].z1 = vz;
+
+					zones[prevzone].x2 = vx;
+					zones[prevzone].z2 = vz;
+					// TODO: NORM RECALC
+				}
+
+			}
+			else
+			{
+				//rot
+				r.rot += r.speed;
+
+				for (int vertex = 0; vertex < r.num; vertex++)
+				{
+					auto thiszone = r.first + vertex;
+					auto prevzone = thiszone - 1;
+
+					if (vertex == 0) prevzone = r.first + r.num - 1;
+
+					int16_t rotmatrix[4];
+					GloomMaths::GetCamRot2Raw(r.rot & 1023, rotmatrix);
+
+					int16_t nx, nz;
+
+					Rotter(r.lx[vertex], r.lz[vertex], nx, nz, rotmatrix);
+
+					zones[thiszone].x1 = nx + r.cx;
+					zones[thiszone].z1 = nz + r.cz;
+
+					zones[prevzone].x2 = nx + r.cx;
+					zones[prevzone].z2 = nz + r.cz;
+
+					Rotter(r.na[vertex], r.nb[vertex], nx, nz, rotmatrix);
+
+					zones[thiszone].na = nx;
+					zones[thiszone].nb = nz;
+
+					zones[thiszone].a = -nz;
+					zones[thiszone].b = nx;
+				}
+			}
+		}
+	}
+}
+
+void GameLogic::Rotter(int16_t x, int16_t z, int16_t&nx, int16_t& nz, int16_t camrots[4])
+{
+	/*
+		move	d0, d2
+		move	d1, d3
+		;
+		muls(a4), d0
+		muls	2(a4), d3
+		add.l	d3, d0
+		add.l	d0, d0
+		swap	d0; new x!
+		;
+		muls	4(a4), d2
+		muls	6(a4), d1
+		add.l	d2, d1
+		add.l	d1, d1
+		swap	d1
+	*/
+	int32_t newx = (int32_t)camrots[0] * (int32_t)x + (int32_t)camrots[1] * (int32_t)z;
+	int32_t newz = (int32_t)camrots[2] * (int32_t)x + (int32_t)camrots[3] * (int32_t)z;
+
+	// compensate for 1.15 fracs
+	newx += newx;
+	newz += newz;
+
+	nx = (newx >> 16);
+	nz = (newz >> 16);
+}
+
 bool GameLogic::Collision(bool event, int32_t x, int32_t z, int32_t r, int32_t& overshoot, int32_t& closestzone)
 {
 	// do 3x3 square
@@ -383,6 +529,10 @@ bool GameLogic::Update(Camera* cam)
 
 	// move any doors
 	DoDoor();
+
+	// update rots/morphs
+
+	DoRot();
 
 	//update the anims
 

@@ -201,6 +201,7 @@ int main(int argc, char* argv[])
 					cam.rot = 0;
 					scriptstring.insert(0, "maps/");
 					gmap.Load(scriptstring.c_str(), &objgraphics);
+					//gmap.Load("maps/map1_4", &objgraphics);
 					renderer.Init(render32, &gmap, &objgraphics);
 					logic.Init(&gmap, &cam);
 					showscreen = false;

@@ -47,6 +47,11 @@ namespace IffHandler
 						uint16_t repeat = 257 - static_cast<uint16_t>(control);
 						uint8_t data = *p++;
 
+						if ((xpos + repeat) > widthinbytes)
+						{
+							repeat = widthinbytes - xpos;
+						}
+
 						std::fill(row.begin() + xpos, row.begin() + xpos + repeat, data);
 
 						xpos += repeat;

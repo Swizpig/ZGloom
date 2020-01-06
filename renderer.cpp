@@ -808,7 +808,10 @@ void Renderer::Render(Camera* camera)
 
 			Column** tc = gloommap->GetTexPointers();
 
-			DrawColumn(x, ystart, h, tc[basetexture] + column, z, basetexture/20);
+			if (tc[basetexture])
+			{
+				DrawColumn(x, ystart, h, tc[basetexture] + column, z, basetexture / 20);
+			}
 			zbuff[x] = z;
 			//debugVline(x, 120 - h/2, 120 + h/2, rendersurface, 0xFFFF0000 + 255 - z / 16);
 		}

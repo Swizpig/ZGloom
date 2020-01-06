@@ -12,7 +12,7 @@ static uint32_t Get32(const uint8_t* p)
 	return (static_cast<uint16_t>(p[0])) << 24 | (static_cast<uint16_t>(p[1]) << 16) | (static_cast<uint16_t>(p[2])) << 8 | (static_cast<uint16_t>(p[3]) << 0);
 }
 
-void Event::Load(const uint8_t* data, uint32_t evnum, std::vector<Object>& objects, std::vector<Door>& doors, std::vector<TextureChange>& tchanges)
+void Event::Load(const uint8_t* data, uint32_t evnum, std::vector<Object>& objects, std::vector<Door>& doors, std::vector<TextureChange>& tchanges, std::vector<RotPoly>& rotpolys)
 {
 	uint16_t op;
 
@@ -69,8 +69,13 @@ void Event::Load(const uint8_t* data, uint32_t evnum, std::vector<Object>& objec
 				break;
 
 			case ET_ROTATEPOLY:
-				//TODO
-				data += 8;
+				RotPoly r;
+				r.polynum = Get16(data); data += 2;
+				r.count = Get16(data); data += 2;
+				r.speed = Get16(data); data += 2;
+				r.flags = Get16(data); data += 2;
+				r.ev = evnum;
+				rotpolys.push_back(r);
 				break;
 
 		}
@@ -211,6 +216,8 @@ bool GloomMap::Load(const char* name, ObjectGraphics* nobj)
 	anims.clear();
 	tchanges.clear();
 	activedoors.clear();
+	rotpolys.clear();
+	activerotpolys.clear();
 
 	objectlogic = nobj;
 
@@ -325,7 +332,7 @@ bool GloomMap::Load(const char* name, ObjectGraphics* nobj)
 	for (auto e = 0; e < numevents; e++)
 	{
 		// this starts at 1. 
-		events[e].Load(rawdata.data + eventpointers[e], e + 1, objects, doors, tchanges);
+		events[e].Load(rawdata.data + eventpointers[e], e + 1, objects, doors, tchanges, rotpolys);
 	}
 
 	//set up the object sideband
@@ -381,8 +388,11 @@ bool GloomMap::Load(const char* name, ObjectGraphics* nobj)
 	{
 		if (i<texturestotal)
 		{
-			texturepointers[i] = &(textures[i / 20].columns[64 * (i % 20)]);
-			texturepointersorig[i] = &(textures[i / 20].columns[64 * (i % 20)]);
+			if ((64 * (i % 20)) < (int)textures[i / 20].columns.size())
+			{
+				texturepointers[i] = &(textures[i / 20].columns[64 * (i % 20)]);
+				texturepointersorig[i] = &(textures[i / 20].columns[64 * (i % 20)]);
+			}
 		}
 	}
 
@@ -550,6 +560,140 @@ void GloomMap::ExecuteEvent(uint32_t e)
 		if (t.ev == e)
 		{
 			zones[t.zone].t[0] = t.newtexture;
+		}
+	}
+
+	// rot/morph polys
+
+	for (auto r : rotpolys)
+	{
+		if (r.ev == e)
+		{
+			ActiveRotPoly ar;
+
+			/*
+			exec_rotpolys	;
+			;could also be morphpolys depending on bit 0 of flags!
+				;
+				addlast	rotpolys
+				bne.s	.ok
+				addq	#8,a6
+				bra	exec_loop
+				;
+			.ok	st	doorsfxflag
+				movem	(a6)+,d0-d3	;polynum,count,speed,flags
+				;
+				clr	rp_rot(a0)
+				move	d1,rp_num(a0)
+				move	d2,rp_speed(a0)
+				move	d3,rp_flags(a0)
+				move	d1,d5
+				subq	#1,d5
+				move.l	map_poly(pc),a2	;polygons!
+				lsl	#5,d0
+				add	d0,a2
+				move.l	a2,rp_first(a0)
+				;
+				btst	#0,d3
+				beq	.rot
+			*/
+
+			ar.rot = 0;
+			ar.num = r.count;
+			ar.speed = r.speed;
+			ar.flags = r.flags;
+			ar.first = r.polynum;
+
+			if (r.flags & 1)
+			{
+				/*
+				;
+				;OK, prepare for morph
+				;
+				lsl	#5,d1
+				lea	0(a2,d1),a3
+				lea	rp_vx(a0),a1
+				;
+			.loop	movem	zo_lx(a3),d0-d1
+				movem	zo_lx(a2),d2-d3
+				sub	d2,d0
+				sub	d3,d1
+				movem	d0-d3,(a1)
+				addq	#8,a1
+				;
+				lea	32(a2),a2
+				lea	32(a3),a3
+				dbf	d5,.loop
+				;
+				bra	exec_loop
+				;
+				*/
+
+				// MORPH
+				for (int16_t p = 0; p < r.count; p++)
+				{
+					ar.vx[p] = zones[ar.first + p + ar.num].x1 - zones[ar.first + p].x1;
+					ar.vz[p] = zones[ar.first + p + ar.num].z1 - zones[ar.first + p].z1;
+					ar.ox[p] = zones[ar.first + p].x1;
+					ar.oz[p] = zones[ar.first + p].z1;
+				}
+			}
+			else
+			{
+
+				/*
+				.rot	;First, calc centre X,Z into d6,d7
+				;
+				moveq	#0,d6
+				moveq	#0,d7
+				move.l	a2,a1
+				;
+				.loop0	movem	zo_lx(a1),d0/d2
+				add.l	d0,d6
+				add.l	d2,d7
+				lea	32(a1),a1
+				dbf	d5,.loop0
+				;
+				divu	d1,d6
+				divu	d1,d7
+				movem	d6-d7,rp_cx(a0)
+				;
+				lea	rp_lx(a0),a1
+				subq	#1,d1
+				;
+				.loop2	movem	zo_lx(a2),d0/d2
+				sub	d6,d0
+				move	d0,(a1)+
+				sub	d7,d2
+				move	d2,(a1)+
+				move.l	zo_na(a2),(a1)+
+				;
+				lea	32(a2),a2
+				dbf	d1,.loop2
+				*/
+				int32_t cx, cz;
+				cx = 0; cz = 0;
+				for (int16_t p = 0; p < r.count; p++)
+				{
+					cx += zones[ar.first + p].x1;
+					cz += zones[ar.first + p].z1;
+				}
+				cx /= r.count;
+				cz /= r.count;
+
+				ar.cx = cx;
+				ar.cz = cz;
+
+				for (int16_t p = 0; p < r.count; p++)
+				{
+					ar.lx[p] = zones[ar.first + p].x1 - cx;
+					ar.lz[p] = zones[ar.first + p].z1 - cz;
+					ar.na[p] = zones[ar.first + p].na;
+					ar.nb[p] = zones[ar.first + p].nb;
+				}
+			}
+
+			activerotpolys.push_back(ar);
 		}
 	}
 }

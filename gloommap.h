@@ -7,6 +7,29 @@
 #include "quick.h"
 #include "objectgraphics.h"
 
+// rot/morph poly
+
+class ActiveRotPoly
+{
+	public:
+	int16_t speed;
+	int16_t rot;
+	int16_t flags;// what to do ?
+	int16_t cx; //only for rot
+	int16_t cz;
+	int32_t	first; //pointer to first!
+	int16_t num;
+		
+	int16_t vx[32];
+	int16_t lx[32];
+	int16_t vz[32];
+	int16_t lz[32];
+	int16_t ox[32];
+	int16_t na[32];
+	int16_t oz[32];
+	int16_t nb[32];
+};
+
 //texture animation
 
 class Anim
@@ -23,6 +46,16 @@ class TextureChange
 	public:
 	uint32_t zone;
 	uint32_t newtexture;
+	uint16_t ev;
+};
+
+class RotPoly
+{
+	public:
+	int16_t polynum;
+	int16_t count;
+	int16_t speed;
+	int16_t flags;
 	uint16_t ev;
 };
 
@@ -109,7 +142,7 @@ class Event
 		ET_ROTATEPOLY = 6
 	};
 
-	void Load(const uint8_t* data, uint32_t evnum, std::vector<Object>& objects, std::vector<Door>& doors, std::vector<TextureChange>& tchanges);
+	void Load(const uint8_t* data, uint32_t evnum, std::vector<Object>& objects, std::vector<Door>& doors, std::vector<TextureChange>& tchanges, std::vector<RotPoly>& rotpolys);
 };
 
 class Zone
@@ -188,6 +221,7 @@ class GloomMap
 		Flat& GetFloor() { return floor; };
 		std::list<MapObject>& GetMapObjects() { return mapobjects; };
 		std::list<ActiveDoor>& GetActiveDoors() { return activedoors; };
+		std::vector<ActiveRotPoly>& GetActiveRotPolys() { return activerotpolys; };
 		Column** GetTexPointers(){ return texturepointers;};
 		Column** GetTexPointersOrig(){ return texturepointersorig; };
 		std::vector<uint32_t>& GetCollisions(int zt, int x, int z) {return collisionpolys[zt][x][z];};
@@ -212,9 +246,11 @@ class GloomMap
 		std::vector<Door> doors;
 		std::vector<Anim> anims;
 		std::vector<TextureChange> tchanges;
-		std::list<ActiveDoor> activedoors;
+		std::vector<RotPoly> rotpolys;
 
+		std::list<ActiveDoor> activedoors;
 		std::list<MapObject> mapobjects;
+		std::vector<ActiveRotPoly> activerotpolys;
 
 		// texture pointers, used for remapping anims. 160 = 20 * 8;
 		Column* texturepointers[160];
