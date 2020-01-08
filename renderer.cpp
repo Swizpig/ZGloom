@@ -471,7 +471,9 @@ void Renderer::DrawObjects(Camera* camera)
 						lsr	#5, d0
 						and	#7, d0
 						*/
-						uint16_t ang = GloomMaths::CalcAngle(o.x.GetInt(), o.z.GetInt(), camera->x.GetInt(), camera->z.GetInt());
+						//uint16_t ang = GloomMaths::CalcAngle(o.x.GetInt(), o.z.GetInt(), camera->x.GetInt(), camera->z.GetInt());
+
+						uint16_t ang = GloomMaths::CalcAngle(camera->x.GetInt(), camera->z.GetInt(), o.x.GetInt(), o.z.GetInt());
 
 						ang += 16;
 						ang -= o.rot;

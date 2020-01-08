@@ -59,6 +59,16 @@ class RotPoly
 	uint16_t ev;
 };
 
+class Teleport
+{
+	public:
+	int16_t x;
+	int16_t y; // unused?
+	int16_t z;
+	int16_t rot;
+	int16_t ev;
+};
+
 class Object
 {
 	// these are loaded from map
@@ -102,11 +112,19 @@ class MapObject
 	int32_t xvec;
 	int32_t zvec;
 
+	//used for teleport effects
+	int16_t pixsize;
+	int16_t pixsizeadd;
+	int16_t telex;
+	int16_t telez;
+	int16_t telerot;
+
 	void(*logic)(MapObject&, GameLogic*);
 	void(*oldlogic)(MapObject&, GameLogic*);
 	void(*oldlogic2)(MapObject&, GameLogic*);
 
 	MapObject(Object m);
+	MapObject();
 };
 
 class Door
@@ -142,7 +160,8 @@ class Event
 		ET_ROTATEPOLY = 6
 	};
 
-	void Load(const uint8_t* data, uint32_t evnum, std::vector<Object>& objects, std::vector<Door>& doors, std::vector<TextureChange>& tchanges, std::vector<RotPoly>& rotpolys);
+	void Load(const uint8_t* data, uint32_t evnum, std::vector<Object>& objects, std::vector<Door>& doors, 
+			std::vector<TextureChange>& tchanges, std::vector<RotPoly>& rotpolys, std::vector<Teleport>& teles);
 };
 
 class Zone
@@ -225,7 +244,7 @@ class GloomMap
 		Column** GetTexPointers(){ return texturepointers;};
 		Column** GetTexPointersOrig(){ return texturepointersorig; };
 		std::vector<uint32_t>& GetCollisions(int zt, int x, int z) {return collisionpolys[zt][x][z];};
-		void ExecuteEvent(uint32_t e);
+		void ExecuteEvent(uint32_t e, bool& gotele, Teleport& teleout);
 		GloomMap() { hasflat = false; };
 
 	private:
@@ -247,6 +266,7 @@ class GloomMap
 		std::vector<Anim> anims;
 		std::vector<TextureChange> tchanges;
 		std::vector<RotPoly> rotpolys;
+		std::vector<Teleport> teles;
 
 		std::list<ActiveDoor> activedoors;
 		std::list<MapObject> mapobjects;

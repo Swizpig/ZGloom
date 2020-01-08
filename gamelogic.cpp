@@ -9,6 +9,11 @@ void GameLogic::Init(GloomMap* gmapin, Camera* cam)
 	camdir = 1;
 	std::fill(animframe, animframe + 160, 0);
 
+	for (auto e = 0; e < 25; e++)
+	{
+		eventhit[e] = false;
+	}
+
 	for (auto o : gmap->GetMapObjects())
 	{
 		if (o.t == 0)// player
@@ -16,6 +21,7 @@ void GameLogic::Init(GloomMap* gmapin, Camera* cam)
 			cam->x = o.x;
 			cam->y = 120; //TODO, and rotation
 			cam->z = o.z;
+			cam->rot = o.rot;
 		}
 	}
 }
@@ -196,7 +202,7 @@ void  GameLogic::DoRot()
 				}
 				else if (r.rot > 0x4000)
 				{
-					if (r.flags & 3)
+					if (r.flags & 2)
 					{
 						r.speed = -r.speed;
 					}
@@ -441,6 +447,17 @@ bool GameLogic::Update(Camera* cam)
 	Quick newx = cam->x;
 	Quick newz = cam->z;
 
+	MapObject playerobj;
+
+	for (auto o : gmap->GetMapObjects())
+	{
+		if (o.t == ObjectGraphics::OLT_PLAYER1)
+		{
+			playerobj = o;
+			break;
+		}
+	}
+
 	if (keystate[SDL_SCANCODE_UP])
 	{
 		// U 
@@ -508,6 +525,8 @@ bool GameLogic::Update(Camera* cam)
 	}
 
 	// event check
+	bool gotele = false;
+	Teleport tele;
 
 	if (Collision(true, cam->x.GetInt(), cam->z.GetInt(), 32, overshoot, closestzone))
 	{
@@ -517,14 +536,26 @@ bool GameLogic::Update(Camera* cam)
 			{
 				done = true;
 			}
-			gmap->ExecuteEvent(gmap->GetZones()[closestzone].ev);
+
+			if (!eventhit[gmap->GetZones()[closestzone].ev])
+			{
+				gmap->ExecuteEvent(gmap->GetZones()[closestzone].ev, gotele, tele);
+			}
 
 			// these are one-shot
 			if (gmap->GetZones()[closestzone].ev<19)
 			{
-				gmap->GetZones()[closestzone].ev = -1;
+				eventhit[gmap->GetZones()[closestzone].ev] = true;
 			}
 		}
+	}
+
+	if (gotele)
+	{
+		//TODO: teleport animation
+		cam->x.SetInt(tele.x);
+		cam->z.SetInt(tele.z);
+		cam->rot = (uint8_t)tele.rot;
 	}
 
 	// move any doors
@@ -567,6 +598,15 @@ bool GameLogic::Update(Camera* cam)
 	for (auto &o : gmap->GetMapObjects())
 	{
 		o.logic(o, this);
+	}
+
+	for (auto& o : gmap->GetMapObjects())
+	{
+		if (o.t == ObjectGraphics::OLT_PLAYER1)
+		{
+			o = playerobj;
+			break;
+		}
 	}
 
 	return done;

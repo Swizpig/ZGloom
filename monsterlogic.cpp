@@ -58,9 +58,9 @@ void CalcVecs(MapObject& o)
 	Quick camrots[4], t;
 	GloomMaths::GetCamRot(ang, camrots);
 	t.SetVal(o.movspeed);
-	// these seem inverted compared to above?
-	o.xvec = (t * camrots[1]).GetVal();
-	o.zvec = -(t * camrots[3]).GetVal();
+
+	o.xvec = -(t * camrots[1]).GetVal();
+	o.zvec = (t * camrots[3]).GetVal();
 	return;
 }
 

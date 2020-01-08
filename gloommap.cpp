@@ -12,7 +12,8 @@ static uint32_t Get32(const uint8_t* p)
 	return (static_cast<uint16_t>(p[0])) << 24 | (static_cast<uint16_t>(p[1]) << 16) | (static_cast<uint16_t>(p[2])) << 8 | (static_cast<uint16_t>(p[3]) << 0);
 }
 
-void Event::Load(const uint8_t* data, uint32_t evnum, std::vector<Object>& objects, std::vector<Door>& doors, std::vector<TextureChange>& tchanges, std::vector<RotPoly>& rotpolys)
+void Event::Load(const uint8_t* data, uint32_t evnum, std::vector<Object>& objects, std::vector<Door>& doors, std::vector<TextureChange>& tchanges, 
+				 std::vector<RotPoly>& rotpolys, std::vector<Teleport>& teles)
 {
 	uint16_t op;
 
@@ -30,7 +31,7 @@ void Event::Load(const uint8_t* data, uint32_t evnum, std::vector<Object>& objec
 				o.z = Get16(data); data += 2;
 				o.rot = (uint8_t)Get16(data); data += 2;
 				// whats all this? Does the editor use a different coordinate system to the game itself?
-				o.rot = (192 - o.rot + 128) & 255;
+				//o.rot = (192 - o.rot + 128) & 255;
 
 				o.ev = evnum;
 
@@ -47,8 +48,14 @@ void Event::Load(const uint8_t* data, uint32_t evnum, std::vector<Object>& objec
 				break;
 
 			case ET_TELEPORT:
-				//TODO
-				data += 8;
+				Teleport tele;
+
+				tele.x = Get16(data); data += 2;
+				tele.y = Get16(data); data += 2;
+				tele.z = Get16(data); data += 2;
+				tele.rot = Get16(data); data += 2;
+				tele.ev = evnum;
+				teles.push_back(tele);
 				break;
 				
 			case ET_LOADOBJECTS:
@@ -218,6 +225,7 @@ bool GloomMap::Load(const char* name, ObjectGraphics* nobj)
 	activedoors.clear();
 	rotpolys.clear();
 	activerotpolys.clear();
+	teles.clear();
 
 	objectlogic = nobj;
 
@@ -332,7 +340,7 @@ bool GloomMap::Load(const char* name, ObjectGraphics* nobj)
 	for (auto e = 0; e < numevents; e++)
 	{
 		// this starts at 1. 
-		events[e].Load(rawdata.data + eventpointers[e], e + 1, objects, doors, tchanges, rotpolys);
+		events[e].Load(rawdata.data + eventpointers[e], e + 1, objects, doors, tchanges, rotpolys, teles);
 	}
 
 	//set up the object sideband
@@ -373,7 +381,10 @@ bool GloomMap::Load(const char* name, ObjectGraphics* nobj)
 		}
 	}
 
-	ExecuteEvent(1);
+	//I'm assuming the start event can't have a teleport...
+	bool dummy;
+	Teleport dummyt;
+	ExecuteEvent(1, dummy, dummyt);
 
 	// set up the texture pointers
 
@@ -504,12 +515,16 @@ void GloomMap::DumpDebug()
 	}
 }
 
-void GloomMap::ExecuteEvent(uint32_t e)
+void GloomMap::ExecuteEvent(uint32_t e, bool& gotele, Teleport& teleout)
 {
 	// add objects?
 	
 	// DEMOS events seem off by one? 
 	// e++;
+
+	gotele = false;
+
+	//printf("EVENT: %i\n", e);
 
 	for (auto o : objects)
 	{
@@ -696,6 +711,17 @@ void GloomMap::ExecuteEvent(uint32_t e)
 			activerotpolys.push_back(ar);
 		}
 	}
+
+	//teleports
+
+	for (auto t : teles)
+	{
+		if (t.ev == e)
+		{
+			gotele = true;
+			teleout = t;
+		}
+	}
 }
 
 MapObject::MapObject(Object m)
@@ -727,4 +753,9 @@ MapObject::MapObject(Object m)
 		default:
 			logic = &NullLogic;
 	}
+}
+
+MapObject::MapObject()
+{
+
 }
