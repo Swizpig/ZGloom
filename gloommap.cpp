@@ -351,6 +351,9 @@ bool GloomMap::Load(const char* name, ObjectGraphics* nobj)
 		o.framespeed = objectlogic->objectlogic[o.t].framespeed;
 		o.render = objectlogic->objectlogic[o.t].render;
 		o.movspeed = objectlogic->objectlogic[o.t].movspeed;
+
+		o.shape = objectlogic->objectlogic[o.t].shape;
+		o.firey = objectlogic->objectlogic[o.t].firey;
 	}
 
 	// load wall anims
@@ -726,36 +729,41 @@ void GloomMap::ExecuteEvent(uint32_t e, bool& gotele, Teleport& teleout)
 
 MapObject::MapObject(Object m)
 {
+	isstrip = false;
+	killme = false;
 	x.SetInt(m.x);
 	y = m.y;
 	z.SetInt(m.z);
 	t = m.t;
 
-	frame = m.frame;
-	framespeed = m.framespeed;
+	data.ms.frame = m.frame;
+	data.ms.framespeed = m.framespeed;
 
-	render = m.render;
-	rot = m.rot;
-	movspeed = m.movspeed;
+	data.ms.render = m.render;
+	data.ms.rot = m.rot;
+	data.ms.movspeed = m.movspeed;
+	data.ms.shape = m.shape;
+	data.ms.firey = m.firey;
 
 	switch (t)
 	{
 		case ObjectGraphics::OLT_MARINE:
-			logic = &MonsterLogic;
+			data.ms.logic = &MonsterLogic;
 			break;
 		case ObjectGraphics::OLT_WEAPON1:
 		case ObjectGraphics::OLT_WEAPON2:
 		case ObjectGraphics::OLT_WEAPON3:
 		case ObjectGraphics::OLT_WEAPON4:
 		case ObjectGraphics::OLT_WEAPON5:
-			logic = &WeaponLogic;
+			data.ms.logic = &WeaponLogic;
 			break;
 		default:
-			logic = &NullLogic;
+			data.ms.logic = &NullLogic;
 	}
 }
 
 MapObject::MapObject()
 {
-
+	isstrip = false;
+	killme = false;
 }

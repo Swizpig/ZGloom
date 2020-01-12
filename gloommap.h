@@ -84,23 +84,19 @@ class Object
 	uint32_t framespeed;
 	uint32_t render;
 	int32_t movspeed;
+	int16_t firey;
+	std::vector<Shape>* shape;
 };
 
 // an object actually in play
 
 class GameLogic;
+class MapObject;
+class Column;
 
-class MapObject
+class MapObjectSideBand
 {
 	public:
-	Quick x;
-	int16_t y;
-	Quick z;
-	int16_t t;
-
-	int16_t rotx;
-	int16_t rotz;
-
 	uint32_t frame;
 	uint32_t framespeed;
 
@@ -111,6 +107,9 @@ class MapObject
 	int32_t movspeed;
 	int32_t xvec;
 	int32_t zvec;
+	//normalised versions of the above
+	int32_t nxvec;
+	int32_t nzvec;
 
 	//used for teleport effects
 	int16_t pixsize;
@@ -119,9 +118,56 @@ class MapObject
 	int16_t telez;
 	int16_t telerot;
 
+	int16_t firey;
+
+	std::vector<Shape>* shape;
+
+	//collision stuff
+	int16_t colltype;
+	int16_t collwith;
+	int16_t hitpoints;
+	int16_t damage;
+	int32_t rad;
+	int32_t radsq;
+
+	//bouncy bullets
+	int16_t bouncecnt;
+
 	void(*logic)(MapObject&, GameLogic*);
 	void(*oldlogic)(MapObject&, GameLogic*);
 	void(*oldlogic2)(MapObject&, GameLogic*);
+	void(*die)(MapObject&, GameLogic*);
+	void(*hit)(MapObject&, GameLogic*);
+};
+
+class TranslucentStrip
+{
+	public:
+		Column* column;
+		int32_t palette;
+};
+
+union ObjectUnion
+{
+	TranslucentStrip ts;
+	MapObjectSideBand ms;
+};
+
+class MapObject
+{
+	public:
+	bool isstrip;
+	Quick x;
+	int16_t y;
+	Quick z;
+	int16_t t;
+
+	int16_t rotx;
+	int16_t rotz;
+
+	ObjectUnion data;
+
+	bool killme;
 
 	MapObject(Object m);
 	MapObject();
@@ -202,7 +248,7 @@ class Zone
 class Column
 {
 	public:
-	uint8_t flag;
+	int8_t flag;
 	uint8_t data[64];
 };
 

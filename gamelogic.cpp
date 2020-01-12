@@ -2,7 +2,7 @@
 #include "renderer.h"
 #include "monsterlogic.h"
 
-void GameLogic::Init(GloomMap* gmapin, Camera* cam)
+void GameLogic::Init(GloomMap* gmapin, Camera* cam, ObjectGraphics* ograph)
 {
 	gmap = gmapin;
 
@@ -21,8 +21,33 @@ void GameLogic::Init(GloomMap* gmapin, Camera* cam)
 			cam->x = o.x;
 			cam->y = 120; //TODO, and rotation
 			cam->z = o.z;
-			cam->rot = o.rot;
+			cam->rot = o.data.ms.rot;
 		}
+	}
+
+	wtable[0].hitpoint = 1;
+	wtable[0].damage = 1;
+	wtable[0].speed = 32;
+
+	wtable[1].hitpoint = 5;
+	wtable[1].damage = 2;
+	wtable[1].speed = 36;
+
+	wtable[2].hitpoint = 10;
+	wtable[2].damage = 2;
+	wtable[2].speed = 40;
+
+	wtable[3].hitpoint = 15;
+	wtable[3].damage = 3;
+	wtable[3].speed = 40;
+
+	wtable[4].hitpoint = 20;
+	wtable[4].damage = 5;
+	wtable[4].speed = 24;
+
+	for (auto i = 0; i < 5; i++)
+	{
+		wtable[i].shape = &(ograph->BulletShapes[i]);
 	}
 }
 
@@ -458,6 +483,13 @@ bool GameLogic::Update(Camera* cam)
 		}
 	}
 
+	playerobj.x = cam->x;
+	playerobj.y = cam->y;
+	playerobj.z = cam->z;
+	playerobj.data.ms.rot = cam->rot;
+
+	inc.SetVal(playerobj.data.ms.movspeed);
+
 	if (keystate[SDL_SCANCODE_UP])
 	{
 		// U 
@@ -476,7 +508,7 @@ bool GameLogic::Update(Camera* cam)
 	{
 		//L
 		//TODO: Rotation acceleration
-		if (keystate[SDL_SCANCODE_LSHIFT])
+		if (keystate[SDL_SCANCODE_LALT])
 		{
 			//strafe
 			newx = newx + camrotstrafe[1] * inc;
@@ -490,7 +522,7 @@ bool GameLogic::Update(Camera* cam)
 	if (keystate[SDL_SCANCODE_RIGHT])
 	{
 		//R
-		if (keystate[SDL_SCANCODE_LSHIFT])
+		if (keystate[SDL_SCANCODE_LALT])
 		{
 			//strafe
 			newx = newx - camrotstrafe[1] * inc;
@@ -501,6 +533,20 @@ bool GameLogic::Update(Camera* cam)
 			cam->rot -= 2;
 		}
 	}
+
+	if (keystate[SDL_SCANCODE_LCTRL])
+	{
+		//Shoot!
+
+		Shoot(playerobj, this, (playerobj.data.ms.collwith & 3) ^ 3, 0, wtable[0].hitpoint, wtable[0].damage, wtable[0].speed, wtable[0].shape);
+	}
+
+	if (keystate[SDL_SCANCODE_F1])
+	{
+		// cheat for debug
+		done = true;
+	}
+
 
 	int32_t overshoot, closestzone;
 
@@ -597,7 +643,23 @@ bool GameLogic::Update(Camera* cam)
 
 	for (auto &o : gmap->GetMapObjects())
 	{
-		o.logic(o, this);
+		o.data.ms.logic(o, this);
+	}
+
+	//kill pass
+
+	auto i = gmap->GetMapObjects().begin();
+
+	while (i != gmap->GetMapObjects().end())
+	{
+		if (i->killme)
+		{
+			i = gmap->GetMapObjects().erase(i);
+		}
+		else
+		{
+			++i;
+		}
 	}
 
 	for (auto& o : gmap->GetMapObjects())

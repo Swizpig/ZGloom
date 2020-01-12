@@ -71,7 +71,7 @@ void LoadPic(std::string name, SDL_Surface* render8)
 	}
 	IffHandler::DecodeIff(picfile.data, pic);
 
-	std::copy(pic.begin(), pic.begin() + 320 * 240, (uint8_t*)(render8->pixels));
+	std::copy(pic.begin(), pic.begin() + pic.size(), (uint8_t*)(render8->pixels));
 }
 
 
@@ -201,9 +201,9 @@ int main(int argc, char* argv[])
 					cam.rot = 0;
 					scriptstring.insert(0, "maps/");
 					gmap.Load(scriptstring.c_str(), &objgraphics);
-					//gmap.Load("maps/map1_4", &objgraphics);
+					//gmap.Load("maps/map4_2", &objgraphics);
 					renderer.Init(render32, &gmap, &objgraphics);
-					logic.Init(&gmap, &cam);
+					logic.Init(&gmap, &cam, &objgraphics);
 					showscreen = false;
 					playing = true;
 

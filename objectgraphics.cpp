@@ -140,6 +140,7 @@ ObjectGraphics::ObjectGraphics()
 	LoadGraphic("objs/ghoul", GhoulShapes);
 	LoadGraphic("objs/dragon", DragonShapes);
 	LoadGraphic("objs/lizard", LizardShapes);
+	LoadGraphic("objs/demon", DemonShapes);
 	LoadGraphic("objs/deathhead", DeathheadShapes);
 	LoadGraphic("objs/troll", TrollShapes);
 	LoadGraphicBin(BinResource::bullet1, BulletShapes[0]);
@@ -278,6 +279,31 @@ ObjectGraphics::ObjectGraphics()
 	objectlogic[OLT_LIZARD].framespeed = 0x4000;
 	objectlogic[OLT_DEATHHEAD].framespeed = 0x6000;
 	objectlogic[OLT_TROLL].framespeed = 0x4000;
+
+	objectlogic[OLT_PLAYER1].firey = -60;
+	objectlogic[OLT_PLAYER2].firey = -60;
+	objectlogic[OLT_HEALTH].firey	= 0;
+	objectlogic[OLT_WEAPON].firey	= 0;
+	objectlogic[OLT_THERMO].firey	= 0;
+	objectlogic[OLT_INFRA].firey	= 0;
+	objectlogic[OLT_INVISI].firey	= 0;
+	objectlogic[OLT_INVINC].firey	= 0;
+	objectlogic[OLT_DRAGON].firey = -144;
+	objectlogic[OLT_BOUNCY].firey =	0;
+	objectlogic[OLT_MARINE].firey = -60;
+	objectlogic[OLT_BALDY].firey = -60;
+	objectlogic[OLT_TERRA].firey = -60;
+	objectlogic[OLT_GHOUL].firey = -64;
+	objectlogic[OLT_PHANTOM].firey = -60;
+	objectlogic[OLT_DEMON].firey = -90;
+	objectlogic[OLT_WEAPON1].firey = 0;
+	objectlogic[OLT_WEAPON2].firey = 0;
+	objectlogic[OLT_WEAPON3].firey = 0;
+	objectlogic[OLT_WEAPON4].firey = 0;
+	objectlogic[OLT_WEAPON5].firey = 0;
+	objectlogic[OLT_LIZARD].firey = -60;
+	objectlogic[OLT_DEATHHEAD].firey =  -60;
+	objectlogic[OLT_TROLL].firey = -60;
 
 	return;
 }

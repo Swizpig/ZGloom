@@ -256,16 +256,9 @@ void Renderer::DrawFlat(std::vector<int32_t>& ceilend, std::vector<int32_t>& flo
 				uint8_t b = ceil.palette[ceil.data[ix][iz]][2];
 
 				// dim it
-				auto p = z / 128; if (p > 15) p = 15;
-				r = darkpalettes[p][r >> 4];
-				g = darkpalettes[p][g >> 4];
-				b = darkpalettes[p][b >> 4];
-
-				r = r | (r << 4);
-				g = g | (g << 4);
-				b = b | (b << 4);
-
-				((uint32_t*)(rendersurface->pixels))[x + y*renderwidth] = (r<<16) | (g<<8) | b;
+				uint32_t dimcol;
+				ColourModify(r, g, b, dimcol, z);
+				((uint32_t*)(rendersurface->pixels))[x + y*renderwidth] = dimcol;
 			}
 
 			qx = qx + dx;
@@ -316,16 +309,10 @@ void Renderer::DrawFlat(std::vector<int32_t>& ceilend, std::vector<int32_t>& flo
 				uint8_t b = floor.palette[floor.data[ix][iz]][2];
 
 				// dim it
-				auto p = z / 128; if (p > 15) p = 15;
-				r = darkpalettes[p][r >> 4];
-				g = darkpalettes[p][g >> 4];
-				b = darkpalettes[p][b >> 4];
+				uint32_t dimcol;
+				ColourModify(r, g, b, dimcol, z);
 
-				r = r | (r << 4);
-				g = g | (g << 4);
-				b = b | (b << 4);
-
-				((uint32_t*)(rendersurface->pixels))[x + y*renderwidth] = (r << 16) | (g << 8) | b;
+				((uint32_t*)(rendersurface->pixels))[x + y*renderwidth] = dimcol;
 			}
 
 			qx = qx + dx;
@@ -371,23 +358,34 @@ void Renderer::DrawColumn(int32_t x, int32_t ystart, int32_t h, Column* textured
 		{
 			uint8_t colour = texturedata->data[row];
 
-			// TODO: Select correct palette
 			uint8_t r = gloommap->GetTextures()[palused].palette[colour][0];
 			uint8_t g = gloommap->GetTextures()[palused].palette[colour][1];
 			uint8_t b = gloommap->GetTextures()[palused].palette[colour][2];
 
-			// dim it
-			auto p = z / 128; if (p > 15) p = 15;
+			if (texturedata->flag && (colour == 0))
+			{
+				//translucent
+				const uint32_t stripands[] = { 0xff00ffff, 0xffff00ff, 0xffffff00, 0xff0000ff, 0xff00ff00, 0xffff0000, 0xffffffff };
 
-			r = darkpalettes[p][r >> 4];
-			g = darkpalettes[p][g >> 4];
-			b = darkpalettes[p][b >> 4];
+				uint32_t andval = stripands[7 + texturedata->flag];
 
-			r = r | (r << 4);
-			g = g | (g << 4);
-			b = b | (b << 4);
+				surface[x + y*renderwidth] = surface[x + y*renderwidth] & andval;
+			}
+			else
+			{
+				// dim it
+				auto p = z / 128; if (p > 15) p = 15;
 
-			surface[x + y*renderwidth] = (r << 16) + (g << 8) + b;
+				r = darkpalettes[p][r >> 4];
+				g = darkpalettes[p][g >> 4];
+				b = darkpalettes[p][b >> 4];
+
+				r = r | (r << 4);
+				g = g | (g << 4);
+				b = b | (b << 4);
+
+				surface[x + y*renderwidth] = (r << 16) + (g << 8) + b;
+			}
 		}
 
 		tstart = tstart + tscale;
@@ -409,145 +407,165 @@ void Renderer::DrawObjects(Camera* camera)
 
 	uint32_t* surface = (uint32_t*)(rendersurface->pixels);
 
-	for (auto &o : gloommap->GetMapObjects())
+	strips.insert(strips.end(), gloommap->GetMapObjects().begin(), gloommap->GetMapObjects().end());
+
+	for (auto &o : strips)
 	{
 		// don't draw the player!
-		if ((o.t > 1) && (o.t != 3))
+
+		if (o.isstrip)
 		{
-			x = o.x;
-			z = o.z;
+		}
+		else
+		{
+			if ((o.t > 1) && (o.t != 3))
+			{
+				x = o.x;
+				z = o.z;
 
-			x = x - camera->x;
-			z = z - camera->z;
+				x = x - camera->x;
+				z = z - camera->z;
 
-			temp = x;
-			x = (x * cammatrix[0]) + (z * cammatrix[1]);
-			z = (temp * cammatrix[2]) + (z * cammatrix[3]);
+				temp = x;
+				x = (x * cammatrix[0]) + (z * cammatrix[1]);
+				z = (temp * cammatrix[2]) + (z * cammatrix[3]);
 
-			o.rotx = x.GetInt();
-			o.rotz = z.GetInt();
+				o.rotx = x.GetInt();
+				o.rotz = z.GetInt();
+			}
 		}
 	}
 
 	// z sort
 
-	//std::sort(gloommap->GetMapObjects().begin(), gloommap->GetMapObjects().end(), zcompare);
+	strips.sort(zcompare);
 
-	gloommap->GetMapObjects().sort(zcompare);
-
-	for (auto o:gloommap->GetMapObjects())
+	for (auto o:strips)
 	{
-		// don't draw the player!
-		if ((o.t > 1) && (o.t != 3))
+		if (o.isstrip)
 		{
-			ix = o.rotx;
-			iz = o.rotz;
-			iy = o.y;
-			iy -= camera->y;
+			int32_t h = (256 << focshift) / o.rotz;
+			int32_t ystart = halfrenderheight - ((256 - camera->y) << focshift) / o.rotz;
 
-			if (iz > 0)
+			if (o.rotz < zbuff[o.rotx]) DrawColumn(o.rotx, ystart, h, o.data.ts.column, o.rotz, o.data.ts.palette);
+		}
+		else
+		{
+			// don't draw the player!
+			if ((o.t > 1) && (o.t != 3))
 			{
-				ix <<= focshift;
-				ix /= iz;
+				ix = o.rotx;
+				iz = o.rotz;
+				iy = o.y;
+				iy -= camera->y;
 
-				iy <<= focshift;
-				iy /= iz;
-
-				if (1)//o.t == ObjectGraphics::OLT_MARINE)
+				if (iz > 0)
 				{
-					std::vector<Shape>* s = objectgraphics->objectlogic[o.t].shape;
+					ix <<= focshift;
+					ix /= iz;
 
-					uint16_t column = 0;
+					iy <<= focshift;
+					iy /= iz;
 
-					int frametouse = 0;
-
-					if (o.render == 8)
+					if (1)//o.t == ObjectGraphics::OLT_MARINE)
 					{
-						// rotatable!
-						/*
-						bsr	calcangle2
-						add	#16, d0
-						sub	ob_rot(a5), d0
-						lsr	#5, d0
-						and	#7, d0
-						*/
-						//uint16_t ang = GloomMaths::CalcAngle(o.x.GetInt(), o.z.GetInt(), camera->x.GetInt(), camera->z.GetInt());
+						std::vector<Shape>* s = o.data.ms.shape;
 
-						uint16_t ang = GloomMaths::CalcAngle(camera->x.GetInt(), camera->z.GetInt(), o.x.GetInt(), o.z.GetInt());
+						uint16_t column = 0;
 
-						ang += 16;
-						ang -= o.rot;
-						ang >>= 5;
-						ang &= 7;
-						frametouse = ang | (((o.frame >> 16) & 3) << 3);
-					}
-					else
-					{
-						frametouse = o.frame >> 16;
-					}
+						int frametouse = 0;
 
-					auto scale = 2;
-					auto shapewidth = (*s)[frametouse].w;
-					auto shapeheight = (*s)[frametouse].h;
-
-					int h = ((shapeheight * scale) << focshift) / iz;
-					int w = ((shapewidth * scale) << focshift) / iz;
-
-					if ((w > 0) && (h > 0))
-					{
-
-						Quick temp;
-
-						Quick dx;
-						Quick dy;
-						Quick tx, ty;
-
-						tx.SetInt(0);
-						ty.SetInt(0);
-
-						dx.SetInt(shapewidth);
-						dy.SetInt(shapeheight);
-
-						temp.SetInt(w);
-						dx = dx / temp;
-
-						temp.SetInt(h);
-						dy = dy / temp;
-
-						int32_t ystart = halfrenderheight - iy - h;
-
-						if ((ix + halfrenderwidth + w / 2) > 0)
+						if (o.data.ms.render == 8)
 						{
-							for (int32_t sx = ix + halfrenderwidth - w / 2; sx < (ix + halfrenderwidth + w / 2); sx++)
+							// rotatable!
+							/*
+							bsr	calcangle2
+							add	#16, d0
+							sub	ob_rot(a5), d0
+							lsr	#5, d0
+							and	#7, d0
+							*/
+							//uint16_t ang = GloomMaths::CalcAngle(o.x.GetInt(), o.z.GetInt(), camera->x.GetInt(), camera->z.GetInt());
+
+							uint16_t ang = GloomMaths::CalcAngle(camera->x.GetInt(), camera->z.GetInt(), o.x.GetInt(), o.z.GetInt());
+
+							ang += 16;
+							ang -= o.data.ms.rot;
+							ang >>= 5;
+							ang &= 7;
+							frametouse = ang | (((o.data.ms.frame >> 16) & 3) << 3);
+						}
+						else
+						{
+							frametouse = o.data.ms.frame >> 16;
+						}
+
+						auto scale = 2;
+						auto shapewidth = (*s)[frametouse].w;
+						auto shapeheight = (*s)[frametouse].h;
+
+						int h = ((shapeheight * scale) << focshift) / iz;
+						int w = ((shapewidth * scale) << focshift) / iz;
+
+						if ((w > 0) && (h > 0))
+						{
+
+							Quick temp;
+
+							Quick dx;
+							Quick dy;
+							Quick tx, ty;
+
+							tx.SetInt(0);
+							ty.SetInt(0);
+
+							dx.SetInt(shapewidth);
+							dy.SetInt(shapeheight);
+
+							temp.SetInt(w);
+							dx = dx / temp;
+
+							temp.SetInt(h);
+							dy = dy / temp;
+
+							int32_t ystart = halfrenderheight - iy - h;
+
+							if ((ix + halfrenderwidth + w / 2) > 0)
 							{
-								if (sx >= renderwidth) break;
-								ty.SetInt(0);
-
-								for (int32_t sy = ystart; sy < (ystart + h); sy++)
+								for (int32_t sx = ix + halfrenderwidth - w / 2; sx < (ix + halfrenderwidth + w / 2); sx++)
 								{
-									if ((sx >= 0) && (iz > zbuff[sx])) break;
-									if (sy >= renderheight) break;
+									if (sx >= renderwidth) break;
+									ty.SetInt(0);
 
-									if ((sx >= 0) && (sy >= 0))
+									for (int32_t sy = ystart; sy < (ystart + h); sy++)
 									{
-										auto col = (*s)[frametouse].data[ty.GetInt() + tx.GetInt()*shapeheight];
+										if ((sx >= 0) && (iz > zbuff[sx])) break;
+										if (sy >= renderheight) break;
 
-										if (col != 1)
+										if ((sx >= 0) && (sy >= 0))
 										{
-											surface[sx + sy*renderwidth] = col;
-										}
-									}
+											auto col = (*s)[frametouse].data[ty.GetInt() + tx.GetInt()*shapeheight];
 
-									ty = ty + dy;
+											if (col != 1)
+											{
+												uint32_t dimcol;
+
+												ColourModify(0xFF & (col >> 16), 0xFF & (col >> 8), 0xFF & col, dimcol, o.rotz);
+												surface[sx + sy*renderwidth] = dimcol;
+											}
+										}
+
+										ty = ty + dy;
+									}
+									tx = tx + dx;
 								}
-								tx = tx + dx;
 							}
 						}
 					}
-				}
-				else
-				{
-					debugVline(ix + halfrenderwidth, 0, halfrenderheight - iy, rendersurface, 0xFFFFFF);
+					else
+					{
+						debugVline(ix + halfrenderwidth, 0, halfrenderheight - iy, rendersurface, 0xFFFFFF);
+					}
 				}
 			}
 		}
@@ -592,12 +610,30 @@ int16_t Renderer::CastColumn(int32_t x, int16_t& zone, Quick& t)
 
 						len.SetInt(w.len);
 
-						t = m;
+						if (m.GetVal() < 0) m.SetVal(0);
 
-						if (t.GetVal() < 0) t.SetVal(0);
+						// check for transparent column
+						int basetexture;
+						Column* texcol = GetTexColumn(hitwall, m, basetexture);
 
-						zone = hitwall;
-						z = thisz;
+						if (texcol && texcol->flag)
+						{
+							// transparent!
+							MapObject o;
+
+							o.isstrip = true;
+							o.data.ts.column = texcol;
+							o.data.ts.palette = basetexture / 20;
+							o.rotx = x;
+							o.rotz = thisz.GetInt();
+							strips.push_back(o);
+						}
+						else
+						{
+							t = m;
+							zone = hitwall;
+							z = thisz;
+						}
 					}
 				}
 			}
@@ -614,12 +650,13 @@ void Renderer::Render(Camera* camera)
 	SDL_LockSurface(rendersurface);
 
 	std::fill(zbuff.begin(), zbuff.end(), 30000);
+	strips.clear();
 
 	for (size_t z = 0; z < walls.size(); z++)
 	{
 		Zone zone = gloommap->GetZones()[z];
 
-		if (zone.ztype == Zone::ZT_WALL)
+		if (zone.ztype == Zone::ZT_WALL  && (zone.a | zone.b))
 		{
 			walls[z].valid = true;
 
@@ -733,6 +770,11 @@ void Renderer::Render(Camera* camera)
 				walls[z].wl_rsx = OriginSide(walls[z].wl_lx, walls[z].wl_lz, walls[z].wl_rx, walls[z].wl_rz) ? -1 : renderwidth;
 			}
 
+			if (walls[z].wl_lsx == walls[z].wl_rsx)
+			{
+				walls[z].valid = false;
+			}
+
 			if (walls[z].wl_lsx > walls[z].wl_rsx)
 			{
 				std::swap(walls[z].wl_lsx, walls[z].wl_rsx);
@@ -775,44 +817,16 @@ void Renderer::Render(Camera* camera)
 		{
 			int32_t h = (256 << focshift) / z;
 			int32_t ystart = halfrenderheight - ((256 - camera->y) << focshift) / z;
-			Quick scale;
 
 			ceilend[x] = ystart;
 			floorstart[x] = ystart + h;
 
-			scale.SetInt(gloommap->GetZones()[hitzone].sc/2);
+			int basetexture;
+			Column* texcol = GetTexColumn(hitzone, texpos, basetexture);	
 
-			// scale is sometimes -ve? What? Possibly reflected texture? I've cobbled this together in a nasty way, don't understand the underlying logic
-			if (gloommap->GetZones()[hitzone].sc < 0)
+			if (texcol)
 			{
-				scale.SetInt(1);
-			}
-
-			// not sure how this, well, scales
-			if (scale.GetInt() == 0) scale.SetInt(1);
-
-			texpos = texpos*scale;
-
-			auto textouse  = texpos.GetInt();
-
-			if (textouse < 0) textouse = 0;
-			if (textouse > 7) textouse = 7;
-
-			int basetexture = gloommap->GetZones()[hitzone].t[textouse];
-			int column = texpos.GetFrac() / (0x10000 / 64);
-
-			// EMPIRICAL F-F-F-F-FUDGE
-
-			if (gloommap->GetZones()[hitzone].sc < 0)
-			{
-				column /= -gloommap->GetZones()[hitzone].sc*2;
-			}
-
-			Column** tc = gloommap->GetTexPointers();
-
-			if (tc[basetexture])
-			{
-				DrawColumn(x, ystart, h, tc[basetexture] + column, z, basetexture / 20);
+				DrawColumn(x, ystart, h, texcol, z, basetexture / 20);
 			}
 			zbuff[x] = z;
 			//debugVline(x, 120 - h/2, 120 + h/2, rendersurface, 0xFFFF0000 + 255 - z / 16);
@@ -850,4 +864,47 @@ void Renderer::Render(Camera* camera)
 #endif
 
 	SDL_UnlockSurface(rendersurface);
+}
+
+Column* Renderer::GetTexColumn(int hitzone, Quick texpos, int& basetexture)
+{
+	Quick scale;
+	Column* result = nullptr;
+
+	scale.SetInt(gloommap->GetZones()[hitzone].sc / 2);
+
+	// scale is sometimes -ve? What? Possibly reflected texture? I've cobbled this together in a nasty way, don't understand the underlying logic
+	if (gloommap->GetZones()[hitzone].sc < 0)
+	{
+		scale.SetInt(1);
+	}
+
+	// not sure how this, well, scales
+	if (scale.GetInt() == 0) scale.SetInt(1);
+
+	texpos = texpos*scale;
+
+	auto textouse = texpos.GetInt();
+
+	if (textouse < 0) textouse = 0;
+	if (textouse > 7) textouse = 7;
+
+	basetexture = gloommap->GetZones()[hitzone].t[textouse];
+	int column = texpos.GetFrac() / (0x10000 / 64);
+
+	// EMPIRICAL F-F-F-F-FUDGE
+
+	if (gloommap->GetZones()[hitzone].sc < 0)
+	{
+		column /= -gloommap->GetZones()[hitzone].sc * 2;
+	}
+
+	Column** tc = gloommap->GetTexPointers();
+
+	if (tc[basetexture])
+	{
+		result = tc[basetexture] + column;
+	}
+
+	return result;
 }

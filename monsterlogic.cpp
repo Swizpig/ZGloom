@@ -25,11 +25,14 @@ void WeaponLogic(MapObject& o, GameLogic* logic)
 
 	Quick camrots[4];
 
-	o.movspeed += 8;
+	o.data.ms.movspeed += 8;
 
-	GloomMaths::GetCamRot(o.movspeed&127, camrots);
+	GloomMaths::GetCamRot(o.data.ms.movspeed & 127, camrots);
 
 	o.y = (camrots[2].GetVal() >> 9) & 0xFF;
+
+	o.data.ms.frame += (1 << 16);
+	if ((o.data.ms.frame >> 16) >= o.data.ms.shape->size()) o.data.ms.frame = 0;
 }
 
 void CalcVecs(MapObject& o)
@@ -53,14 +56,14 @@ void CalcVecs(MapObject& o)
 		rts
 	*/
 
-	uint32_t ang = o.rot & 255;
+	uint32_t ang = o.data.ms.rot & 255;
 
 	Quick camrots[4], t;
 	GloomMaths::GetCamRot(ang, camrots);
-	t.SetVal(o.movspeed);
+	t.SetVal(o.data.ms.movspeed);
 
-	o.xvec = -(t * camrots[1]).GetVal();
-	o.zvec = (t * camrots[3]).GetVal();
+	o.data.ms.xvec = -(t * camrots[1]).GetVal();
+	o.data.ms.zvec = (t * camrots[3]).GetVal();
 	return;
 }
 
@@ -95,10 +98,10 @@ bool CheckVecs(MapObject& o, GameLogic* logic)
 	newx = o.x;
 	newz = o.z;
 
-	t.SetVal(o.xvec);
+	t.SetVal(o.data.ms.xvec);
 	newx = newx + t;
 
-	t.SetVal(o.zvec);
+	t.SetVal(o.data.ms.zvec);
 	newz = newz + t;
 
 	int32_t overshoot, zone;
@@ -137,7 +140,7 @@ void MonsterLogic(MapObject& o, GameLogic* logic)
 		;
 	*/
 
-	o.oldrot = o.rot;
+	o.data.ms.oldrot = o.data.ms.rot;
 	/* TODO
 		subq	#1, ob_delay(a5)
 		ble	fire1
@@ -182,20 +185,145 @@ void MonsterLogic(MapObject& o, GameLogic* logic)
 	if (!CheckVecs(o, logic))
 	{
 		// try +/- 90 degrees
-		o.rot += (GloomMaths::RndW() > 0) ? 64 : -64;
+		o.data.ms.rot += (GloomMaths::RndW() > 0) ? 64 : -64;
 		CalcVecs(o);
 		if (CheckVecs(o, logic)) goto good;
 
-		o.rot += 128;
+		o.data.ms.rot += 128;
 		CalcVecs(o);
 		if (CheckVecs(o, logic)) goto good;
 
-		o.rot = o.oldrot + 128;
+		o.data.ms.rot = o.data.ms.oldrot + 128;
 		CalcVecs(o);
 		CheckVecs(o, logic);
 	}
 
 good:
-	o.frame += o.framespeed;
-	o.frame &= 0x3FFFF;
+	o.data.ms.frame += o.data.ms.framespeed;
+	o.data.ms.frame &= 0x3FFFF;
 }
+
+void FireLogic(MapObject& o, GameLogic* logic)
+{
+ 	if (!CheckVecs(o, logic))
+	{
+		// todo: bounce, sparks
+		o.killme = true;
+	}
+	else
+	{
+		o.data.ms.frame+= (1<<16);
+		if ((o.data.ms.frame>>16) >= o.data.ms.shape->size()) o.data.ms.frame = 0;
+	}
+}
+
+void KillLogic(MapObject& o, GameLogic* logic)
+{
+	o.killme = true;
+}
+
+void Shoot(MapObject& o, GameLogic* logic, int32_t colltype, int32_t collwith, int32_t hitpoints, int32_t damage, int32_t speed, std::vector<Shape>* shape)
+{
+	MapObject newobject;
+
+	/*
+	shoot	;
+	;fire off a bullet...
+	;
+	;d2 : colltype
+	;d3 : collwith
+	;d4 : hitpoints
+	;d5 : damage
+	;d6 : speed
+	;a2=bullet shape
+	;a3=sparks shape
+	;
+	addfirst	objects
+	beq	.rts
+	;
+	move	ob_bouncecnt(a5),ob_bouncecnt(a0)
+	move	ob_x(a5),ob_x(a0)
+	move	ob_y(a5),d0
+	add	ob_firey(a5),d0
+	move	d0,ob_y(a0)
+	move	ob_z(a5),ob_z(a0)
+	move.l	#firelogic,ob_logic(a0)
+	move.l	#drawshape_1,ob_render(a0)
+	move.l	#rts,ob_hit(a0)
+	move.l	#killobject,ob_die(a0)
+	*/
+
+	newobject.t = 999;
+	newobject.data.ms.bouncecnt = o.data.ms.bouncecnt;
+	newobject.x = o.x;
+	newobject.y = o.y + o.data.ms.firey;
+	newobject.z = o.z;
+	newobject.data.ms.logic = FireLogic;
+	newobject.data.ms.render = 1;
+	newobject.data.ms.hit = NullLogic;
+	newobject.data.ms.die = KillLogic;
+	/*
+	move	d2,ob_colltype(a0)
+	move	d3,ob_collwith(a0)
+	move	d4,ob_hitpoints(a0)
+	move	d5,ob_damage(a0)
+	move	d6,ob_movspeed(a0)
+	move.l	a2,ob_shape(a0)
+	clr	ob_invisible(a0)
+	*/
+	newobject.data.ms.colltype = colltype;
+	newobject.data.ms.collwith = collwith;
+	newobject.data.ms.hitpoints = hitpoints;
+	newobject.data.ms.damage = damage;
+	newobject.data.ms.movspeed = speed;
+	newobject.data.ms.shape = shape;
+	newobject.data.ms.frame = 0;
+
+	/*
+	clr	ob_frame(a0)
+	move.l	a3,ob_chunks(a0)
+	;
+	move	ob_rot(a5),d0
+	and	#255,d0
+	move.l	camrots(pc),a1
+	lea	0(a1,d0*8),a1
+	;
+	*/
+	int16_t camrots[4];
+	GloomMaths::GetCamRotRaw(o.data.ms.rot & 255, camrots);
+	/*
+	move	2(a1),d0
+	move	d0,ob_nxvec(a0)
+	neg	d0
+	muls	d6,d0
+	add.l	d0,d0
+	move	6(a1),d1
+	move	d1,ob_nzvec(a0)
+	muls	d6,d1
+	add.l	d1,d1
+	;
+	*/
+
+	newobject.data.ms.nxvec = camrots[1];
+	newobject.data.ms.xvec = (int32_t)(camrots[1])*speed * 2;
+	newobject.data.ms.nzvec = camrots[3];
+	newobject.data.ms.zvec = (int32_t)(camrots[3])*speed * 2;
+	
+	/*
+	movem.l	d0-d1,ob_xvec(a0)
+	;add.l	d0,ob_x(a0)
+	;add.l	d1,ob_z(a0)
+	;
+	move	#32,ob_rad(a0)
+	move.l	#32*32,ob_radsq(a0)
+	;
+	
+	*/
+
+	newobject.data.ms.rad = 32;
+	newobject.data.ms.radsq = 32 * 32;
+
+	
+	logic->AddObject(newobject);
+}
+
