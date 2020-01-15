@@ -11,6 +11,7 @@ class GameLogic
 	public:
 		void Init(GloomMap* gmapin, Camera* cam, ObjectGraphics* ograph);
 		bool Update(Camera* cam);
+		int32_t GetEffect();
 
 		// needed public for monster logic
 
@@ -21,6 +22,10 @@ class GameLogic
 	private:
 		GloomMap* gmap;
 		int camdir = 1;
+
+		//currently active teleport
+		Teleport activetele;
+		bool levelfinished;
 
 		int32_t FindSegDist(int32_t x, int32_t z, Zone& zone);
 		void DoDoor();

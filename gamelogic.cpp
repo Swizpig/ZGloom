@@ -5,6 +5,7 @@
 void GameLogic::Init(GloomMap* gmapin, Camera* cam, ObjectGraphics* ograph)
 {
 	gmap = gmapin;
+	levelfinished = false;
 
 	camdir = 1;
 	std::fill(animframe, animframe + 160, 0);
@@ -571,8 +572,8 @@ bool GameLogic::Update(Camera* cam)
 	}
 
 	// event check
-	bool gotele = false;
 	Teleport tele;
+	bool gotele = false;
 
 	if (Collision(true, cam->x.GetInt(), cam->z.GetInt(), 32, overshoot, closestzone))
 	{
@@ -580,7 +581,8 @@ bool GameLogic::Update(Camera* cam)
 		{
 			if (gmap->GetZones()[closestzone].ev == 24)
 			{
-				done = true;
+				levelfinished = true;
+				playerobj.data.ms.pixsizeadd = 1;
 			}
 
 			if (!eventhit[gmap->GetZones()[closestzone].ev])
@@ -598,11 +600,25 @@ bool GameLogic::Update(Camera* cam)
 
 	if (gotele)
 	{
-		//TODO: teleport animation
-		cam->x.SetInt(tele.x);
-		cam->z.SetInt(tele.z);
-		cam->rot = (uint8_t)tele.rot;
+		// teleport animation
+		activetele = tele;
+		playerobj.data.ms.pixsizeadd = 2;
 	}
+
+	// actually do the tele animation
+
+	playerobj.data.ms.pixsize += playerobj.data.ms.pixsizeadd;
+
+	if (playerobj.data.ms.pixsize >= 24)
+	{
+		cam->x.SetInt(activetele.x);
+		cam->z.SetInt(activetele.z);
+		cam->rot = (uint8_t)activetele.rot;
+		playerobj.data.ms.pixsizeadd = -playerobj.data.ms.pixsizeadd;
+		if (levelfinished) done = true;
+	}
+
+	if (playerobj.data.ms.pixsize == 0) playerobj.data.ms.pixsizeadd = 0;
 
 	// move any doors
 	DoDoor();
@@ -672,4 +688,17 @@ bool GameLogic::Update(Camera* cam)
 	}
 
 	return done;
+}
+
+int32_t GameLogic::GetEffect()
+{
+	for (auto o : gmap->GetMapObjects())
+	{
+		if (o.t == ObjectGraphics::OLT_PLAYER1)
+		{
+			return o.data.ms.pixsize;
+		}
+	}
+
+	return 0;
 }

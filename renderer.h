@@ -48,6 +48,7 @@ class Renderer
 	public:
 		void Init(SDL_Surface* nrendersurface, GloomMap* ngloommap, ObjectGraphics* nObjectGraphics);
 		void Render(Camera* Camera);
+		void SetEffect(int32_t timer) {fadetimer = timer;};
 
 	private:
 		bool OriginSide(int16_t fx, int16_t fz, int16_t bx, int16_t bz);
@@ -75,6 +76,8 @@ class Renderer
 
 		// I'm not sure how gloom does screen dimming, I've implemented my own lookup tables
 		int32_t darkpalettes[16][16];
+		//for fadeout/in
+		int32_t fadetimer;
 
 		void ColourModify(uint8_t rin, uint8_t gin, uint8_t bin, uint32_t& col, int32_t z)
 		{
@@ -86,6 +89,15 @@ class Renderer
 			r = r | (r << 4);
 			g = g | (g << 4);
 			b = b | (b << 4);
+
+			if (fadetimer)
+			{
+				g -= fadetimer * 2;
+				r -= fadetimer * 2;
+
+				if (r < 0) r = 0;
+				if (g < 0) g = 0;
+			}
 
 			col = (r << 16) | (g << 8) | b;
 		};

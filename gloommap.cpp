@@ -731,6 +731,10 @@ MapObject::MapObject(Object m)
 {
 	isstrip = false;
 	killme = false;
+
+	data.ms.pixsizeadd = 0;
+	data.ms.pixsize = 0;
+
 	x.SetInt(m.x);
 	y = m.y;
 	z.SetInt(m.z);
@@ -766,4 +770,7 @@ MapObject::MapObject()
 {
 	isstrip = false;
 	killme = false;
+
+	data.ms.pixsizeadd = 0;
+	data.ms.pixsize = 0;
 }

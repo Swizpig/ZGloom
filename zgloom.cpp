@@ -12,6 +12,7 @@
 #include "objectgraphics.h"
 #include <iostream>
 #include "gamelogic.h"
+#include "soundhandler.h"
 
 Uint32 my_callbackfunc(Uint32 interval, void *param)
 {
@@ -69,9 +70,30 @@ void LoadPic(std::string name, SDL_Surface* render8)
 
 		SDL_SetPaletteColors(render8->format->palette, &col, c, 1);
 	}
-	IffHandler::DecodeIff(picfile.data, pic);
 
-	std::copy(pic.begin(), pic.begin() + pic.size(), (uint8_t*)(render8->pixels));
+	uint32_t width = 0;
+
+	IffHandler::DecodeIff(picfile.data, pic, width);
+
+	if (width == 320)
+	{
+		std::copy(pic.begin(), pic.begin() + pic.size(), (uint8_t*)(render8->pixels));
+	}
+	else
+	{
+		// gloom 3 has some odd-sized intermission pictures. Do a line-by-line copy.
+
+		uint32_t p = 0;
+		uint32_t y = 0;
+
+		while (p < pic.size())
+		{
+			std::copy(pic.begin() + p, pic.begin() + p + 320, (uint8_t*)(render8->pixels) + y*320);
+
+			p += width;
+			y++;
+		}
+	}
 }
 
 
@@ -97,6 +119,8 @@ int main(int argc, char* argv[])
 	titlemusic.Load("sfxs/med1");
 	intermissionmusic.Load("sfxs/med2");
 
+	SoundHandler::Init();
+
 	SDL_Window* win = SDL_CreateWindow("ZGloom", 100, 100, 800, 600, SDL_WINDOW_SHOWN /*| SDL_WINDOW_FULLSCREEN*/);
 	if (win == nullptr)
 	{
@@ -118,6 +142,7 @@ int main(int argc, char* argv[])
 		return 1;
 	}
 
+	SDL_Surface* fontsurface = SDL_CreateRGBSurface(0, 320, 256, 8, 0, 0, 0, 0);
 	SDL_Surface* render8 = SDL_CreateRGBSurface(0, 320, 240, 8, 0, 0, 0, 0);
 	SDL_Surface* render32 = SDL_CreateRGBSurface(0, 320, 240, 32, 0x00FF0000, 0x0000FF00, 0x000000FF, 0xFF000000);
 
@@ -131,6 +156,10 @@ int main(int argc, char* argv[])
 	SDL_Event sEvent;
 
 	bool done = true;
+
+	CrmFile fontfile;
+
+	fontfile.Load("misc/bigfont.bin");
 
 	bool showscreen = false;
 	bool waiting = false;
@@ -165,7 +194,7 @@ int main(int argc, char* argv[])
 
 					if (intermissionmusic.data)
 					{
-						SDL_AudioSpec a;
+						SDL_AudioSpec a, obtained;
 
 						a.freq = 44100;
 						a.format = AUDIO_S16;
@@ -174,7 +203,7 @@ int main(int argc, char* argv[])
 						a.callback = fill_audio;
 						a.userdata = ctx;
 
-						if (SDL_OpenAudio(&a, NULL) < 0) {
+						if (SDL_OpenAudio(&a, &obtained) < 0) {
 							std::cout << "openaudio error" << SDL_GetError() << std::endl;
 							return -1;
 						}
@@ -201,12 +230,11 @@ int main(int argc, char* argv[])
 					cam.rot = 0;
 					scriptstring.insert(0, "maps/");
 					gmap.Load(scriptstring.c_str(), &objgraphics);
-					//gmap.Load("maps/map4_2", &objgraphics);
+					//gmap.Load("maps/map1_4", &objgraphics);
 					renderer.Init(render32, &gmap, &objgraphics);
 					logic.Init(&gmap, &cam, &objgraphics);
 					showscreen = false;
 					playing = true;
-
 				}
 			}
 		}
@@ -250,7 +278,11 @@ int main(int argc, char* argv[])
 
 		SDL_FillRect(render32, NULL, 0);
 
-		if (playing) renderer.Render(&cam);
+		if (playing)
+		{
+			renderer.SetEffect(logic.GetEffect());
+			renderer.Render(&cam);
+		}
 		if (showscreen)
 		{
 			SDL_BlitSurface(render8, NULL, render32, NULL);

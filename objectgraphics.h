@@ -98,7 +98,5 @@ class ObjectGraphics
 		std::vector<Shape> TrollShapes;
 		std::vector<Shape> BulletShapes[5];
 
-		//std::vector<Shape> Bullet1Shapes;
-
 		ObjectLogic objectlogic[OLT_END];
 };

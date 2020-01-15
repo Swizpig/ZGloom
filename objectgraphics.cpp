@@ -145,6 +145,10 @@ ObjectGraphics::ObjectGraphics()
 	LoadGraphic("objs/troll", TrollShapes);
 	LoadGraphicBin(BinResource::bullet1, BulletShapes[0]);
 	LoadGraphicBin(BinResource::bullet2, BulletShapes[1]);
+	LoadGraphicBin(BinResource::bullet3, BulletShapes[2]);
+	LoadGraphicBin(BinResource::bullet4, BulletShapes[3]);
+	LoadGraphicBin(BinResource::bullet5, BulletShapes[4]);
+
 	//
 	//for (uint32_t s = 0; s < MarineShapes.size(); s++)
 	//{
@@ -172,9 +176,9 @@ ObjectGraphics::ObjectGraphics()
 	objectlogic[OLT_DEMON].shape = &DemonShapes;
 	objectlogic[OLT_WEAPON1].shape = &(BulletShapes[0]); // TODO: sparks and that
 	objectlogic[OLT_WEAPON2].shape = &(BulletShapes[1]); // TODO: sparks and that;
-	objectlogic[OLT_WEAPON3].shape = &(BulletShapes[0]); // TODO: sparks and that;
-	objectlogic[OLT_WEAPON4].shape = &(BulletShapes[0]); // TODO: sparks and that;
-	objectlogic[OLT_WEAPON5].shape = &(BulletShapes[0]); // TODO: sparks and that;
+	objectlogic[OLT_WEAPON3].shape = &(BulletShapes[2]); // TODO: sparks and that;
+	objectlogic[OLT_WEAPON4].shape = &(BulletShapes[3]); // TODO: sparks and that;
+	objectlogic[OLT_WEAPON5].shape = &(BulletShapes[4]); // TODO: sparks and that;
 	objectlogic[OLT_LIZARD].shape = &LizardShapes;
 	objectlogic[OLT_DEATHHEAD].shape = &DeathheadShapes;
 	objectlogic[OLT_TROLL].shape = &TrollShapes;

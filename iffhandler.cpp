@@ -15,7 +15,7 @@ static uint32_t Get32(const uint8_t* p)
 
 namespace IffHandler
 {
-	void DecodeIff(uint8_t* indata, std::vector<uint8_t>& outdata)
+	void DecodeIff(uint8_t* indata, std::vector<uint8_t>& outdata, uint32_t& outwidth)
 	{
 		uint16_t width  = Get16(indata + 0);
 		uint16_t height = Get16(indata + 2);
@@ -87,5 +87,8 @@ namespace IffHandler
 				}
 			}
 		}
+
+		outwidth = width;
 	}
+
 }

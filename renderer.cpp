@@ -374,17 +374,9 @@ void Renderer::DrawColumn(int32_t x, int32_t ystart, int32_t h, Column* textured
 			else
 			{
 				// dim it
-				auto p = z / 128; if (p > 15) p = 15;
-
-				r = darkpalettes[p][r >> 4];
-				g = darkpalettes[p][g >> 4];
-				b = darkpalettes[p][b >> 4];
-
-				r = r | (r << 4);
-				g = g | (g << 4);
-				b = b | (b << 4);
-
-				surface[x + y*renderwidth] = (r << 16) + (g << 8) + b;
+				uint32_t dimcol;
+				ColourModify(r, g, b, dimcol, z);
+				surface[x + y*renderwidth] = dimcol;
 			}
 		}
 
