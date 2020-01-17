@@ -1,6 +1,7 @@
 #include "gamelogic.h"
 #include "renderer.h"
 #include "monsterlogic.h"
+#include "soundhandler.h"
 
 void GameLogic::Init(GloomMap* gmapin, Camera* cam, ObjectGraphics* ograph)
 {
@@ -575,25 +576,30 @@ bool GameLogic::Update(Camera* cam)
 	Teleport tele;
 	bool gotele = false;
 
-	if (Collision(true, cam->x.GetInt(), cam->z.GetInt(), 32, overshoot, closestzone))
+	// prevent multiple sound playing!
+	if (!playerobj.data.ms.pixsizeadd)
 	{
-		if (gmap->GetZones()[closestzone].ev>1)
+		if (Collision(true, cam->x.GetInt(), cam->z.GetInt(), 32, overshoot, closestzone))
 		{
-			if (gmap->GetZones()[closestzone].ev == 24)
+			if (gmap->GetZones()[closestzone].ev > 1)
 			{
-				levelfinished = true;
-				playerobj.data.ms.pixsizeadd = 1;
-			}
+				if (gmap->GetZones()[closestzone].ev == 24)
+				{
+					levelfinished = true;
+					SoundHandler::Play(SoundHandler::SOUND_TELEPORT);
+					playerobj.data.ms.pixsizeadd = 1;
+				}
 
-			if (!eventhit[gmap->GetZones()[closestzone].ev])
-			{
-				gmap->ExecuteEvent(gmap->GetZones()[closestzone].ev, gotele, tele);
-			}
+				if (!eventhit[gmap->GetZones()[closestzone].ev])
+				{
+					gmap->ExecuteEvent(gmap->GetZones()[closestzone].ev, gotele, tele);
+				}
 
-			// these are one-shot
-			if (gmap->GetZones()[closestzone].ev<19)
-			{
-				eventhit[gmap->GetZones()[closestzone].ev] = true;
+				// these are one-shot
+				if (gmap->GetZones()[closestzone].ev < 19)
+				{
+					eventhit[gmap->GetZones()[closestzone].ev] = true;
+				}
 			}
 		}
 	}

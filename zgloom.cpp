@@ -2,6 +2,7 @@
 //
 
 #include "SDL.h"
+#include "SDL_mixer.h"
 #include "xmp/include/xmp.h"
 
 #include "gloommap.h"
@@ -34,12 +35,10 @@ Uint32 my_callbackfunc(Uint32 interval, void *param)
 	SDL_PushEvent(&event);
 	return(interval);
 }
-static int playingaudio;
 
 static void fill_audio(void *udata, Uint8 *stream, int len)
 {
-	if (xmp_play_buffer((xmp_context)udata, stream, len, 0) < 0)
-		playingaudio = 0;
+	auto res = xmp_play_buffer((xmp_context)udata, stream, len, 0);
 }
 
 void LoadPic(std::string name, SDL_Surface* render8)
@@ -119,6 +118,12 @@ int main(int argc, char* argv[])
 	titlemusic.Load("sfxs/med1");
 	intermissionmusic.Load("sfxs/med2");
 
+	if (Mix_OpenAudio(22050, AUDIO_S16LSB, 2, 1024))
+	{
+		std::cout << "openaudio error" << Mix_GetError() << std::endl;
+		return -1;
+	}
+
 	SoundHandler::Init();
 
 	SDL_Window* win = SDL_CreateWindow("ZGloom", 100, 100, 800, 600, SDL_WINDOW_SHOWN /*| SDL_WINDOW_FULLSCREEN*/);
@@ -143,8 +148,8 @@ int main(int argc, char* argv[])
 	}
 
 	SDL_Surface* fontsurface = SDL_CreateRGBSurface(0, 320, 256, 8, 0, 0, 0, 0);
-	SDL_Surface* render8 = SDL_CreateRGBSurface(0, 320, 240, 8, 0, 0, 0, 0);
-	SDL_Surface* render32 = SDL_CreateRGBSurface(0, 320, 240, 32, 0x00FF0000, 0x0000FF00, 0x000000FF, 0xFF000000);
+	SDL_Surface* render8 = SDL_CreateRGBSurface(0, 320, 256, 8, 0, 0, 0, 0);
+	SDL_Surface* render32 = SDL_CreateRGBSurface(0, 320, 246, 32, 0x00FF0000, 0x0000FF00, 0x000000FF, 0xFF000000);
 
 	ObjectGraphics objgraphics;
 	Renderer renderer;
@@ -164,6 +169,8 @@ int main(int argc, char* argv[])
 	bool showscreen = false;
 	bool waiting = false;
 	bool playing = false;
+
+	Mix_Volume(-1, 32);
 
 	while (done)
 	{
@@ -194,26 +201,16 @@ int main(int argc, char* argv[])
 
 					if (intermissionmusic.data)
 					{
-						SDL_AudioSpec a, obtained;
-
-						a.freq = 44100;
-						a.format = AUDIO_S16;
-						a.channels = 2;
-						a.samples = 2048;
-						a.callback = fill_audio;
-						a.userdata = ctx;
-
-						if (SDL_OpenAudio(&a, &obtained) < 0) {
-							std::cout << "openaudio error" << SDL_GetError() << std::endl;
-							return -1;
+						if (xmp_load_module_from_memory(ctx, intermissionmusic.data, intermissionmusic.size))
+						{
+							std::cout << "music error";
 						}
 
-						xmp_load_module_from_memory(ctx, intermissionmusic.data, intermissionmusic.size);
-
-						xmp_start_player(ctx, 44100, 0);
-
-						SDL_PauseAudio(0);
-						playingaudio = 1;
+						if (xmp_start_player(ctx, 22050, 0))
+						{
+							std::cout << "music error";
+						}
+						Mix_HookMusic(fill_audio, ctx);
 					}
 					break;
 				}
@@ -256,10 +253,9 @@ int main(int argc, char* argv[])
 					waiting = false;
 					if (intermissionmusic.data)
 					{
-						playingaudio = 0;
+						Mix_HookMusic(nullptr, nullptr);
 						xmp_end_player(ctx);
 						xmp_release_module(ctx);
-						SDL_CloseAudio();
 					}
 				}
 			}

@@ -67,9 +67,9 @@ class Renderer
 		ObjectGraphics* objectgraphics;
 		std::vector<Wall> walls;
 		int32_t renderwidth = 320;
-		int32_t renderheight = 240;
+		int32_t renderheight = 256;
 		int32_t halfrenderwidth = 160;
-		int32_t halfrenderheight = 120;
+		int32_t halfrenderheight = 128;
 		static const uint32_t focshift = 7;
 		std::vector<Quick> castgrads;
 		std::vector<int32_t> zbuff;
@@ -92,11 +92,10 @@ class Renderer
 
 			if (fadetimer)
 			{
-				g -= fadetimer * 2;
-				r -= fadetimer * 2;
-
-				if (r < 0) r = 0;
-				if (g < 0) g = 0;
+				// gloom deluxe fade to bluish
+				r = (r * (25 - fadetimer) + 128 * fadetimer) / 25;
+				g = (g * (25 - fadetimer) + 128 * fadetimer) / 25;
+				b = (b * (25 - fadetimer) + 255 * fadetimer) / 25;
 			}
 
 			col = (r << 16) | (g << 8) | b;

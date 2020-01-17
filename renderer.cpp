@@ -596,6 +596,12 @@ int16_t Renderer::CastColumn(int32_t x, int16_t& zone, Quick& t)
 					m = (castgrads[x] * lz - lx) / (dx - castgrads[x] * dz);
 					thisz = lz + m*dz;
 
+					// quick overflow check
+					if (thisz.GetInt() < std::min(w.wl_lz, w.wl_rz))
+					{
+						thisz.SetInt(std::min(w.wl_lz, w.wl_rz));
+					}
+
 					if (thisz < z)
 					{
 						Quick len;

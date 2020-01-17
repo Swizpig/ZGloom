@@ -1,6 +1,7 @@
 #include "gloommap.h"
 #include "gloommaths.h"
 #include "monsterlogic.h"
+#include "soundhandler.h"
 
 static uint16_t Get16(const uint8_t* p)
 {
@@ -542,6 +543,8 @@ void GloomMap::ExecuteEvent(uint32_t e, bool& gotele, Teleport& teleout)
 	}
 
 	// doors.
+	bool diddoor = false;
+
 	for (auto d : doors)
 	{
 		if (d.eventnum == e)
@@ -567,6 +570,7 @@ void GloomMap::ExecuteEvent(uint32_t e, bool& gotele, Teleport& teleout)
 			ad.do_frac = 0;
 			ad.do_fracadd = 0x100;
 
+			diddoor = true;
 			activedoors.push_back(ad);
 		}
 	}
@@ -621,6 +625,8 @@ void GloomMap::ExecuteEvent(uint32_t e, bool& gotele, Teleport& teleout)
 			ar.speed = r.speed;
 			ar.flags = r.flags;
 			ar.first = r.polynum;
+
+			diddoor = true;
 
 			if (r.flags & 1)
 			{
@@ -715,12 +721,15 @@ void GloomMap::ExecuteEvent(uint32_t e, bool& gotele, Teleport& teleout)
 		}
 	}
 
+	if (diddoor) SoundHandler::Play(SoundHandler::SOUND_DOOR);
+
 	//teleports
 
 	for (auto t : teles)
 	{
 		if (t.ev == e)
 		{
+			SoundHandler::Play(SoundHandler::SOUND_TELEPORT);
 			gotele = true;
 			teleout = t;
 		}
