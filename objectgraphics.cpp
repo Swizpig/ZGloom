@@ -309,5 +309,70 @@ ObjectGraphics::ObjectGraphics()
 	objectlogic[OLT_DEATHHEAD].firey =  -60;
 	objectlogic[OLT_TROLL].firey = -60;
 
+	// delay/ranges for rnddelay
+	objectlogic[OLT_PLAYER1].range	= 1 ;
+	objectlogic[OLT_PLAYER2].range	= 1 ;
+	objectlogic[OLT_HEALTH].range = 0;
+	objectlogic[OLT_WEAPON].range = 4;
+	objectlogic[OLT_THERMO].range = 0;
+	objectlogic[OLT_INFRA].range = 0;
+	objectlogic[OLT_INVISI].range = 0;
+	objectlogic[OLT_INVINC].range = 0;
+	objectlogic[OLT_DRAGON].range = 32;
+	objectlogic[OLT_BOUNCY].range = 0;
+	objectlogic[OLT_MARINE].range = 32;
+	objectlogic[OLT_BALDY].range = 16;
+	objectlogic[OLT_TERRA].range = 48;
+	objectlogic[OLT_GHOUL].range = 48;
+	objectlogic[OLT_PHANTOM].range = 16;
+	objectlogic[OLT_DEMON].range = 4;
+	objectlogic[OLT_WEAPON1].range = 4;
+	objectlogic[OLT_WEAPON2].range = 4;
+	objectlogic[OLT_WEAPON3].range = 4;
+	objectlogic[OLT_WEAPON4].range = 4;
+	objectlogic[OLT_WEAPON5].range = 4;
+	objectlogic[OLT_LIZARD].range = 8;
+	objectlogic[OLT_DEATHHEAD].range = 16;
+	objectlogic[OLT_TROLL].range = 8;
+
+	objectlogic[OLT_PLAYER1].base = 1;
+	objectlogic[OLT_PLAYER2].base = 1;
+	objectlogic[OLT_HEALTH].base = 0;
+	objectlogic[OLT_WEAPON].base = 4;
+	objectlogic[OLT_THERMO].base = 0;
+	objectlogic[OLT_INFRA].base = 0;
+	objectlogic[OLT_INVISI].base = 0;
+	objectlogic[OLT_INVINC].base = 0;
+	objectlogic[OLT_DRAGON].base = 16;
+	objectlogic[OLT_BOUNCY].base = 0;
+	objectlogic[OLT_MARINE].base = 16;
+	objectlogic[OLT_BALDY].base = 8;
+	objectlogic[OLT_TERRA].base = 32;
+	objectlogic[OLT_GHOUL].base = 32;
+	objectlogic[OLT_PHANTOM].base = 8;
+	objectlogic[OLT_DEMON].base = 32;
+	objectlogic[OLT_WEAPON1].base = 4;
+	objectlogic[OLT_WEAPON2].base = 4;
+	objectlogic[OLT_WEAPON3].base = 4;
+	objectlogic[OLT_WEAPON4].base = 4;
+	objectlogic[OLT_WEAPON5].base = 4;
+	objectlogic[OLT_LIZARD].base = 8;
+	objectlogic[OLT_DEATHHEAD].base = -8;
+	objectlogic[OLT_TROLL].base = 8;
+
+	for (int i = 0; i < OLT_END; i++)
+	{
+		if ((i == OLT_GHOUL) || (i == OLT_TERRA))
+		{
+			objectlogic[i].firecnt = 5;
+			objectlogic[i].firerate = 12;
+		}
+		else
+		{
+			objectlogic[i].firecnt = 0;
+			objectlogic[i].firerate = 0;
+		}
+	}
+
 	return;
 }

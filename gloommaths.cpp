@@ -621,6 +621,13 @@ namespace GloomMaths
 		return r;
 	}
 
+	uint16_t RndN(int16_t mult)
+	{
+		uint32_t result = mult * RndW();
+
+		return (uint16_t)(result >> 16);
+	}
+
 	static const uint16_t arctable[] =
 	{
 		0x0000, 0x0014, 0x0028, 0x003D, 0x0051, 0x0065, 0x007A, 0x008E, 0x00A2, 0x00B7, 0x00CB, 0x00E0, 0x00F4, 0x0108, 0x011D, 0x0131,

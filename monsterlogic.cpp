@@ -23,13 +23,13 @@ void WeaponLogic(MapObject& o, GameLogic* logic)
 	move	d0, ob_y(a5)
 	*/
 
-	Quick camrots[4];
+	int16_t camrots[4];
 
 	o.data.ms.movspeed += 8;
 
-	GloomMaths::GetCamRot(o.data.ms.movspeed & 127, camrots);
+	GloomMaths::GetCamRotRaw(o.data.ms.movspeed & 127, camrots);
 
-	o.y = (camrots[2].GetVal() >> 9) & 0xFF;
+	o.y = (camrots[1] >> 8);
 
 	o.data.ms.frame += (1 << 16);
 	if ((o.data.ms.frame >> 16) >= o.data.ms.shape->size()) o.data.ms.frame = 0;
@@ -131,54 +131,158 @@ bool CheckVecs(MapObject& o, GameLogic* logic)
 	}
 }
 
-void MonsterLogic(MapObject& o, GameLogic* logic)
+int16_t RndDelay(MapObject&o)
 {
 	/*
-	monsterlogic;
-		move	ob_rot(a5), ob_oldrot(a5)
-		; monster cruising around minding his own business...
+	rnddelay	move	ob_range(a5), d0
+		bsr	rndn
+		add	ob_base(a5), d0
+		move	d0, ob_delay(a5)
 		;
+	rts
 	*/
 
-	o.data.ms.oldrot = o.data.ms.rot;
-	/* TODO
-		subq	#1, ob_delay(a5)
-		ble	fire1
+	o.data.ms.delay = GloomMaths::RndN(o.data.ms.range) + o.data.ms.base;
+	return o.data.ms.delay;
+}
+
+void PauseLogic(MapObject&o, GameLogic* logic)
+{
+	/*
+		pauselogic	subq	#1, ob_delay(a5)
+		bgt.s.skip
 		;
+		bsr	rnddelay
+		move.l	ob_oldlogic(a5), ob_logic(a5)
+		;
+		; if in front of player, continue on old course...
+		;
+		bsr	pickcalc
+		;
+		move	ob_rot(a0), d1
+		and	#255, d1
+		sub	d0, d1
+		bpl.s.pl
+		neg	d1
+		.pl	cmp	#64, d1
+		bcs.s.skip
+		cmp	#192, d1
+		bcc.s.skip
+		;
+		.useold	move	ob_oldrot(a5), ob_rot(a5)
+		bsr	calcvecs
+		;
+		.skip	rts
+	*/
+	o.data.ms.delay--;
+
+	if (o.data.ms.delay <= 0)
+	{
+		MapObject player = logic->GetPlayerObj();
+		RndDelay(o);
+		o.data.ms.logic = o.data.ms.oldlogic;
+
+		uint8_t ang = logic->PickCalc(o);
+
+		int16_t compang = (int16_t)(player.data.ms.rot&0xFF) - ang;
+
+		if (compang < 0) compang = -compang;
+
+		if ((compang>64) && (compang < 192))
+		{
+			o.data.ms.rot = o.data.ms.oldrot;
+			CalcVecs(o);
+		}
+	}
+}
+
+void Fire1(MapObject& o, GameLogic* logic)
+{
+	/*
+	fire1	bsr	pickcalc
+	;
+	; random noise for inaccuracy!
+		;
+		move	d0, -(a7)
+		bsr	rndw
+		and	#31, d0
+		sub	#16, d0
+		add(a7) + , d0
+		and	#255, d0
+		;
+		move	d0, ob_rot(a5)
+		bsr	calcvecs
+		move	#7, ob_delay(a5)
+		move.l	ob_logic(a5), ob_oldlogic(a5)
+		move.l	#pauselogic, ob_logic(a5)
+		clr.l	ob_frame(a5)
+		;
+		moveq	#4, d2; colltype
+		moveq	#0, d3; collwith
+		moveq	#1, d4; hitpoints
+		moveq	#1, d5; damage
+		moveq	#20, d6; speed
+		moveq	#0, d7; acceleration!
+		lea	bullet1, a2
+		lea	sparks1, a3
+		;
+		bsr	shoot
+		;
+		rts
 	*/
 
+	uint16_t ang = logic->PickCalc(o);
+	uint16_t rand = GloomMaths::RndW();
+
+	ang += (rand & 31) - 16;
+	ang &= 0xFF;
+
+	o.data.ms.rot = ang;
+	CalcVecs(o);
+	o.data.ms.delay = 7;
+
+	o.data.ms.oldlogic = o.data.ms.logic;
+
+	o.data.ms.logic = PauseLogic;
+	o.data.ms.frame = 0;
+
+	Shoot(o, logic, 4, 0, 1, 1, 20, logic->wtable[0].shape);
+}
+
+void MonsterMove(MapObject& o, GameLogic* logic)
+{
 	/*
 	monstermove	bsr	checkvecs
-		beq.s	monsternew
-		;
-		; OK, try 90 / -90 degrees...
-		;
+	beq.s	monsternew
+	;
+	; OK, try 90 / -90 degrees...
+	;
 	monsterfix	bsr	rndw
-		moveq	#64, d1
-		tst	d0
-		bpl.s.umk
-		moveq	# - 64, d1
+	moveq	#64, d1
+	tst	d0
+	bpl.s.umk
+	moveq	# - 64, d1
 	.umk	add	d1, ob_rot(a5)
-		bsr	calcvecs
-		bsr	checkvecs
-		beq.s	monsternew
-		;
-		add	#128, ob_rot(a5)
-		bsr	calcvecs
-		bsr	checkvecs
-		beq.s	monsternew
-		;
-		move	ob_oldrot(a5), d0
-		add	#128, d0
-		move	d0, ob_rot(a5)
-		;
-		bsr	calcvecs
-		bsr	checkvecs
+	bsr	calcvecs
+	bsr	checkvecs
+	beq.s	monsternew
+	;
+	add	#128, ob_rot(a5)
+	bsr	calcvecs
+	bsr	checkvecs
+	beq.s	monsternew
+	;
+	move	ob_oldrot(a5), d0
+	add	#128, d0
+	move	d0, ob_rot(a5)
+	;
+	bsr	calcvecs
+	bsr	checkvecs
 	monsternew;
-		move.l	ob_framespeed(a5), d0
-		add.l	d0, ob_frame(a5)
-		and	#3, ob_frame(a5)
-		rts
+	move.l	ob_framespeed(a5), d0
+	add.l	d0, ob_frame(a5)
+	and	#3, ob_frame(a5)
+	rts
 
 	*/
 
@@ -201,6 +305,33 @@ void MonsterLogic(MapObject& o, GameLogic* logic)
 good:
 	o.data.ms.frame += o.data.ms.framespeed;
 	o.data.ms.frame &= 0x3FFFF;
+}
+
+void MonsterLogic(MapObject& o, GameLogic* logic)
+{
+	/*
+	monsterlogic;
+	move	ob_rot(a5), ob_oldrot(a5)
+	; monster cruising around minding his own business...
+	;
+	*/
+
+	o.data.ms.oldrot = o.data.ms.rot;
+	/* TODO
+		subq	#1, ob_delay(a5)
+		ble	fire1
+		;
+		*/
+
+	o.data.ms.delay--;
+
+	if (o.data.ms.delay <= 0)
+	{
+		Fire1(o, logic);
+	}
+
+	MonsterMove(o, logic);
+
 }
 
 void FireLogic(MapObject& o, GameLogic* logic)
@@ -305,7 +436,7 @@ void Shoot(MapObject& o, GameLogic* logic, int32_t colltype, int32_t collwith, i
 	*/
 
 	newobject.data.ms.nxvec = camrots[1];
-	newobject.data.ms.xvec = (int32_t)(camrots[1])*speed * 2;
+	newobject.data.ms.xvec = -(int32_t)(camrots[1])*speed * 2;
 	newobject.data.ms.nzvec = camrots[3];
 	newobject.data.ms.zvec = (int32_t)(camrots[3])*speed * 2;
 	
@@ -325,5 +456,233 @@ void Shoot(MapObject& o, GameLogic* logic, int32_t colltype, int32_t collwith, i
 
 	
 	logic->AddObject(newobject);
+}
+
+void TerraLogic2(MapObject& o, GameLogic* logic)
+{
+	/*
+	terralogic2	;
+	subq	#1,ob_delay(a5)
+	bgt.s	.rts
+	;
+	move	ob_firerate(a5),ob_delay(a5)
+	;
+	;OK, to to face player and fire away!
+	;
+	bsr	pickcalc
+	move	d0,ob_rot(a5)
+	bsr	calcvecs
+	;
+	moveq	#4,d2	;colltype
+	moveq	#0,d3	;collwith
+	moveq	#1,d4	;hitpoints
+	moveq	#3,d5	;damage
+	moveq	#16,d6	;speed
+	moveq	#0,d7	;acceleration!
+	lea	bullet4,a2
+	lea	sparks4,a3
+	;
+	bsr	shoot
+	;
+	move.l	shootsfx3(pc),a0
+	moveq	#32,d0
+	moveq	#5,d1
+	bsr	playsfx
+	;
+	subq	#1,ob_delay2(a5)
+	bgt.s	.rts
+	;
+	bsr	rnddelay
+	move.l	#terralogic,ob_logic(a5)
+	;
+	*/
+
+	o.data.ms.delay--;
+
+	if (o.data.ms.delay) return;
+
+	o.data.ms.delay = o.data.ms.firerate;
+	o.data.ms.rot = logic->PickCalc(o);
+	CalcVecs(o);
+	Shoot(o, logic, 2, 0, 1, 3, 16, logic->wtable[3].shape);
+	SoundHandler::Play(SoundHandler::SOUND_SHOOT3);
+
+	o.data.ms.delay2--;
+
+	if (o.data.ms.delay2) return;
+	RndDelay(o);
+	o.data.ms.logic = TerraLogic;
+}
+
+void TerraLogic(MapObject& o, GameLogic* logic)
+{
+	/*
+	terralogic	;
+	move	ob_rot(a5),ob_oldrot(a5)
+	subq	#1,ob_delay(a5)
+	ble	.fire
+	;
+	move	ob_delay(a5),d0
+	and	#31,d0
+	bne	monstermove
+	;
+	move.l	robotsfx(pc),a0
+	moveq	#64,d0
+	moveq	#10,d1
+	bsr	playsfx
+	bra	monstermove
+	;
+	.fire	;OK, terra goes apeshit! stand there firing off at player!
+	;use punchrate as firedelay!
+	;
+	clr	ob_frame(a5)
+	move	#1,ob_delay(a5)
+	move	ob_firecnt(a5),ob_delay2(a5)
+	move.l	#terralogic2,ob_logic(a5)
+	rts
+	*/
+	o.data.ms.oldrot = o.data.ms.rot;
+	o.data.ms.delay--;
+
+	if (o.data.ms.delay > 0)
+	{
+		if ((o.data.ms.delay & 31) != 0)
+		{
+			MonsterMove(o, logic);
+			return;
+		}
+
+		SoundHandler::Play(SoundHandler::SOUND_ROBOT);
+		MonsterMove(o, logic);
+		return;
+	}
+	else
+	{
+		o.data.ms.frame = 0;
+		o.data.ms.delay = 1;
+		o.data.ms.delay2 = o.data.ms.firecnt;
+		o.data.ms.logic = TerraLogic2;
+	}
+}
+
+void GhoulLogic(MapObject& o, GameLogic* logic)
+{
+	/*
+	ghoullogic	;
+	addq	#8,ob_bounce(a5)
+	move	ob_bounce(a5),d0
+	move.l	camrots(pc),a0
+	and	#255,d0
+	move	0(a0,d0*8),d0
+	ext.l	d0
+	lsl.l	#5,d0	;+/- 32
+	swap	d0
+	add	#-32,d0
+	move	d0,ob_y(a5)
+	*/
+	o.data.ms.bounce += 8;
+	int16_t camrots[4];
+	GloomMaths::GetCamRotRaw(o.data.ms.bounce&255, camrots);
+	int32_t y = camrots[0];
+	y <<= 5;
+	y >>= 16;
+	y -= 32;
+	o.y = y;
+	/*
+	;
+	bsr	pickcalc
+	move	d0,ob_rot(a5)
+	;
+	subq	#1,ob_delay(a5)
+	bgt.s	.skip
+	;
+	move	#1,ob_frame(a5)
+	move.l	#$2000,ob_framespeed(a5)
+	moveq	#4,d2	;colltype
+	moveq	#0,d3	;collwith
+	moveq	#1,d4	;hitpoints
+	moveq	#3,d5	;damage
+	moveq	#20,d6	;speed
+	moveq	#0,d7	;acceleration!
+	lea	bullet2,a2
+	lea	sparks2,a3
+	;
+	bsr	shoot
+	bsr	rnddelay
+	;
+	*/
+
+	uint8_t ang = logic->PickCalc(o);
+	o.data.ms.rot = ang;
+	o.data.ms.delay--;
+
+	if (o.data.ms.delay<=0)
+	{
+		o.data.ms.frame = 1;
+		o.data.ms.framespeed = 0x2000;
+		Shoot(o, logic, 4, 0, 2, 3, 20, logic->wtable[1].shape);
+		RndDelay(o);
+	}
+
+	/*
+	.skip	;OK, ghoul moves around ignoring walls!
+	;
+	;he's pointed at player...how about randomly selected to make
+	;this his new movement vector?
+	;
+	bsr	rndw
+	move	ob_movspeed(a5),d1
+	lsl	#8,d1
+	cmp	d1,d0
+	bcc.s	.no
+	;
+	bsr	calcvecs
+	;
+	move.l	ghoulsfx(pc),a0
+	moveq	#32,d0
+	moveq	#-5,d1
+	bsr	playsfx
+	;
+	.no	movem.l	ob_xvec(a5),d0-d1
+	add.l	d0,ob_x(a5)
+	add.l	d1,ob_z(a5)
+	;
+	move.l	ob_framespeed(a5),d0
+	beq.s	.rts
+	add.l	d0,ob_frame(a5)
+	cmp	#3,ob_frame(a5)
+	bcs.s	.rts
+	;
+	clr	ob_frame(a5)
+	clr.l	ob_framespeed(a5)
+	;
+	.rts	rts
+	*/
+	int16_t rndval = GloomMaths::RndW();
+
+	if (rndval < 0)
+	{
+		// what is going on here
+		SoundHandler::Play(SoundHandler::SOUND_GHOUL);
+		CalcVecs(o);
+	}
+
+	Quick temp;
+	temp.SetVal(o.data.ms.xvec);
+	o.x = o.x + temp;
+
+	temp.SetVal(o.data.ms.zvec);
+	o.z = o.z + temp;
+
+	if (o.data.ms.framespeed)
+	{
+		o.data.ms.frame += o.data.ms.framespeed;
+	}
+
+	if (o.data.ms.frame >= 0x30000)
+	{
+		o.data.ms.frame = 0;
+		o.data.ms.framespeed = 0;
+	}
 }
 

@@ -85,6 +85,10 @@ class Object
 	uint32_t render;
 	int32_t movspeed;
 	int16_t firey;
+	int16_t base;
+	int16_t range;
+	int16_t firecnt;
+	int16_t firerate;
 	std::vector<Shape>* shape;
 };
 
@@ -130,8 +134,21 @@ class MapObjectSideBand
 	int32_t rad;
 	int32_t radsq;
 
+
+	int16_t delay;
+	int16_t delay2;
+	int16_t range;
+	int16_t base;
+
+	//bullet timers
+	int32_t reload;
+	int32_t reloadcnt;
+	int16_t firecnt;
+	int16_t firerate;
+
 	//bouncy bullets
 	int16_t bouncecnt;
+	int16_t bounce;
 
 	void(*logic)(MapObject&, GameLogic*);
 	void(*oldlogic)(MapObject&, GameLogic*);
@@ -167,10 +184,13 @@ class MapObject
 
 	ObjectUnion data;
 
+	uint64_t identifier;
 	bool killme;
 
 	MapObject(Object m);
 	MapObject();
+
+	static uint64_t counter;
 };
 
 class Door

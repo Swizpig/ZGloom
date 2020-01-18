@@ -27,8 +27,11 @@ class ObjectLogic
 	uint32_t render; // "is 8 frame rotatable sprite", basically
 	int16_t firey;
 	int32_t movspeed;
-
-	//void (*logic)(MapObject&, GameLogic*);
+	//setup for rnddelay
+	int16_t range;
+	int16_t base;
+	int16_t firecnt;
+	int16_t firerate;
 };
 
 class ObjectGraphics

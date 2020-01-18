@@ -355,6 +355,12 @@ bool GloomMap::Load(const char* name, ObjectGraphics* nobj)
 
 		o.shape = objectlogic->objectlogic[o.t].shape;
 		o.firey = objectlogic->objectlogic[o.t].firey;
+
+		o.base = objectlogic->objectlogic[o.t].base;
+		o.range = objectlogic->objectlogic[o.t].range;
+
+		o.firecnt = objectlogic->objectlogic[o.t].firecnt;
+		o.firerate = objectlogic->objectlogic[o.t].firerate;
 	}
 
 	// load wall anims
@@ -758,10 +764,27 @@ MapObject::MapObject(Object m)
 	data.ms.shape = m.shape;
 	data.ms.firey = m.firey;
 
+	data.ms.delay = 0;
+	data.ms.range = m.range;
+	data.ms.base = m.base;
+	data.ms.firecnt = m.firecnt;
+	data.ms.firerate = m.firerate;
+
+	data.ms.reload = (t == ObjectGraphics::OLT_PLAYER1)? 5 : 0;
+	data.ms.reloadcnt = 0;
+
+	data.ms.bounce = 0;
+
 	switch (t)
 	{
 		case ObjectGraphics::OLT_MARINE:
 			data.ms.logic = &MonsterLogic;
+			break;
+		case ObjectGraphics::OLT_TERRA:
+			data.ms.logic = &TerraLogic;
+			break;
+		case ObjectGraphics::OLT_GHOUL:
+			data.ms.logic = &GhoulLogic;
 			break;
 		case ObjectGraphics::OLT_WEAPON1:
 		case ObjectGraphics::OLT_WEAPON2:
@@ -773,6 +796,9 @@ MapObject::MapObject(Object m)
 		default:
 			data.ms.logic = &NullLogic;
 	}
+
+	identifier = counter;
+	counter++;
 }
 
 MapObject::MapObject()
@@ -782,4 +808,12 @@ MapObject::MapObject()
 
 	data.ms.pixsizeadd = 0;
 	data.ms.pixsize = 0;
+	data.ms.delay = 0;
+	data.ms.reload = 0;
+	data.ms.reloadcnt = 0;
+
+	identifier = counter;
+	counter++;
 }
+
+uint64_t MapObject::counter;

@@ -30,22 +30,27 @@ void GameLogic::Init(GloomMap* gmapin, Camera* cam, ObjectGraphics* ograph)
 	wtable[0].hitpoint = 1;
 	wtable[0].damage = 1;
 	wtable[0].speed = 32;
+	wtable[0].sound = SoundHandler::SOUND_SHOOT;
 
 	wtable[1].hitpoint = 5;
 	wtable[1].damage = 2;
 	wtable[1].speed = 36;
+	wtable[1].sound = SoundHandler::SOUND_SHOOT2;
 
 	wtable[2].hitpoint = 10;
 	wtable[2].damage = 2;
 	wtable[2].speed = 40;
+	wtable[2].sound = SoundHandler::SOUND_SHOOT3;
 
 	wtable[3].hitpoint = 15;
 	wtable[3].damage = 3;
 	wtable[3].speed = 40;
+	wtable[3].sound = SoundHandler::SOUND_SHOOT4;
 
 	wtable[4].hitpoint = 20;
 	wtable[4].damage = 5;
 	wtable[4].speed = 24;
+	wtable[4].sound = SoundHandler::SOUND_SHOOT5;
 
 	for (auto i = 0; i < 5; i++)
 	{
@@ -200,6 +205,46 @@ void GameLogic::DoDoor()
 			++ i;
 		}
 	}
+}
+
+MapObject GameLogic::GetPlayerObj()
+{
+	for (auto o : gmap->GetMapObjects())
+	{
+		if (o.t == ObjectGraphics::OLT_PLAYER1)
+		{
+			return o;
+			break;
+		}
+	}
+
+	// warning squash
+
+	return gmap->GetMapObjects().front();
+}
+
+uint8_t GameLogic::PickCalc(MapObject& o)
+{
+	/*
+	pickcalc; pick a player and calculate angle to player!
+		;
+		bsr	pickplayer
+		bsr	calcangle
+		tst	ob_invisible(a0)
+		beq.s.rts
+		move	d0, -(a7)
+		bsr	rndw
+		and	#63, d0
+		sub	#32, d0
+		add(a7) + , d0
+		and	#255, d0
+		.rts	rts
+	*/
+	MapObject player = GetPlayerObj();
+	uint8_t ang = GloomMaths::CalcAngle(player.x.GetInt(), player.z.GetInt(), o.x.GetInt(), o.z.GetInt());
+
+	// TODO invisibility
+	return ang;
 }
 
 void  GameLogic::DoRot()
@@ -474,21 +519,13 @@ bool GameLogic::Update(Camera* cam)
 	Quick newx = cam->x;
 	Quick newz = cam->z;
 
-	MapObject playerobj;
-
-	for (auto o : gmap->GetMapObjects())
-	{
-		if (o.t == ObjectGraphics::OLT_PLAYER1)
-		{
-			playerobj = o;
-			break;
-		}
-	}
+	MapObject playerobj = GetPlayerObj();
 
 	playerobj.x = cam->x;
-	playerobj.y = cam->y;
+	playerobj.y = 0;
 	playerobj.z = cam->z;
-	playerobj.data.ms.rot = cam->rot;
+	//I've fouled up the coord system here
+	playerobj.data.ms.rot = -cam->rot;
 
 	inc.SetVal(playerobj.data.ms.movspeed);
 
@@ -539,9 +576,15 @@ bool GameLogic::Update(Camera* cam)
 	if (keystate[SDL_SCANCODE_LCTRL])
 	{
 		//Shoot!
-
-		Shoot(playerobj, this, (playerobj.data.ms.collwith & 3) ^ 3, 0, wtable[0].hitpoint, wtable[0].damage, wtable[0].speed, wtable[0].shape);
+		if (playerobj.data.ms.reloadcnt == 0)
+		{
+			Shoot(playerobj, this, (playerobj.data.ms.collwith & 3) ^ 3, 0, wtable[0].hitpoint, wtable[0].damage, wtable[0].speed, wtable[0].shape);
+			SoundHandler::Play(wtable[0].sound);
+			playerobj.data.ms.reloadcnt = playerobj.data.ms.reload;
+		}
 	}
+
+	if (playerobj.data.ms.reloadcnt > 0) playerobj.data.ms.reloadcnt--;
 
 	if (keystate[SDL_SCANCODE_F1])
 	{

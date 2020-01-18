@@ -448,7 +448,7 @@ void Renderer::DrawObjects(Camera* camera)
 			{
 				ix = o.rotx;
 				iz = o.rotz;
-				iy = o.y;
+				iy = -o.y;
 				iy -= camera->y;
 
 				if (iz > 0)
