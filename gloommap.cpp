@@ -361,6 +361,14 @@ bool GloomMap::Load(const char* name, ObjectGraphics* nobj)
 
 		o.firecnt = objectlogic->objectlogic[o.t].firecnt;
 		o.firerate = objectlogic->objectlogic[o.t].firerate;
+
+		o.colltype = objectlogic->objectlogic[o.t].colltype;
+		o.collwith = objectlogic->objectlogic[o.t].collwith;
+		o.rad = objectlogic->maxwidths[o.t];
+		o.damage = objectlogic->objectlogic[o.t].damage;
+		o.hitpoints = objectlogic->objectlogic[o.t].hitpoints;
+		o.weapon = objectlogic->objectlogic[o.t].weapon;
+		o.hurtpause = objectlogic->objectlogic[o.t].hurtpause;
 	}
 
 	// load wall anims
@@ -751,7 +759,7 @@ MapObject::MapObject(Object m)
 	data.ms.pixsize = 0;
 
 	x.SetInt(m.x);
-	y = m.y;
+	y.SetInt(m.y);
 	z.SetInt(m.z);
 	t = m.t;
 
@@ -775,29 +783,66 @@ MapObject::MapObject(Object m)
 
 	data.ms.bounce = 0;
 
+	data.ms.colltype = m.colltype;
+	data.ms.collwith = m.collwith;
+	data.ms.washit = 0;
+	data.ms.rad = m.rad;
+	data.ms.radsq = data.ms.rad * data.ms.rad;
+	data.ms.damage = m.damage;
+	data.ms.hitpoints = m.hitpoints;
+	data.ms.weapon = m.weapon;
+	data.ms.hurtwait = 0;
+	data.ms.hurtpause = m.hurtpause;
+
 	switch (t)
 	{
+		case ObjectGraphics::OLT_PLAYER1:
+			data.ms.logic = MonsterLogic;
+			data.ms.hit = NullLogicComp;
+			data.ms.die = NullLogicComp;
+			break;
+		case ObjectGraphics::OLT_PLAYER2:
+			data.ms.logic = MonsterLogic;
+			data.ms.hit = NullLogicComp;
+			data.ms.die = NullLogicComp;
+			break;
 		case ObjectGraphics::OLT_MARINE:
-			data.ms.logic = &MonsterLogic;
+			data.ms.logic = MonsterLogic;
+			data.ms.hit = HurtNGrunt;
+			data.ms.die = BlowObject;
+			break;
+		case ObjectGraphics::OLT_BALDY:
+			data.ms.logic = NullLogic;
+			data.ms.hit = HurtNGrunt;
+			data.ms.die = BlowObject;
 			break;
 		case ObjectGraphics::OLT_TERRA:
-			data.ms.logic = &TerraLogic;
+			data.ms.logic = TerraLogic;
+			data.ms.hit = NullLogicComp;
+			data.ms.die = KillLogicComp;
 			break;
 		case ObjectGraphics::OLT_GHOUL:
-			data.ms.logic = &GhoulLogic;
+			data.ms.logic = GhoulLogic;
+			data.ms.hit = NullLogicComp;
+			data.ms.die = BlowObject;
 			break;
 		case ObjectGraphics::OLT_WEAPON1:
 		case ObjectGraphics::OLT_WEAPON2:
 		case ObjectGraphics::OLT_WEAPON3:
 		case ObjectGraphics::OLT_WEAPON4:
 		case ObjectGraphics::OLT_WEAPON5:
-			data.ms.logic = &WeaponLogic;
+			data.ms.logic = WeaponLogic;
+			data.ms.hit = WeaponGot;
+			data.ms.die = WeaponGot;
 			break;
 		default:
-			data.ms.logic = &NullLogic;
+			data.ms.logic = NullLogic;
+			data.ms.hit = NullLogicComp;
+			data.ms.die = KillLogicComp;
 	}
 
-	identifier = counter;
+	// avoid zero as I need to flag nothing
+	identifier = counter+1;
 	counter++;
 }
 
@@ -812,7 +857,18 @@ MapObject::MapObject()
 	data.ms.reload = 0;
 	data.ms.reloadcnt = 0;
 
-	identifier = counter;
+
+	data.ms.colltype = 0;
+	data.ms.collwith = 0;
+	data.ms.washit = 0;
+	data.ms.damage = 0;
+	data.ms.hitpoints = 0;
+	data.ms.weapon = 0;
+	data.ms.hurtwait = 0;
+	data.ms.hurtpause = 0;
+
+	// avoid zero as I need to flag nothing
+	identifier = counter + 1;
 	counter++;
 }
 

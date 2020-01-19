@@ -89,6 +89,15 @@ class Object
 	int16_t range;
 	int16_t firecnt;
 	int16_t firerate;
+
+	//collison
+	int16_t collwith;
+	int16_t colltype;
+	uint32_t rad;
+	int16_t damage;
+	int16_t hitpoints;
+	int16_t weapon;
+	int16_t hurtpause;
 	std::vector<Shape>* shape;
 };
 
@@ -110,6 +119,7 @@ class MapObjectSideBand
 	uint32_t oldrot;
 	int32_t movspeed;
 	int32_t xvec;
+	int32_t yvec;
 	int32_t zvec;
 	//normalised versions of the above
 	int32_t nxvec;
@@ -133,18 +143,22 @@ class MapObjectSideBand
 	int16_t damage;
 	int32_t rad;
 	int32_t radsq;
-
+	//some kind of "Don't flag up a hit on this object?" flag?
+	uint64_t washit;
 
 	int16_t delay;
 	int16_t delay2;
 	int16_t range;
 	int16_t base;
+	int16_t hurtwait;
+	int16_t hurtpause;
 
 	//bullet timers
 	int32_t reload;
 	int32_t reloadcnt;
 	int16_t firecnt;
 	int16_t firerate;
+	int16_t weapon;
 
 	//bouncy bullets
 	int16_t bouncecnt;
@@ -153,8 +167,9 @@ class MapObjectSideBand
 	void(*logic)(MapObject&, GameLogic*);
 	void(*oldlogic)(MapObject&, GameLogic*);
 	void(*oldlogic2)(MapObject&, GameLogic*);
-	void(*die)(MapObject&, GameLogic*);
-	void(*hit)(MapObject&, GameLogic*);
+	void(*die)(MapObject&, MapObject&, GameLogic*);
+	void(*oldhit)(MapObject&, MapObject&, GameLogic*);
+	void(*hit)(MapObject&, MapObject& ,GameLogic*);
 };
 
 class TranslucentStrip
@@ -175,7 +190,7 @@ class MapObject
 	public:
 	bool isstrip;
 	Quick x;
-	int16_t y;
+	Quick y;
 	Quick z;
 	int16_t t;
 

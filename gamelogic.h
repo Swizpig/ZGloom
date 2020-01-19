@@ -14,8 +14,9 @@ class GameLogic
 		bool Update(Camera* cam);
 		int32_t GetEffect();
 
-		// needed public for monster logic. This is a mess, needs refactor to split more clanly
+		// needed public for monster logic. This is a mess, needs refactor to split more cleanly
 		MapObject GetPlayerObj();
+
 		bool Collision(bool event, int32_t x, int32_t z, int32_t r, int32_t& overshoot, int32_t& closestzone);
 		bool AdjustPos(int32_t& overshoot, Quick& x, Quick& z, int32_t r, int32_t& closestzone);
 		void AddObject(MapObject o) { gmap->GetMapObjects().push_back(o); };
@@ -23,6 +24,8 @@ class GameLogic
 
 		struct weapontableentry { int32_t hitpoint; int32_t damage; int32_t speed; std::vector<Shape>* shape; SoundHandler::Sounds sound; };
 		weapontableentry wtable[5];
+		ObjectGraphics* objectgraphics;
+		std::list<MapObject> newobjects;
 
 	private:
 		GloomMap* gmap;
@@ -36,6 +39,7 @@ class GameLogic
 		void DoDoor();
 		void DoRot();
 		void Rotter(int16_t x, int16_t z, int16_t&nx, int16_t& nz, int16_t camrots[4]);
+		void ObjectCollision();
 		uint32_t animframe[160];
 		bool eventhit[25];
 

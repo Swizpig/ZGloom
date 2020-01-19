@@ -6,6 +6,7 @@
 void GameLogic::Init(GloomMap* gmapin, Camera* cam, ObjectGraphics* ograph)
 {
 	gmap = gmapin;
+	objectgraphics = ograph;
 	levelfinished = false;
 
 	camdir = 1;
@@ -27,20 +28,22 @@ void GameLogic::Init(GloomMap* gmapin, Camera* cam, ObjectGraphics* ograph)
 		}
 	}
 
+	// note weird order of SFX.
+
 	wtable[0].hitpoint = 1;
 	wtable[0].damage = 1;
 	wtable[0].speed = 32;
-	wtable[0].sound = SoundHandler::SOUND_SHOOT;
+	wtable[0].sound = SoundHandler::SOUND_SHOOT3;
 
 	wtable[1].hitpoint = 5;
 	wtable[1].damage = 2;
 	wtable[1].speed = 36;
-	wtable[1].sound = SoundHandler::SOUND_SHOOT2;
+	wtable[1].sound = SoundHandler::SOUND_SHOOT5;
 
 	wtable[2].hitpoint = 10;
 	wtable[2].damage = 2;
 	wtable[2].speed = 40;
-	wtable[2].sound = SoundHandler::SOUND_SHOOT3;
+	wtable[2].sound = SoundHandler::SOUND_SHOOT;
 
 	wtable[3].hitpoint = 15;
 	wtable[3].damage = 3;
@@ -509,6 +512,7 @@ bool GameLogic::Update(Camera* cam)
 	bool done = false;
 
 	inc.SetVal(0xd0000);
+	newobjects.clear();
 
 	Quick camrots[4], camrotstrafe[4];
 
@@ -522,7 +526,7 @@ bool GameLogic::Update(Camera* cam)
 	MapObject playerobj = GetPlayerObj();
 
 	playerobj.x = cam->x;
-	playerobj.y = 0;
+	playerobj.y.SetInt(0);
 	playerobj.z = cam->z;
 	//I've fouled up the coord system here
 	playerobj.data.ms.rot = -cam->rot;
@@ -555,7 +559,7 @@ bool GameLogic::Update(Camera* cam)
 		}
 		else
 		{
-			cam->rot += 2;
+			cam->rot += 4;
 		}
 	}
 	if (keystate[SDL_SCANCODE_RIGHT])
@@ -569,7 +573,7 @@ bool GameLogic::Update(Camera* cam)
 		}
 		else
 		{
-			cam->rot -= 2;
+			cam->rot -= 4;
 		}
 	}
 
@@ -578,8 +582,9 @@ bool GameLogic::Update(Camera* cam)
 		//Shoot!
 		if (playerobj.data.ms.reloadcnt == 0)
 		{
-			Shoot(playerobj, this, (playerobj.data.ms.collwith & 3) ^ 3, 0, wtable[0].hitpoint, wtable[0].damage, wtable[0].speed, wtable[0].shape);
-			SoundHandler::Play(wtable[0].sound);
+			auto wep = playerobj.data.ms.weapon;
+			Shoot(playerobj, this, (playerobj.data.ms.collwith & 3) ^ 3, 0, wtable[wep].hitpoint, wtable[wep].damage, wtable[wep].speed, wtable[wep].shape);
+			SoundHandler::Play(wtable[wep].sound);
 			playerobj.data.ms.reloadcnt = playerobj.data.ms.reload;
 		}
 	}
@@ -711,6 +716,16 @@ bool GameLogic::Update(Camera* cam)
 		o.data.ms.logic(o, this);
 	}
 
+	ObjectCollision();
+	
+	//made a bit of a horlicks of this. 
+	//I'm not confident about passing pointers to list members around, is that safe? I moved the kill pass to the end, so it should be OK, but erred on the side of safely
+	auto playerobjupdated = GetPlayerObj();
+
+	playerobj.data.ms.hitpoints = playerobjupdated.data.ms.hitpoints;
+	playerobj.data.ms.weapon = playerobjupdated.data.ms.weapon;
+	playerobj.data.ms.reload = playerobjupdated.data.ms.reload;
+
 	//kill pass
 
 	auto i = gmap->GetMapObjects().begin();
@@ -726,6 +741,8 @@ bool GameLogic::Update(Camera* cam)
 			++i;
 		}
 	}
+
+	gmap->GetMapObjects().insert(gmap->GetMapObjects().end(), newobjects.begin(), newobjects.end());
 
 	for (auto& o : gmap->GetMapObjects())
 	{
@@ -750,4 +767,77 @@ int32_t GameLogic::GetEffect()
 	}
 
 	return 0;
+}
+
+void GameLogic::ObjectCollision()
+{
+	for (auto &o : gmap->GetMapObjects())
+	{
+		if (o.data.ms.collwith)
+		{
+			for (auto &o2 : gmap->GetMapObjects())
+			{
+				// don't compare with self!
+				if (o.identifier == o2.identifier)
+				{
+					o.data.ms.washit = 0;
+
+					// note goes back to the outer loop in the original? But that seems to mess with the asymettric nature of the collision system?
+					//break;
+					continue;
+				}
+
+				if ((o.data.ms.collwith & o2.data.ms.colltype) == 0)
+				{
+					continue;
+				}
+
+				int32_t radsum = o2.data.ms.rad + o.data.ms.rad;
+
+				if (abs(o2.x.GetInt() - o.x.GetInt()) > radsum)
+				{
+					continue;
+				}
+				if (abs(o2.z.GetInt() - o.z.GetInt()) > radsum)
+				{
+					continue;
+				}
+
+				int32_t xd = abs(o2.x.GetInt() - o.x.GetInt());
+				int32_t zd = abs(o2.z.GetInt() - o.z.GetInt());
+
+				if ((xd*xd + zd*zd) < (radsum*radsum))
+				{
+					//printf("COLLISION %i %i\n", o.t, o2.t);
+					if (o.data.ms.washit == o2.identifier)
+					{
+						// prevents double collision, as this part of the code hits *both* objects. I think?
+						break;
+					}
+
+					o.data.ms.washit = o2.identifier;
+
+					o.data.ms.hitpoints -= o2.data.ms.damage;
+					if (o.data.ms.hitpoints <= 0)
+					{
+						o.data.ms.die(o, o2, this);
+					}
+					else
+					{
+						o.data.ms.hit(o, o2, this);
+					}
+
+					o2.data.ms.hitpoints -= o.data.ms.damage;
+					if (o2.data.ms.hitpoints <= 0)
+					{
+						o2.data.ms.die(o2, o, this);
+					}
+					else
+					{
+						o2.data.ms.hit(o2, o, this);
+					}
+				}
+			}
+		}
+	}
 }

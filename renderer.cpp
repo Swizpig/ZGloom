@@ -448,7 +448,7 @@ void Renderer::DrawObjects(Camera* camera)
 			{
 				ix = o.rotx;
 				iz = o.rotz;
-				iy = -o.y;
+				iy = -o.y.GetInt();
 				iy -= camera->y;
 
 				if (iz > 0)
@@ -485,7 +485,7 @@ void Renderer::DrawObjects(Camera* camera)
 							ang -= o.data.ms.rot;
 							ang >>= 5;
 							ang &= 7;
-							frametouse = ang | (((o.data.ms.frame >> 16) & 3) << 3);
+							frametouse = ang | (((o.data.ms.frame >> 16) & 7) << 3);
 						}
 						else
 						{

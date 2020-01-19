@@ -8,6 +8,12 @@ void NullLogic(MapObject& o, GameLogic* logic)
 	return;
 }
 
+void NullLogicComp(MapObject& thisobj, MapObject& otherobj, GameLogic* logic)
+{
+	return;
+}
+
+
 void WeaponLogic(MapObject& o, GameLogic* logic)
 {
 	// TODO: Sparks, frames
@@ -29,7 +35,7 @@ void WeaponLogic(MapObject& o, GameLogic* logic)
 
 	GloomMaths::GetCamRotRaw(o.data.ms.movspeed & 127, camrots);
 
-	o.y = (camrots[1] >> 8);
+	o.y.SetInt(camrots[1] >> 8);
 
 	o.data.ms.frame += (1 << 16);
 	if ((o.data.ms.frame >> 16) >= o.data.ms.shape->size()) o.data.ms.frame = 0;
@@ -348,9 +354,9 @@ void FireLogic(MapObject& o, GameLogic* logic)
 	}
 }
 
-void KillLogic(MapObject& o, GameLogic* logic)
+void KillLogicComp(MapObject& thisobj, MapObject& otherobj, GameLogic* logic)
 {
-	o.killme = true;
+	thisobj.killme = true;
 }
 
 void Shoot(MapObject& o, GameLogic* logic, int32_t colltype, int32_t collwith, int32_t hitpoints, int32_t damage, int32_t speed, std::vector<Shape>* shape)
@@ -387,12 +393,14 @@ void Shoot(MapObject& o, GameLogic* logic, int32_t colltype, int32_t collwith, i
 	newobject.t = 999;
 	newobject.data.ms.bouncecnt = o.data.ms.bouncecnt;
 	newobject.x = o.x;
-	newobject.y = o.y + o.data.ms.firey;
+	Quick temp;
+	temp.SetInt(o.data.ms.firey);
+	newobject.y = o.y + temp;
 	newobject.z = o.z;
 	newobject.data.ms.logic = FireLogic;
 	newobject.data.ms.render = 1;
-	newobject.data.ms.hit = NullLogic;
-	newobject.data.ms.die = KillLogic;
+	newobject.data.ms.hit = NullLogicComp;
+	newobject.data.ms.die = KillLogicComp;
 	/*
 	move	d2,ob_colltype(a0)
 	move	d3,ob_collwith(a0)
@@ -587,7 +595,7 @@ void GhoulLogic(MapObject& o, GameLogic* logic)
 	y <<= 5;
 	y >>= 16;
 	y -= 32;
-	o.y = y;
+	o.y.SetInt(y);
 	/*
 	;
 	bsr	pickcalc
@@ -686,3 +694,280 @@ void GhoulLogic(MapObject& o, GameLogic* logic)
 	}
 }
 
+void WeaponGot(MapObject& thisobj, MapObject& otherobj, GameLogic* logic)
+{
+	SoundHandler::Play(SoundHandler::SOUND_TOKEN);
+
+	if (thisobj.data.ms.weapon > otherobj.data.ms.weapon)
+	{
+		otherobj.data.ms.weapon = thisobj.data.ms.weapon;
+		otherobj.data.ms.reload = 5;
+	}
+	else
+	{
+		//todo: megaweapon etc.. .
+		if (otherobj.data.ms.reload > 1)
+		{
+			otherobj.data.ms.reload--;
+		}
+	}
+	thisobj.killme = true;
+}
+
+void PauseLogic2(MapObject& o, GameLogic* logic)
+{
+	/*
+	pauselogic2	
+	subq	#1, ob_hurtwait(a5)
+	bgt.s.rts
+	clr	ob_frame(a5)
+	move.l	ob_oldlogic2(a5), ob_logic(a5)
+	move.l	ob_oldhit(a5), ob_hit(a5)
+	.rts	rts
+	*/
+	o.data.ms.hurtwait--;
+
+	if (o.data.ms.hurtwait < 0)
+	{
+		o.data.ms.frame = 0;
+		o.data.ms.logic = o.data.ms.oldlogic2;
+		o.data.ms.hit = o.data.ms.oldhit;
+	}
+}
+
+void HurtObject(MapObject& thisobj, MapObject& otherobj, GameLogic* logic)
+{
+	/*
+	hurtobject	move	ob_colltype(a0), d0
+		and	#24, d0
+		bne.s.rts
+		;
+	moveq	#23, d7
+		bsr	bloodymess
+		move	ob_hurtpause(a5), ob_hurtwait(a5)
+		beq.rts
+		;
+	move	#4, ob_frame(a5)
+		move.l	ob_logic(a5), ob_oldlogic2(a5)
+		move.l	ob_hit(a5), ob_oldhit(a5)
+		move.l	#pauselogic2, ob_logic(a5)
+		move.l	#rts, ob_hit(a5)
+		;
+	.rts	rts
+	*/
+
+	// this checks so it doesn't flinch on collision with the player (as opposed to the players *bullets*)
+	if (!(otherobj.data.ms.colltype & 24))
+	{
+		// TODO: blud
+
+		thisobj.data.ms.hurtwait = thisobj.data.ms.hurtpause;
+
+		if (thisobj.data.ms.hurtpause)
+		{
+			thisobj.data.ms.frame = 0x40000;
+			thisobj.data.ms.oldlogic2 = thisobj.data.ms.logic;
+			thisobj.data.ms.oldhit = thisobj.data.ms.hit;
+			thisobj.data.ms.logic = PauseLogic2;
+			thisobj.data.ms.hit = NullLogicComp;
+		}
+	}
+}
+
+int16_t lastgrunt;
+
+void HurtNGrunt(MapObject& thisobj, MapObject& otherobj, GameLogic* logic)
+{
+	/*
+	hurtngrunt	move.l	a0, -(a7)
+	bsr	rndw
+	and	#3, d0
+	cmp	lastgrunt(pc), d0
+	bne.s	.new
+	addq	#1, d0
+	and	#3, d0
+	.new	move	d0, lastgrunt
+	lea	grunttable(pc), a0
+	move.l	0(a0, d0 * 4), a0
+	move.l(a0), a0
+	moveq	#64, d0
+	moveq	#1, d1
+	bsr	playsfx
+	move.l(a7) + , a0
+	;
+	*/
+
+	auto random = GloomMaths::RndW()&3;
+
+	if (random == lastgrunt)
+	{
+		random = (random + 1) & 3;
+	}
+
+	lastgrunt = random;
+
+	switch (random)
+	{
+		case 0:
+			SoundHandler::Play(SoundHandler::SOUND_GRUNT);
+			break;
+		case 1:
+			SoundHandler::Play(SoundHandler::SOUND_GRUNT2);
+			break;
+		case 2:
+			SoundHandler::Play(SoundHandler::SOUND_GRUNT3);
+			break;
+		case 3:
+			SoundHandler::Play(SoundHandler::SOUND_GRUNT4);
+			break;
+	}
+
+	HurtObject(thisobj, otherobj, logic);
+}
+
+int32_t BloodSpeed()
+{
+	int32_t result = (int16_t)GloomMaths::RndW();
+	result <<= 2;
+	return result;
+}
+
+int32_t BloodSpeed2()
+{
+	int32_t result = (int16_t)GloomMaths::RndW();
+	result <<= 5;
+	return result;
+}
+
+int32_t BloodSpeed3()
+{
+	int32_t result = (int16_t)GloomMaths::RndW();
+	result <<= 4;
+	return result;
+}
+
+void ChunkLogic(MapObject& o, GameLogic* logic)
+{
+	/*
+	chunklogic	move	mode(pc),d0
+	beq	chunklogic2
+	;
+	add.l	#$8000,ob_yvec(a5)
+	move.l	ob_yvec(a5),d0
+	add.l	ob_y(a5),d0
+	blt	.skip
+	;
+	;OK...hit ground!
+	;
+	bsr	splat
+	addlast	gore
+	bne.s	.gok
+	;
+	move.l	gore(pc),a0
+	killitem	gore
+	addlast	gore
+	beq	killobject
+	;
+	.gok	move	ob_x(a5),go_x(a0)
+	move	ob_z(a5),go_z(a0)
+	move.l	ob_shape(a5),a1
+	move	ob_frame(a5),d0
+	add.l	12(a1,d0*4),a1
+	move.l	a1,go_shape(a0)
+	;
+	bra	killobject
+	;
+	.skip	move.l	d0,ob_y(a5)
+	bsr	checkvecs
+	beq.s	.rts
+	clr.l	ob_xvec(a5)
+	clr.l	ob_zvec(a5)
+	.rts	rts
+	*/
+
+	//TODO meaty mode
+	o.data.ms.yvec += 0x8000;
+	Quick temp;
+	temp.SetVal(o.data.ms.yvec);
+	o.y = o.y + temp;
+
+	if (o.y.GetVal() >= 0)
+	{
+		SoundHandler::Play(SoundHandler::SOUND_SPLAT);
+		o.data.ms.logic = NullLogic;
+		return;
+	}
+
+	if (!CheckVecs(o, logic))
+	{
+		o.data.ms.xvec = 0;
+		o.data.ms.zvec = 0;
+	}
+}
+
+void BlowChunx(MapObject& thisobj, MapObject& otherobj, GameLogic* logic)
+{
+	/*
+	.loop	addlast	objects
+	beq	killobject
+	movem.l	ob_x(a5),d0-d2
+	move.l	#-64<<16,d1
+	movem.l	d0-d2,ob_x(a0)
+	;
+	bsr	bloodspeed3
+	move.l	d0,ob_xvec(a0)
+	bsr	bloodspeed3
+	sub.l	#$40000,d0
+	move.l	d0,ob_yvec(a0)
+	bsr	bloodspeed3
+	move.l	d0,ob_zvec(a0)
+	;
+	clr	ob_invisible(a0)
+	clr	ob_colltype(a0)
+	clr	ob_collwith(a0)
+	move.l	#chunklogic,ob_logic(a0)
+	move.l	a4,ob_shape(a0)
+	move.l	#drawshape_1sc,ob_render(a0)
+	move	d7,ob_frame(a0)
+	move	ob_scale(a5),ob_scale(a0)
+	;
+	move	an_maxw(a4),d0
+	move	d0,ob_rad(a0)
+	mulu	d0,d0
+	move.l	d0,ob_radsq(a0)
+	;
+	dbf	d7,.loop
+	rts
+	*/
+
+	for (size_t frame = 0; frame < logic->objectgraphics->GetGoreShape(thisobj.t).size(); frame++)
+	{
+		MapObject chunks;
+		chunks.x = thisobj.x;
+		chunks.y.SetInt(-64);
+		chunks.z = thisobj.z;
+
+		chunks.t = 999;
+		chunks.data.ms.xvec = BloodSpeed3();
+		chunks.data.ms.yvec = BloodSpeed3() - 0x40000;
+		chunks.data.ms.zvec = BloodSpeed3();
+		chunks.data.ms.colltype = 0;
+		chunks.data.ms.collwith = 0;
+		chunks.data.ms.render = 1;
+		chunks.data.ms.logic = ChunkLogic;
+		chunks.data.ms.shape = &logic->objectgraphics->GetGoreShape(thisobj.t);
+		chunks.data.ms.frame = frame << 16;
+		//chunks.data.ms.shape = scale;
+		chunks.data.ms.rad = logic->objectgraphics->maxwidthsgore[thisobj.t];
+		chunks.data.ms.radsq = chunks.data.ms.rad*chunks.data.ms.rad;
+
+		logic->newobjects.push_back(chunks);
+	}
+}
+
+void BlowObject(MapObject& thisobj, MapObject& otherobj, GameLogic* logic)
+{
+	SoundHandler::Play(SoundHandler::SOUND_DIE);
+	BlowChunx(thisobj, otherobj, logic);
+	thisobj.killme = true;
+}

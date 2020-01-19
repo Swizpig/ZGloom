@@ -1,12 +1,13 @@
 #include "script.h"
 #include "crmfile.h"
+#include  "config.h"
 #include <iostream>
 
 Script::Script()
 {
 	CrmFile file;
 
-	if (!file.Load("misc/script"))
+	if (!file.Load(Config::GetScriptName().c_str()))
 	{
 		std::cout << "Could not load script!";
 		return;

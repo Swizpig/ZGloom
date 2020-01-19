@@ -1,5 +1,6 @@
 #include "crmfile.h"
 #include "soundhandler.h"
+#include "config.h"
 
 #include <string>
 #include "SDL.h"
@@ -7,39 +8,12 @@
 
 namespace SoundHandler
 {
-	char* soundnames[] =
-	{
-		"sfxs/shoot.bin",
-		"sfxs/shoot2.bin",
-		"sfxs/shoot3.bin",
-		"sfxs/shoot4.bin",
-		"sfxs/shoot5.bin",
-		"sfxs/grunt.bin",
-		"sfxs/grunt2.bin",
-		"sfxs/grunt3.bin",
-		"sfxs/grunt4.bin",
-		"sfxs/token.bin",
-		"sfxs/door.bin",
-		"sfxs/footstep.bin",
-		"sfxs/die.bin",
-		"sfxs/splat.bin",
-		"sfxs/teleport.bin",
-		"sfxs/ghoul.bin",
-		"sfxs/lizard.bin",
-		"sfxs/lizhit.bin",
-		"sfxs/trollmad.bin",
-		"sfxs/trollhit.bin",
-		"sfxs/robot.bin",
-		"sfxs/robodie.bin",
-		"sfxs/dragon.bin"
-	};
-
 	static CrmFile sounddata[SOUND_END];
 	static Mix_Chunk* sdlsounds[SOUND_END];
 
 	static uint8_t wavheader[] = "RIFF    WAVEfmt ";
 
-	uint8_t* CreateWAV(uint8_t* data)
+	uint8_t* CreateWAV(uint8_t* data, uint32_t filelength)
 	{
 		uint32_t period = (uint32_t)(data[0]) << 8 | data[1];
 		uint32_t length = (uint32_t)(data[2]) << 8 | data[3];
@@ -47,6 +21,13 @@ namespace SoundHandler
 		// hello Paula
 		period = 3546895 / period;
 		length *= 2;
+
+		// 8bit killer has some corrupt samples?
+
+		if ((length + 4) > filelength)
+		{
+			length = filelength - 4;
+		}
 
 		//signed to offset binary
 
@@ -120,14 +101,14 @@ namespace SoundHandler
 
 		for (auto i = 0; i < SOUND_END; i++)
 		{
-			sounddata[i].Load(soundnames[i]);
+			sounddata[i].Load(Config::GetSoundFilename((SoundHandler::Sounds)i).c_str());
 
 			if (sounddata[i].data)
 			{
-				uint8_t* wavdata = CreateWAV(sounddata[i].data);
+				uint8_t* wavdata = CreateWAV(sounddata[i].data, sounddata[i].size);
 
 #if 1
-				std::string fname = soundnames[i];
+				std::string fname = Config::GetSoundFilename((SoundHandler::Sounds)i);
 
 				fname += ".wav";
 

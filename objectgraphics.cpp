@@ -1,6 +1,7 @@
 #include "objectgraphics.h"
 #include "crmfile.h"
 #include "binresources.h"
+#include "config.h"
 
 #include <vector>
 
@@ -63,7 +64,7 @@ void Shape::DumpDebug(const char* name)
 	fclose(file);
 }
 
-void ObjectGraphics::LoadGraphicBin(const uint8_t* bindata, std::vector<Shape>& shape)
+uint32_t ObjectGraphics::LoadGraphicBin(const uint8_t* bindata, std::vector<Shape>& shape)
 {
 	uint32_t frames;
 
@@ -91,16 +92,18 @@ void ObjectGraphics::LoadGraphicBin(const uint8_t* bindata, std::vector<Shape>& 
 	{
 		shape[f].Load(bindata + frameoffsets[f], bindata + paletteoffset);
 	}
+
+	return maxw;
 }
 
 
-void ObjectGraphics::LoadGraphic(const char* name, std::vector<Shape>& shape)
+uint32_t ObjectGraphics::LoadGraphic(const char* name, std::vector<Shape>& shape)
 {
 	CrmFile file;
 
 	file.Load(name);
 
-	if (!file.data) return;
+	if (!file.data) return 0;
 
 	uint32_t frames;
 
@@ -128,26 +131,48 @@ void ObjectGraphics::LoadGraphic(const char* name, std::vector<Shape>& shape)
 	{
 		shape[f].Load(file.data + frameoffsets[f], file.data + paletteoffset);
 	}
+
+	return maxw;
 }
 
 ObjectGraphics::ObjectGraphics()
 {
-	LoadGraphic("objs/tokens", TokenShapes);
-	LoadGraphic("objs/marine", MarineShapes);
-	LoadGraphic("objs/baldy", BaldyShapes);
-	LoadGraphic("objs/terra", TerraShapes);
-	LoadGraphic("objs/phantom", PhantomShapes);
-	LoadGraphic("objs/ghoul", GhoulShapes);
-	LoadGraphic("objs/dragon", DragonShapes);
-	LoadGraphic("objs/lizard", LizardShapes);
-	LoadGraphic("objs/demon", DemonShapes);
-	LoadGraphic("objs/deathhead", DeathheadShapes);
-	LoadGraphic("objs/troll", TrollShapes);
-	LoadGraphicBin(BinResource::bullet1, BulletShapes[0]);
-	LoadGraphicBin(BinResource::bullet2, BulletShapes[1]);
-	LoadGraphicBin(BinResource::bullet3, BulletShapes[2]);
-	LoadGraphicBin(BinResource::bullet4, BulletShapes[3]);
-	LoadGraphicBin(BinResource::bullet5, BulletShapes[4]);
+	maxwidths[OLT_THERMO]    = LoadGraphic(Config::GetObjectFilename(OGT_TOKENS).c_str(), TokenShapes);
+	maxwidths[OLT_MARINE]    = LoadGraphic(Config::GetObjectFilename(OGT_MARINE).c_str(), MarineShapes);
+	maxwidths[OLT_BALDY]     = LoadGraphic(Config::GetObjectFilename(OGT_BALDY).c_str(), BaldyShapes);
+	maxwidths[OLT_TERRA]     = LoadGraphic(Config::GetObjectFilename(OGT_TERRA).c_str(), TerraShapes);
+	maxwidths[OLT_PHANTOM]   = LoadGraphic(Config::GetObjectFilename(OGT_PHANTOM).c_str(), PhantomShapes);
+	maxwidths[OLT_GHOUL]     = LoadGraphic(Config::GetObjectFilename(OGT_GHOUL).c_str(), GhoulShapes);
+	maxwidths[OLT_DRAGON]    = LoadGraphic(Config::GetObjectFilename(OGT_DRAGON).c_str(), DragonShapes);
+	maxwidths[OLT_LIZARD]    = LoadGraphic(Config::GetObjectFilename(OGT_LIZARD).c_str(), LizardShapes);
+	maxwidths[OLT_DEMON]     = LoadGraphic(Config::GetObjectFilename(OGT_DEMON).c_str(), DemonShapes);
+	maxwidths[OLT_DEATHHEAD] = LoadGraphic(Config::GetObjectFilename(OGT_DEATHHEAD).c_str(), DeathheadShapes);
+	maxwidths[OLT_TROLL]     = LoadGraphic(Config::GetObjectFilename(OGT_TROLL).c_str(), TrollShapes);
+	maxwidths[OLT_WEAPON1] = LoadGraphicBin(BinResource::bullet1, BulletShapes[0]);
+	maxwidths[OLT_WEAPON2] = LoadGraphicBin(BinResource::bullet2, BulletShapes[1]);
+	maxwidths[OLT_WEAPON3] = LoadGraphicBin(BinResource::bullet3, BulletShapes[2]);
+	maxwidths[OLT_WEAPON4] = LoadGraphicBin(BinResource::bullet4, BulletShapes[3]);
+	maxwidths[OLT_WEAPON5] = LoadGraphicBin(BinResource::bullet5, BulletShapes[4]);
+
+	maxwidthsgore[OLT_MARINE] = LoadGraphic(Config::GetGoreFilename(OGT_MARINE).c_str(), MarineGore);
+	maxwidthsgore[OLT_BALDY] = LoadGraphic(Config::GetGoreFilename(OGT_BALDY).c_str(), BaldyGore);
+	maxwidthsgore[OLT_TERRA] = LoadGraphic(Config::GetGoreFilename(OGT_TERRA).c_str(), TerraGore);
+	maxwidthsgore[OLT_PHANTOM] = LoadGraphic(Config::GetGoreFilename(OGT_PHANTOM).c_str(), PhantomGore);
+	maxwidthsgore[OLT_DRAGON] = LoadGraphic(Config::GetGoreFilename(OGT_DRAGON).c_str(), DragonGore);
+	maxwidthsgore[OLT_LIZARD] = LoadGraphic(Config::GetGoreFilename(OGT_LIZARD).c_str(), LizardGore);
+	maxwidthsgore[OLT_DEMON] = LoadGraphic(Config::GetGoreFilename(OGT_DEMON).c_str(), DemonGore);
+	maxwidthsgore[OLT_TROLL] = LoadGraphic(Config::GetGoreFilename(OGT_TROLL).c_str(), TrollGore);
+
+	maxwidths[OLT_HEALTH] = maxwidths[OLT_THERMO];
+	maxwidths[OLT_WEAPON] = maxwidths[OLT_THERMO];
+	maxwidths[OLT_INFRA]  = maxwidths[OLT_THERMO];
+	maxwidths[OLT_INVISI] = maxwidths[OLT_THERMO];
+	maxwidths[OLT_INVINC] = maxwidths[OLT_THERMO];
+	maxwidths[OLT_BOUNCY] = maxwidths[OLT_THERMO];
+
+	//TODO check these
+	maxwidths[OLT_PLAYER1] = 32;
+	maxwidths[OLT_PLAYER2] = 32;
 
 	//
 	//for (uint32_t s = 0; s < MarineShapes.size(); s++)
@@ -373,6 +398,139 @@ ObjectGraphics::ObjectGraphics()
 			objectlogic[i].firerate = 0;
 		}
 	}
+
+	// this is pretty neat. And these together to get if an object collides
+	objectlogic[OLT_PLAYER1].collwith = 4;
+	objectlogic[OLT_PLAYER2].collwith = 4;
+	objectlogic[OLT_HEALTH].collwith = 24;
+	objectlogic[OLT_WEAPON].collwith = 24;
+	objectlogic[OLT_THERMO].collwith = 24;
+	objectlogic[OLT_INFRA].collwith = 24;
+	objectlogic[OLT_INVISI].collwith = 24;
+	objectlogic[OLT_INVINC].collwith = 24;
+	objectlogic[OLT_DRAGON].collwith = 24 + 3;
+	objectlogic[OLT_BOUNCY].collwith = 24;
+	objectlogic[OLT_MARINE].collwith = 24 + 3;
+	objectlogic[OLT_BALDY].collwith = 24 + 3;
+	objectlogic[OLT_TERRA].collwith = 24 + 3;
+	objectlogic[OLT_GHOUL].collwith = 24 + 3;
+	objectlogic[OLT_PHANTOM].collwith = 3;
+	objectlogic[OLT_DEMON].collwith = 3;
+	objectlogic[OLT_WEAPON1].collwith = 24;
+	objectlogic[OLT_WEAPON2].collwith = 24;
+	objectlogic[OLT_WEAPON3].collwith = 24;
+	objectlogic[OLT_WEAPON4].collwith = 24;
+	objectlogic[OLT_WEAPON5].collwith = 24;
+	objectlogic[OLT_LIZARD].collwith = 24 + 3;
+	objectlogic[OLT_DEATHHEAD].collwith = 24 + 3;
+	objectlogic[OLT_TROLL].collwith = 24 + 3;
+
+	for (int i = 0; i < OLT_END; i++)
+	{
+		objectlogic[i].colltype = 0;
+	}
+	objectlogic[OLT_PLAYER1].colltype = 8;
+	objectlogic[OLT_PLAYER1].colltype = 16;
+
+	objectlogic[OLT_PLAYER1].damage = 1;
+	objectlogic[OLT_PLAYER2].damage = 1;
+	objectlogic[OLT_HEALTH].damage = 0;
+	objectlogic[OLT_WEAPON].damage = 0;
+	objectlogic[OLT_THERMO].damage = 0;
+	objectlogic[OLT_INFRA].damage = 0;
+	objectlogic[OLT_INVISI].damage = 0;
+	objectlogic[OLT_INVINC].damage = 0;
+	objectlogic[OLT_DRAGON].damage = 10;
+	objectlogic[OLT_BOUNCY].damage = 0;
+	objectlogic[OLT_MARINE].damage = 1;
+	objectlogic[OLT_BALDY].damage = 2;
+	objectlogic[OLT_TERRA].damage = 1;
+	objectlogic[OLT_GHOUL].damage = 0;
+	objectlogic[OLT_PHANTOM].damage = 3;
+	objectlogic[OLT_DEMON].damage = 5;
+	objectlogic[OLT_WEAPON1].damage = 0;
+	objectlogic[OLT_WEAPON2].damage = 0;
+	objectlogic[OLT_WEAPON3].damage = 0;
+	objectlogic[OLT_WEAPON4].damage = 0;
+	objectlogic[OLT_WEAPON5].damage = 0;
+	objectlogic[OLT_LIZARD].damage = 2;
+	objectlogic[OLT_DEATHHEAD].damage = 3;
+	objectlogic[OLT_TROLL].damage = 3;
+
+	objectlogic[OLT_PLAYER1].hitpoints = 25;
+	objectlogic[OLT_PLAYER2].hitpoints = 25;
+	objectlogic[OLT_HEALTH].hitpoints = 0;
+	objectlogic[OLT_WEAPON].hitpoints = 0;
+	objectlogic[OLT_THERMO].hitpoints = 0;
+	objectlogic[OLT_INFRA].hitpoints = 0;
+	objectlogic[OLT_INVISI].hitpoints = 0;
+	objectlogic[OLT_INVINC].hitpoints = 0;
+	objectlogic[OLT_DRAGON].hitpoints = 250;
+	objectlogic[OLT_BOUNCY].hitpoints = 0;
+	objectlogic[OLT_MARINE].hitpoints = 5;
+	objectlogic[OLT_BALDY].hitpoints = 10;
+	objectlogic[OLT_TERRA].hitpoints = 35;
+	objectlogic[OLT_GHOUL].hitpoints = 5;
+	objectlogic[OLT_PHANTOM].hitpoints = 10;
+	objectlogic[OLT_DEMON].hitpoints = 25;
+	objectlogic[OLT_WEAPON1].hitpoints = 0;
+	objectlogic[OLT_WEAPON2].hitpoints = 0;
+	objectlogic[OLT_WEAPON3].hitpoints = 0;
+	objectlogic[OLT_WEAPON4].hitpoints = 0;
+	objectlogic[OLT_WEAPON5].hitpoints = 0;
+	objectlogic[OLT_LIZARD].hitpoints = 10;
+	objectlogic[OLT_DEATHHEAD].hitpoints = 35;
+	objectlogic[OLT_TROLL].hitpoints = 18;
+
+	objectlogic[OLT_PLAYER1].weapon = 0;
+	objectlogic[OLT_PLAYER2].weapon = 0;
+	objectlogic[OLT_HEALTH].weapon = 0;
+	objectlogic[OLT_WEAPON].weapon = 1;
+	objectlogic[OLT_THERMO].weapon = 0;
+	objectlogic[OLT_INFRA].weapon = 0;
+	objectlogic[OLT_INVISI].weapon = 0;
+	objectlogic[OLT_INVINC].weapon = 0;
+	objectlogic[OLT_DRAGON].weapon = 0;
+	objectlogic[OLT_BOUNCY].weapon = 0;
+	objectlogic[OLT_MARINE].weapon = 0;
+	objectlogic[OLT_BALDY].weapon = 0;
+	objectlogic[OLT_TERRA].weapon = 0;
+	objectlogic[OLT_GHOUL].weapon = 0;
+	objectlogic[OLT_PHANTOM].weapon = 0;
+	objectlogic[OLT_DEMON].weapon = 0;
+	objectlogic[OLT_WEAPON1].weapon = 0;
+	objectlogic[OLT_WEAPON2].weapon = 1;
+	objectlogic[OLT_WEAPON3].weapon = 2;
+	objectlogic[OLT_WEAPON4].weapon = 3;
+	objectlogic[OLT_WEAPON5].weapon = 4;
+	objectlogic[OLT_LIZARD].weapon = 0;
+	objectlogic[OLT_DEATHHEAD].weapon = 0;
+	objectlogic[OLT_TROLL].weapon = 0;
+
+	objectlogic[OLT_PLAYER1].hurtpause = 5;
+	objectlogic[OLT_PLAYER2].hurtpause = 5;
+	objectlogic[OLT_HEALTH].hurtpause = 5;
+	objectlogic[OLT_WEAPON].hurtpause = 0;
+	objectlogic[OLT_THERMO].hurtpause = 5;
+	objectlogic[OLT_INFRA].hurtpause = 5;
+	objectlogic[OLT_INVISI].hurtpause = 5;
+	objectlogic[OLT_INVINC].hurtpause = 5;
+	objectlogic[OLT_DRAGON].hurtpause = 5;
+	objectlogic[OLT_BOUNCY].hurtpause = 0;
+	objectlogic[OLT_MARINE].hurtpause = 5;
+	objectlogic[OLT_BALDY].hurtpause = 3;
+	objectlogic[OLT_TERRA].hurtpause = 0;
+	objectlogic[OLT_GHOUL].hurtpause = 5;
+	objectlogic[OLT_PHANTOM].hurtpause = 7;
+	objectlogic[OLT_DEMON].hurtpause = 5;
+	objectlogic[OLT_WEAPON1].hurtpause = 0;
+	objectlogic[OLT_WEAPON2].hurtpause = 0;
+	objectlogic[OLT_WEAPON3].hurtpause = 0;
+	objectlogic[OLT_WEAPON4].hurtpause = 0;
+	objectlogic[OLT_WEAPON5].hurtpause = 0;
+	objectlogic[OLT_LIZARD].hurtpause = 2;
+	objectlogic[OLT_DEATHHEAD].hurtpause = 10;
+	objectlogic[OLT_TROLL].hurtpause = 2;
 
 	return;
 }

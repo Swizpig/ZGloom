@@ -5,6 +5,7 @@
 #include "SDL_mixer.h"
 #include "xmp/include/xmp.h"
 
+#include "config.h"
 #include "gloommap.h"
 #include "script.h"
 #include "crmfile.h"
@@ -100,6 +101,7 @@ int main(int argc, char* argv[])
 {
 	GloomMap gmap;
 	Script script;
+	Config::Init();
 
 	xmp_context ctx;
 
@@ -111,12 +113,18 @@ int main(int argc, char* argv[])
 		return 1;
 	}
 
+	int renderwidth = 320;
+	int renderheight = 256;
+
+	int windowwidth = 960;
+	int windowheight = 768;
+
 
 	CrmFile titlemusic;
 	CrmFile intermissionmusic;
 
-	titlemusic.Load("sfxs/med1");
-	intermissionmusic.Load("sfxs/med2");
+	titlemusic.Load(Config::GetMusicFilename(0).c_str());
+	intermissionmusic.Load(Config::GetMusicFilename(1).c_str());
 
 	if (Mix_OpenAudio(22050, AUDIO_S16LSB, 2, 1024))
 	{
@@ -126,7 +134,7 @@ int main(int argc, char* argv[])
 
 	SoundHandler::Init();
 
-	SDL_Window* win = SDL_CreateWindow("ZGloom", 100, 100, 800, 600, SDL_WINDOW_SHOWN /*| SDL_WINDOW_FULLSCREEN*/);
+	SDL_Window* win = SDL_CreateWindow("ZGloom", 100, 100, windowwidth, windowheight, SDL_WINDOW_SHOWN /*| SDL_WINDOW_FULLSCREEN*/);
 	if (win == nullptr)
 	{
 		std::cout << "SDL_CreateWindow Error: " << SDL_GetError() << std::endl;
@@ -140,16 +148,18 @@ int main(int argc, char* argv[])
 		return 1;
 	}
 
-	SDL_Texture* rendertex = SDL_CreateTexture(ren, SDL_PIXELFORMAT_ARGB8888, SDL_TEXTUREACCESS_STREAMING, 320, 240);
+	SDL_Texture* rendertex = SDL_CreateTexture(ren, SDL_PIXELFORMAT_ARGB8888, SDL_TEXTUREACCESS_STREAMING, renderwidth, renderheight);
 	if (rendertex == nullptr)
 	{
 		std::cout << "SDL_CreateTexture Error: " << SDL_GetError() << std::endl;
 		return 1;
 	}
 
+	SDL_ShowCursor(SDL_DISABLE);
+
 	SDL_Surface* fontsurface = SDL_CreateRGBSurface(0, 320, 256, 8, 0, 0, 0, 0);
 	SDL_Surface* render8 = SDL_CreateRGBSurface(0, 320, 256, 8, 0, 0, 0, 0);
-	SDL_Surface* render32 = SDL_CreateRGBSurface(0, 320, 246, 32, 0x00FF0000, 0x0000FF00, 0x000000FF, 0xFF000000);
+	SDL_Surface* render32 = SDL_CreateRGBSurface(0, renderwidth, renderheight, 32, 0x00FF0000, 0x0000FF00, 0x000000FF, 0xFF000000);
 
 	ObjectGraphics objgraphics;
 	Renderer renderer;
@@ -185,7 +195,7 @@ int main(int argc, char* argv[])
 			{
 				case Script::SOP_SETPICT:
 				{
-					scriptstring.insert(0, "pics/");
+					scriptstring.insert(0, Config::GetPicsDir());
 					LoadPic(scriptstring, render8);
 					break;
 				}
@@ -225,7 +235,7 @@ int main(int argc, char* argv[])
 					cam.y = 120;
 					cam.z.SetInt(0);
 					cam.rot = 0;
-					scriptstring.insert(0, "maps/");
+					scriptstring.insert(0, Config::GetLevelDir());
 					gmap.Load(scriptstring.c_str(), &objgraphics);
 					//gmap.Load("maps/map1_4", &objgraphics);
 					renderer.Init(render32, &gmap, &objgraphics);

@@ -32,6 +32,12 @@ class ObjectLogic
 	int16_t base;
 	int16_t firecnt;
 	int16_t firerate;
+	int16_t collwith;
+	int16_t colltype;
+	int16_t damage;
+	int16_t hitpoints;
+	int16_t weapon;
+	int16_t hurtpause;
 };
 
 class ObjectGraphics
@@ -84,9 +90,12 @@ class ObjectGraphics
 			OLT_END
 		};
 
+		uint32_t maxwidths[OLT_END];
+		uint32_t maxwidthsgore[OLT_END];
+
 		ObjectGraphics();
-		void LoadGraphic(const char* name, std::vector<Shape>& shape);
-		void LoadGraphicBin(const uint8_t* bindata, std::vector<Shape>& shape);
+		uint32_t LoadGraphic(const char* name, std::vector<Shape>& shape);
+		uint32_t LoadGraphicBin(const uint8_t* bindata, std::vector<Shape>& shape);
 
 		std::vector<Shape> TokenShapes;
 		std::vector<Shape> MarineShapes;
@@ -101,5 +110,30 @@ class ObjectGraphics
 		std::vector<Shape> TrollShapes;
 		std::vector<Shape> BulletShapes[5];
 
+		//ORGANS
+		std::vector<Shape> MarineGore;
+		std::vector<Shape> BaldyGore;
+		std::vector<Shape> TerraGore;
+		std::vector<Shape> PhantomGore;
+		std::vector<Shape> DemonGore;
+		std::vector<Shape> DragonGore;
+		std::vector<Shape> LizardGore;
+		std::vector<Shape> TrollGore;
+
 		ObjectLogic objectlogic[OLT_END];
+
+		std::vector<Shape>& GetGoreShape(int i)
+		{
+			if (i == OLT_MARINE) return MarineGore;
+			if (i == OLT_BALDY) return BaldyGore;
+			if (i == OLT_TERRA) return TerraGore;
+			if (i == OLT_PHANTOM) return PhantomGore;
+			if (i == OLT_DRAGON) return DragonGore;
+			if (i == OLT_LIZARD) return LizardGore;
+			if (i == OLT_DEMON) return DemonGore;
+			if (i == OLT_TROLL) return TrollGore;
+
+			printf("No gore object for %i\n", i);
+			return MarineGore;
+		};
 };
