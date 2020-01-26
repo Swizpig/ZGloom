@@ -1,6 +1,6 @@
 # ZGloom
 
-A re-implementation of Amiga FPS Gloom
+A re-implementation of [Amiga FPS Gloom](https://en.wikipedia.org/wiki/Gloom_(video_game)).
 
 # Screenshots
 
