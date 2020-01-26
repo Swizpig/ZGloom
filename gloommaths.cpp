@@ -666,7 +666,7 @@ namespace GloomMaths
 
 	uint8_t CalcAngle(int32_t x1, int32_t z1, int32_t x2, int32_t z2)
 	{
-		const int32_t octtable[8] = { 0, 0x4000FFFF, 0x0000FFFF, 0xc0000000, 0x8000FFFF, 0x40000000, 0x80000000, 0xc000FFFF };
+		const unsigned int octtable[8] = { 0, 0x4000FFFF, 0x0000FFFF, 0xc0000000, 0x8000FFFF, 0x40000000, 0x80000000, 0xc000FFFF };
 
 		///OCTTABLE INDEXED BY LONGS, IN BYTES IN THE ASSEMBLY BELOW, HENCE DIV BY 4
 

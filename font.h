@@ -1,6 +1,6 @@
 #pragma once
 #include "crmfile.h"
-#include "SDL.h"
+#include <SDL2/SDL.h>
 #include <string>
 
 class Font

@@ -2,6 +2,7 @@
 
 #include <cstdint>
 #include <vector>
+#include <cstdio>
 
 //#include "gloommap.h"
 //#include "gamelogic.h"
