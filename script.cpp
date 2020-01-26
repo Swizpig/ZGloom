@@ -75,6 +75,12 @@ Script::ScriptOp Script::NextLine(std::string& name)
 		line++;
 		return SOP_WAIT;
 	}
+	if (lines[line].substr(0, 5) == "text_")
+	{
+		name = lines[line].substr(5, std::string::npos);
+		line++;
+		return SOP_TEXT;
+	}
 
 	line++;
 	return SOP_NOP;

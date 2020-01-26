@@ -3,7 +3,7 @@
 #include "soundhandler.h"
 #include <string>
 
-#define ZOMBIE_MASSACRE 1
+#define ZOMBIE_MASSACRE 0
 
 namespace Config
 {

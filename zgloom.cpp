@@ -15,6 +15,7 @@
 #include <iostream>
 #include "gamelogic.h"
 #include "soundhandler.h"
+#include "font.h"
 
 Uint32 my_callbackfunc(Uint32 interval, void *param)
 {
@@ -159,6 +160,7 @@ int main(int argc, char* argv[])
 
 	SDL_Surface* fontsurface = SDL_CreateRGBSurface(0, 320, 256, 8, 0, 0, 0, 0);
 	SDL_Surface* render8 = SDL_CreateRGBSurface(0, 320, 256, 8, 0, 0, 0, 0);
+	SDL_Surface* intermissionscreen = SDL_CreateRGBSurface(0, 320, 256, 8, 0, 0, 0, 0);
 	SDL_Surface* render32 = SDL_CreateRGBSurface(0, renderwidth, renderheight, 32, 0x00FF0000, 0x0000FF00, 0x000000FF, 0xFF000000);
 
 	ObjectGraphics objgraphics;
@@ -172,9 +174,16 @@ int main(int argc, char* argv[])
 
 	bool done = true;
 
+#if 0
+	Font smallfont, bigfont;
 	CrmFile fontfile;
-
 	fontfile.Load("misc/bigfont.bin");
+	if (fontfile.data) bigfont.Load(fontfile);
+	fontfile.Load("misc/smallfont.bin");
+	if (fontfile.data)smallfont.Load(fontfile);
+#endif
+
+	std::string intermissiontext;
 
 	bool showscreen = false;
 	bool waiting = false;
@@ -196,7 +205,8 @@ int main(int argc, char* argv[])
 				case Script::SOP_SETPICT:
 				{
 					scriptstring.insert(0, Config::GetPicsDir());
-					LoadPic(scriptstring, render8);
+					LoadPic(scriptstring, intermissionscreen);
+					SDL_SetPaletteColors(render8->format->palette, intermissionscreen->format->palette->colors, 0, 256);
 					break;
 				}
 				case Script::SOP_LOADFLAT:
@@ -204,6 +214,11 @@ int main(int argc, char* argv[])
 					//improve this, only supports 9 flats
 					gmap.SetFlat(scriptstring[0] - '0');
 					break;
+				}
+				case Script::SOP_TEXT:
+				{
+					 intermissiontext = scriptstring;
+					 break;
 				}
 				case Script::SOP_DRAW:
 				{
@@ -227,6 +242,14 @@ int main(int argc, char* argv[])
 				case Script::SOP_WAIT:
 				{
 					waiting = true;
+
+#if 0
+					SDL_SetPaletteColors(render8->format->palette, bigfont.GetPalette()->colors, 0, 16);
+#endif
+					SDL_BlitSurface(intermissionscreen, NULL, render8, NULL);
+#if 0
+					bigfont.PrintMessage(intermissiontext, 240, render8);
+#endif
 					break;
 				}
 				case Script::SOP_PLAY:

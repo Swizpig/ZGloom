@@ -325,7 +325,21 @@ void  GameLogic::DoRot()
 
 					zones[prevzone].x2 = vx;
 					zones[prevzone].z2 = vz;
-					// TODO: NORM RECALC
+				}
+
+				// norm recalc
+				for (int vertex = 0; vertex < r.num; vertex++)
+				{
+					auto thiszone = r.first + vertex;
+					int16_t rx, rz;
+
+					GloomMaths::CalcNormVec(zones[thiszone].x2 - zones[thiszone].x1, zones[thiszone].z2 - zones[thiszone].z1, rx, rz);
+
+					zones[thiszone].na = rx;
+					zones[thiszone].nb = rz;
+
+					zones[thiszone].a = -rz;
+					zones[thiszone].b = rx;
 				}
 
 			}
@@ -428,6 +442,29 @@ bool GameLogic::Collision(bool event, int32_t x, int32_t z, int32_t r, int32_t& 
 							closestzone = collzones[checkzone];
 						}
 					}
+				}
+			}
+		}
+	}
+
+	// explicit check of rotpolys as they may have gone out of their collision grid spot
+
+	std::vector<ActiveRotPoly>& rotpolys = gmap->GetActiveRotPolys();
+
+	for (auto &thisrot : rotpolys)
+	{
+		for (int16_t i = 0; i < thisrot.num; i++)
+		{
+			int32_t dist = FindSegDist(x, z, gmap->GetZones()[thisrot.first + i]);
+
+			if (dist < r)
+			{
+				good = false;
+
+				if (dist < closest)
+				{
+					closest = dist;
+					closestzone = thisrot.first + i;
 				}
 			}
 		}
@@ -836,6 +873,9 @@ void GameLogic::ObjectCollision()
 					{
 						o2.data.ms.hit(o2, o, this);
 					}
+
+					// note break here. 
+					break;
 				}
 			}
 		}

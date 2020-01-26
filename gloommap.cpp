@@ -797,12 +797,12 @@ MapObject::MapObject(Object m)
 	switch (t)
 	{
 		case ObjectGraphics::OLT_PLAYER1:
-			data.ms.logic = MonsterLogic;
+			data.ms.logic = NullLogic;
 			data.ms.hit = NullLogicComp;
 			data.ms.die = NullLogicComp;
 			break;
 		case ObjectGraphics::OLT_PLAYER2:
-			data.ms.logic = MonsterLogic;
+			data.ms.logic = NullLogic;
 			data.ms.hit = NullLogicComp;
 			data.ms.die = NullLogicComp;
 			break;
@@ -812,19 +812,19 @@ MapObject::MapObject(Object m)
 			data.ms.die = BlowObject;
 			break;
 		case ObjectGraphics::OLT_BALDY:
-			data.ms.logic = NullLogic;
+			data.ms.logic = BaldyLogic;
 			data.ms.hit = HurtNGrunt;
 			data.ms.die = BlowObject;
 			break;
 		case ObjectGraphics::OLT_TERRA:
 			data.ms.logic = TerraLogic;
-			data.ms.hit = NullLogicComp;
-			data.ms.die = KillLogicComp;
+			data.ms.hit = HurtTerra;
+			data.ms.die = BlowTerra;
 			break;
 		case ObjectGraphics::OLT_GHOUL:
 			data.ms.logic = GhoulLogic;
 			data.ms.hit = NullLogicComp;
-			data.ms.die = BlowObject;
+			data.ms.die = BlowObjectNoChunks;
 			break;
 		case ObjectGraphics::OLT_WEAPON1:
 		case ObjectGraphics::OLT_WEAPON2:

@@ -255,6 +255,29 @@ void Fire1(MapObject& o, GameLogic* logic)
 	Shoot(o, logic, 4, 0, 1, 1, 20, logic->wtable[0].shape);
 }
 
+void MonsterFix(MapObject& o, GameLogic* logic)
+{
+	if (1)//!CheckVecs(o, logic))
+	{
+		// try +/- 90 degrees
+		o.data.ms.rot += (GloomMaths::RndW() > 0) ? 64 : -64;
+		CalcVecs(o);
+		if (CheckVecs(o, logic)) goto good;
+
+		o.data.ms.rot += 128;
+		CalcVecs(o);
+		if (CheckVecs(o, logic)) goto good;
+
+		o.data.ms.rot = o.data.ms.oldrot + 128;
+		CalcVecs(o);
+		CheckVecs(o, logic);
+	}
+
+good:
+	o.data.ms.frame += o.data.ms.framespeed;
+	o.data.ms.frame &= 0x3FFFF;
+}
+
 void MonsterMove(MapObject& o, GameLogic* logic)
 {
 	/*
@@ -323,7 +346,7 @@ void MonsterLogic(MapObject& o, GameLogic* logic)
 	*/
 
 	o.data.ms.oldrot = o.data.ms.rot;
-	/* TODO
+	/* 
 		subq	#1, ob_delay(a5)
 		ble	fire1
 		;
@@ -512,7 +535,7 @@ void TerraLogic2(MapObject& o, GameLogic* logic)
 	o.data.ms.delay = o.data.ms.firerate;
 	o.data.ms.rot = logic->PickCalc(o);
 	CalcVecs(o);
-	Shoot(o, logic, 2, 0, 1, 3, 16, logic->wtable[3].shape);
+	Shoot(o, logic, 4, 0, 1, 3, 16, logic->wtable[3].shape);
 	SoundHandler::Play(SoundHandler::SOUND_SHOOT3);
 
 	o.data.ms.delay2--;
@@ -970,4 +993,170 @@ void BlowObject(MapObject& thisobj, MapObject& otherobj, GameLogic* logic)
 	SoundHandler::Play(SoundHandler::SOUND_DIE);
 	BlowChunx(thisobj, otherobj, logic);
 	thisobj.killme = true;
+}
+
+void BlowObjectNoChunks(MapObject& thisobj, MapObject& otherobj, GameLogic* logic)
+{
+	SoundHandler::Play(SoundHandler::SOUND_DIE);
+	thisobj.killme = true;
+}
+
+void HurtTerra(MapObject& thisobj, MapObject& otherobj, GameLogic* logic)
+{
+	/*
+		hurtterra	move.l	a0, -(a7)
+		move.l	shootsfx2(pc), a0
+		moveq	#64, d0
+		moveq	#2, d1
+		bsr	playsfx
+		move.l(a7) + , a0
+		bra.s	hurtobject
+	*/
+
+	SoundHandler::Play(SoundHandler::SOUND_SHOOT2);
+	HurtObject(thisobj, otherobj, logic);
+}
+
+void BlowTerra(MapObject& thisobj, MapObject& otherobj, GameLogic* logic)
+{
+	SoundHandler::Play(SoundHandler::SOUND_ROBODIE);
+	BlowChunx(thisobj, otherobj, logic);
+	thisobj.killme = true;
+}
+
+//baldylogic2?
+void Baldy2Norm(MapObject& o, GameLogic* logic)
+{
+	/*
+	baldy_tonorm	move.l	ob_movspeed(a5),d0
+	lsr.l	#2,d0
+	move.l	d0,ob_movspeed(a5)
+	;
+	move.l	ob_framespeed(a5),d0
+	lsr.l	#2,d0
+	move.l	d0,ob_framespeed(a5)
+	;
+	move.l	ob_oldlogic(a5),ob_logic(a5)
+	bsr	rnddelay
+	;
+	bra	monsterfix
+	*/
+	o.data.ms.movspeed >>= 2;
+	o.data.ms.framespeed >>= 2;
+	o.data.ms.logic = o.data.ms.oldlogic;
+	RndDelay(o);
+	MonsterFix(o, logic);
+}
+
+void BaldyCharge(MapObject& o, GameLogic* logic)
+{
+	/*
+	baldycharge	;
+	;baldy charging at player!
+	;
+	bsr	checkvecs
+	beq	baldy_skip
+	;
+	baldy_tonorm	move.l	ob_movspeed(a5),d0
+	lsr.l	#2,d0
+	move.l	d0,ob_movspeed(a5)
+	;
+	move.l	ob_framespeed(a5),d0
+	lsr.l	#2,d0
+	move.l	d0,ob_framespeed(a5)
+	;
+	move.l	ob_oldlogic(a5),ob_logic(a5)
+	bsr	rnddelay
+	;
+	bra	monsterfix
+	*/
+	if (!CheckVecs(o, logic))
+	{
+		Baldy2Norm(o, logic);
+		return;
+	}
+	/*
+	;
+	baldy_skip	;close to player? start throwing punches around!
+	;
+	bsr	pickcalc
+	;
+	sub	ob_rot(a5),d0
+	cmp	#32,d0
+	bgt	baldy_tonorm
+	cmp	#-32,d0
+	blt	baldy_tonorm
+	;
+
+	*/
+	int8_t ang = logic->PickCalc(o);
+	ang -= o.data.ms.rot;
+
+	if (ang > 32)
+	{
+		Baldy2Norm(o, logic);
+		return;
+	}
+	if (ang < -32)
+	{
+		Baldy2Norm(o, logic);
+		return;
+	}
+
+	//TODO: Punching!
+	/*
+	move.l	a0,ob_washit(a5)
+	bsr	checkcoll
+	beq	monsternew	;no collisions!
+	;
+	;go into punch mode!
+	;
+	move.l	#baldypunch,ob_logic(a5)
+	move	ob_punchrate(a5),ob_delay(a5)
+	clr.l	ob_frame(a5)
+	rts*/
+
+	o.data.ms.frame += o.data.ms.framespeed;
+	o.data.ms.frame &= 0x3FFFF;
+
+}
+
+void BL2(MapObject& o, GameLogic* logic)
+{
+	/*
+	bl2	bsr	pickcalc
+	move	d0,ob_rot(a5)
+	;
+	move.l	ob_movspeed(a5),d0
+	lsl.l	#2,d0
+	move.l	d0,ob_movspeed(a5)
+	move.l	ob_framespeed(a5),d0
+	lsl.l	#2,d0
+	move.l	d0,ob_framespeed(a5)
+	;
+	bsr	calcvecs
+	move.l	ob_logic(a5),ob_oldlogic(a5)
+	move.l	#baldycharge,ob_logic(a5)
+	;
+	rts
+	*/
+	o.data.ms.rot = logic->PickCalc(o);
+	o.data.ms.movspeed <<= 2;
+	o.data.ms.framespeed <<= 2;
+	CalcVecs(o);
+	o.data.ms.oldlogic = o.data.ms.logic;
+	o.data.ms.logic = BaldyCharge;
+}
+
+void BaldyLogic(MapObject& o, GameLogic* logic)
+{
+	o.data.ms.delay--;
+
+	if (o.data.ms.delay>0)
+	{
+		MonsterMove(o, logic);
+		return;
+	}
+
+	BL2(o, logic);
 }
