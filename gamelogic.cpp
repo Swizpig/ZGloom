@@ -820,8 +820,8 @@ void GameLogic::ObjectCollision()
 					o.data.ms.washit = 0;
 
 					// note goes back to the outer loop in the original? But that seems to mess with the asymettric nature of the collision system?
-					//break;
-					continue;
+					// UPDATE: this may be way objects get added to both the back and front of the list
+					break;
 				}
 
 				if ((o.data.ms.collwith & o2.data.ms.colltype) == 0)

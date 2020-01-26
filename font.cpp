@@ -18,9 +18,84 @@ void Font::SetPal(SDL_Surface* palsurface)
 	}
 }
 
+bool Font::Load2(CrmFile& file)
+{
+	w = 8;
+	h = 10;
+
+	for (int i = 0; i < glyphs; i++)
+	{
+		uint32_t pos = Get32(file.data + 4 + 4 * i);
+
+		uint32_t shapepos = pos + Get32(file.data + pos);
+		uint32_t maskpos = pos + 10;
+
+		pos += 4;
+		uint32_t modulo = Get16(file.data + pos);
+
+		pos += 2;
+		uint32_t widthheight = Get16(file.data + pos);
+
+		uint32_t width = (widthheight & 0x3F) * 16;
+		uint32_t height = (widthheight >> 6);
+
+		width = modulo * 8;
+
+		surfaces[i] = SDL_CreateRGBSurface(0, width, height, 8, 0, 0, 0, 0);
+		SDL_SetColorKey(surfaces[i], 1, 0);
+
+		//printf("%i %i %i %i\n", shapepos, maskpos, width, height);
+
+		// assume always 2 bitplanes?
+
+		for (uint32_t plane = 0; plane < 2; plane++)
+		{
+			for (uint32_t y = 0; y < height; y++)
+			{
+				for (uint32_t x = 0; x < width; x++)
+				{
+					uint8_t thebyte = file.data[maskpos + x / 8 + y *((width + 7) / 8) + plane*height*((width + 7) / 8)];
+
+					if (plane == 0)
+					{
+						((char*)surfaces[i]->pixels)[x + y*surfaces[i]->pitch] = 0;
+					}
+
+					if (thebyte & (1 << (7 - (x % 8))))
+					{
+						((char*)surfaces[i]->pixels)[x + y*surfaces[i]->pitch] |= (1 << plane);
+					}
+				}
+			}
+
+			// now the palette
+
+			uint32_t pos = Get32(file.data);
+			int colnum = 0;
+			while (pos < file.size)
+			{
+				SDL_Color col;
+				col.a = 0xFF;
+				col.r = file.data[pos + 0] & 0xf;
+				col.g = file.data[pos + 1] >> 4;
+				col.b = file.data[pos + 1] & 0xF;
+
+				col.r <<= 4;
+				col.g <<= 4;
+				col.b <<= 4;
+
+				SDL_SetPaletteColors(surfaces[i]->format->palette, &col, colnum, 1);
+
+				colnum++;
+				pos += 2;
+			}
+		}
+	}
+	return true;
+}
+
 bool Font::Load(CrmFile& file)
 {
-	bool G2mode = false;
 	w = 6;
 	h = 8;
 
@@ -42,14 +117,14 @@ bool Font::Load(CrmFile& file)
 
 		width = modulo * 8;
 
-		surfaces[i] = SDL_CreateRGBSurface(0, width, height / (G2mode?1:7), 8, 0, 0, 0, 0);
+		surfaces[i] = SDL_CreateRGBSurface(0, width, height / 7, 8, 0, 0, 0, 0);
 		SDL_SetColorKey(surfaces[i], 1, 0);
 
 		//printf("%i %i %i %i\n", shapepos, maskpos, width, height);
 
 		// assume always 7 bitplanes?
 
-		for (uint32_t y = 0; y < height / (G2mode ? 1 : 7); y++)
+		for (uint32_t y = 0; y < height / 7; y++)
 		{
 			for (uint32_t x = 0; x < width; x++)
 			{
@@ -142,7 +217,11 @@ void Font::PrintMessage(std::string message, int y, SDL_Surface* dest)
 			}
 			else if (c == ':')
 			{
-				Blit(xstart, y, 37, dest);
+				Blit(xstart, y, 38, dest);
+			}
+			else if (c == 127) // what is this?
+			{
+				Blit(xstart, y, 39, dest);
 			}
 		}
 

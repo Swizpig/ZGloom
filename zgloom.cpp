@@ -174,13 +174,22 @@ int main(int argc, char* argv[])
 
 	bool done = true;
 
-#if 0
+#if 1
 	Font smallfont, bigfont;
 	CrmFile fontfile;
-	fontfile.Load("misc/bigfont.bin");
-	if (fontfile.data) bigfont.Load(fontfile);
-	fontfile.Load("misc/smallfont.bin");
-	if (fontfile.data)smallfont.Load(fontfile);
+	fontfile.Load((Config::GetMiscDir() + "bigfont2.bin").c_str());
+	if (fontfile.data)
+	{
+		bigfont.Load2(fontfile);
+		smallfont.Load2(fontfile);
+	}
+	else
+	{
+		fontfile.Load((Config::GetMiscDir() + "smallfont.bin").c_str());
+		if (fontfile.data)smallfont.Load(fontfile);
+		fontfile.Load((Config::GetMiscDir() + "bigfont.bin").c_str());
+		if (fontfile.data)bigfont.Load(fontfile);
+	}
 #endif
 
 	std::string intermissiontext;
@@ -188,6 +197,9 @@ int main(int argc, char* argv[])
 	bool showscreen = false;
 	bool waiting = false;
 	bool playing = false;
+	bool fullscreen = false;
+	bool printscreen = false;
+	int screennum = 0;
 
 	Mix_Volume(-1, 32);
 
@@ -243,12 +255,12 @@ int main(int argc, char* argv[])
 				{
 					waiting = true;
 
-#if 0
-					SDL_SetPaletteColors(render8->format->palette, bigfont.GetPalette()->colors, 0, 16);
+#if 1
+					SDL_SetPaletteColors(render8->format->palette, smallfont.GetPalette()->colors, 0, 16);
 #endif
 					SDL_BlitSurface(intermissionscreen, NULL, render8, NULL);
-#if 0
-					bigfont.PrintMessage(intermissiontext, 240, render8);
+#if 1
+					smallfont.PrintMessage(intermissiontext, 240, render8);
 #endif
 					break;
 				}
@@ -279,7 +291,7 @@ int main(int argc, char* argv[])
 				}
 			}
 
-			if ((sEvent.type == SDL_KEYDOWN) || (sEvent.type == SDL_MOUSEBUTTONDOWN))
+			if ((sEvent.type == SDL_KEYDOWN) && (sEvent.key.keysym.sym == SDLK_SPACE))
 			{
 				if (waiting)
 				{
@@ -291,6 +303,25 @@ int main(int argc, char* argv[])
 						xmp_release_module(ctx);
 					}
 				}
+			}
+
+			if ((sEvent.type == SDL_KEYDOWN) && sEvent.key.keysym.sym == SDLK_F12)
+			{
+				if (!fullscreen)
+				{
+					SDL_SetWindowFullscreen(win, SDL_WINDOW_FULLSCREEN);
+				}
+				else
+				{
+					SDL_SetWindowFullscreen(win, 0);
+				}
+
+				fullscreen = !fullscreen;
+			}
+
+			if ((sEvent.type == SDL_KEYDOWN) && sEvent.key.keysym.sym == SDLK_PRINTSCREEN)
+			{
+				printscreen = true;
 			}
 
 			if (sEvent.type == SDL_USEREVENT)
@@ -315,6 +346,18 @@ int main(int argc, char* argv[])
 		if (showscreen)
 		{
 			SDL_BlitSurface(render8, NULL, render32, NULL);
+		}
+
+		if (printscreen)
+		{
+			std::string filename("img");
+
+			filename += std::to_string(screennum);
+			filename += ".bmp";
+			screennum++;
+
+			SDL_SaveBMP(render32, filename.c_str());
+			printscreen = false;
 		}
 		SDL_UpdateTexture(rendertex, NULL, render32->pixels, render32->pitch);
 		SDL_RenderClear(ren);

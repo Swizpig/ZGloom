@@ -18,6 +18,17 @@ namespace Config
 #endif
 	}
 
+	std::string GetMiscDir()
+	{
+#if ZOMBIE_MASSACRE
+		std::string result = "stuf/";
+		return result;
+#else
+		std::string result = "misc/";
+		return result;
+#endif
+	}
+
 	std::string GetPicsDir()
 	{
 #if ZOMBIE_MASSACRE

@@ -19,7 +19,7 @@ class GameLogic
 
 		bool Collision(bool event, int32_t x, int32_t z, int32_t r, int32_t& overshoot, int32_t& closestzone);
 		bool AdjustPos(int32_t& overshoot, Quick& x, Quick& z, int32_t r, int32_t& closestzone);
-		void AddObject(MapObject o) { gmap->GetMapObjects().push_back(o); };
+		void AddObject(MapObject o, bool first) { if (first)  gmap->GetMapObjects().push_front(o);  else gmap->GetMapObjects().push_back(o); };
 		uint8_t PickCalc(MapObject& o);
 
 		struct weapontableentry { int32_t hitpoint; int32_t damage; int32_t speed; std::vector<Shape>* shape; SoundHandler::Sounds sound; };

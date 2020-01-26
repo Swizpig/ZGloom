@@ -8,6 +8,7 @@ class Font
 	public:
 		
 	bool Load(CrmFile& file);
+	bool Load2(CrmFile& file);
 	void SetPal(SDL_Surface* palsurface); 
 	void Blit(int x, int y, int character, SDL_Surface* dest);
 	void PrintMessage(std::string message,  int y, SDL_Surface* dest);

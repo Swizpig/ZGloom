@@ -38,6 +38,7 @@ class ObjectLogic
 	int16_t hitpoints;
 	int16_t weapon;
 	int16_t hurtpause;
+	uint16_t blood;
 };
 
 class ObjectGraphics

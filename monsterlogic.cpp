@@ -485,8 +485,9 @@ void Shoot(MapObject& o, GameLogic* logic, int32_t colltype, int32_t collwith, i
 	newobject.data.ms.rad = 32;
 	newobject.data.ms.radsq = 32 * 32;
 
-	
-	logic->AddObject(newobject);
+	newobject.data.ms.blood = 0;
+
+	logic->AddObject(newobject, true);
 }
 
 void TerraLogic2(MapObject& o, GameLogic* logic)
@@ -983,6 +984,7 @@ void BlowChunx(MapObject& thisobj, MapObject& otherobj, GameLogic* logic)
 		//chunks.data.ms.shape = scale;
 		chunks.data.ms.rad = logic->objectgraphics->maxwidthsgore[thisobj.t];
 		chunks.data.ms.radsq = chunks.data.ms.rad*chunks.data.ms.rad;
+		chunks.data.ms.blood = 0;
 
 		logic->newobjects.push_back(chunks);
 	}
@@ -1159,4 +1161,69 @@ void BaldyLogic(MapObject& o, GameLogic* logic)
 	}
 
 	BL2(o, logic);
+}
+
+void LizardLogic(MapObject& o, GameLogic* logic)
+{
+	/*
+	lizardlogic	;
+	subq	#1,ob_delay(a5)
+	bgt	monstermove	;charge?
+	;
+	bsr	pickcalc	;pic player in a0!
+	move	ob_x(a5),d0
+	sub	ob_x(a0),d0
+	muls	d0,d0
+	move	ob_z(a5),d1
+	sub	ob_z(a0),d1
+	muls	d1,d1
+	add.l	d1,d0
+	cmp.l	#256*256,d0
+	bcc.s	bl2
+	;
+	move.l	lizsfx(pc),a0
+	moveq	#32,d0
+	moveq	#5,d1
+	bsr	playsfx
+	;
+	bra	bl2
+	*/
+	o.data.ms.delay--;
+
+	if (o.data.ms.delay>0)
+	{
+		MonsterMove(o, logic);
+		return;
+	}
+
+	uint8_t ang = logic->PickCalc(o);
+
+	MapObject player = logic->GetPlayerObj();
+
+	int16_t dx = o.x.GetFrac() - player.x.GetFrac();
+	int16_t dz = o.z.GetFrac() - player.z.GetFrac();
+
+	int32_t res = (int32_t)dx * (int32_t)dx + (int32_t)dz * (int32_t)dz;
+
+	if (res < (256 * 256))
+	{
+		SoundHandler::Play(SoundHandler::SOUND_LIZARD);
+	}
+
+	BL2(o, logic);
+}
+
+void LizHurt(MapObject& thisobj, MapObject& otherobj, GameLogic* logic)
+{
+	/*
+	lizhurt	move.l	a0,-(a7)
+	move.l	lizhitsfx(pc),a0
+	moveq	#64,d0
+	moveq	#1,d1
+	bsr	playsfx
+	move.l	(a7)+,a0
+	bra	hurtobject
+	*/
+	SoundHandler::Play(SoundHandler::SOUND_LIZHIT);
+	HurtObject(thisobj, otherobj, logic);
 }

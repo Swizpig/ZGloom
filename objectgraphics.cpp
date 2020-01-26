@@ -531,6 +531,32 @@ ObjectGraphics::ObjectGraphics()
 	objectlogic[OLT_LIZARD].hurtpause = 2;
 	objectlogic[OLT_DEATHHEAD].hurtpause = 10;
 	objectlogic[OLT_TROLL].hurtpause = 2;
+	
+	objectlogic[  OLT_PLAYER1].blood	= 0xf00	 ;
+	objectlogic[  OLT_PLAYER2].blood	= 0xf00	 ;
+	objectlogic[   OLT_HEALTH].blood	= 0xf00	 ;
+	objectlogic[   OLT_WEAPON].blood	= 0	     ;
+	objectlogic[   OLT_THERMO].blood	= 0xf00	 ;
+	objectlogic[    OLT_INFRA].blood	= 0xf00	 ;
+	objectlogic[   OLT_INVISI].blood	= 0xf00	 ;
+	objectlogic[   OLT_INVINC].blood	= 0xf00	 ;
+	objectlogic[   OLT_DRAGON].blood	= 0xf00	 ;
+	objectlogic[   OLT_BOUNCY].blood	= 0xf00	 ;
+	objectlogic[   OLT_MARINE].blood	= 0xf00	 ;
+	objectlogic[    OLT_BALDY].blood	= 0xf00	 ;
+	objectlogic[    OLT_TERRA].blood	= 0xfff	 ;
+	objectlogic[    OLT_GHOUL].blood	= 0x80f0 ;
+	objectlogic[  OLT_PHANTOM].blood	= 0xff0	 ;
+	objectlogic[    OLT_DEMON].blood	= 0xf00	 ;
+	objectlogic[  OLT_WEAPON1].blood	= 0	     ;
+	objectlogic[  OLT_WEAPON2].blood	= 0	     ;
+	objectlogic[  OLT_WEAPON3].blood	= 0	     ;
+	objectlogic[  OLT_WEAPON4].blood	= 0	     ;
+	objectlogic[  OLT_WEAPON5].blood	= 0	     ;
+	objectlogic[   OLT_LIZARD].blood	= 0xf0f	 ;
+	objectlogic[OLT_DEATHHEAD].blood	= 0xf00	 ;
+	objectlogic[    OLT_TROLL].blood	= 0xf00	 ;
+
 
 	return;
 }

@@ -405,10 +405,7 @@ void Renderer::DrawObjects(Camera* camera)
 	{
 		// don't draw the player!
 
-		if (o.isstrip)
-		{
-		}
-		else
+		if (!o.isstrip)
 		{
 			if ((o.t > 1) && (o.t != 3))
 			{
@@ -543,7 +540,21 @@ void Renderer::DrawObjects(Camera* camera)
 												uint32_t dimcol;
 
 												ColourModify(0xFF & (col >> 16), 0xFF & (col >> 8), 0xFF & col, dimcol, o.rotz);
-												surface[sx + sy*renderwidth] = dimcol;
+
+												//transparency flag!
+												if (!o.isstrip && (o.data.ms.blood & 0x8000))
+												{
+													uint32_t surcol = surface[sx + sy*renderwidth];
+													uint32_t b = (((dimcol >> 0) & 0xFF) + ((surcol >> 0) & 0xFF)) / 2;
+													uint32_t g = (((dimcol >> 8) & 0xFF) + ((surcol >> 8) & 0xFF)) / 2;
+													uint32_t r = (((dimcol >>16) & 0xFF) + ((surcol >>16) & 0xFF)) / 2;
+
+													surface[sx + sy*renderwidth] = (r<<16) | (g<<8) | b;
+												}
+												else
+												{
+													surface[sx + sy*renderwidth] = dimcol;
+												}
 											}
 										}
 

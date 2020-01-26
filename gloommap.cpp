@@ -369,6 +369,7 @@ bool GloomMap::Load(const char* name, ObjectGraphics* nobj)
 		o.hitpoints = objectlogic->objectlogic[o.t].hitpoints;
 		o.weapon = objectlogic->objectlogic[o.t].weapon;
 		o.hurtpause = objectlogic->objectlogic[o.t].hurtpause;
+		o.blood = objectlogic->objectlogic[o.t].blood;
 	}
 
 	// load wall anims
@@ -552,7 +553,15 @@ void GloomMap::ExecuteEvent(uint32_t e, bool& gotele, Teleport& teleout)
 
 			CalcVecs(mo);
 
-			mapobjects.push_back(mo);
+			// ordering seems needed for collison?
+			if ((mo.t == ObjectGraphics::OLT_PLAYER1) || (mo.t == ObjectGraphics::OLT_PLAYER1))
+			{
+				mapobjects.push_front(mo);
+			}
+			else
+			{
+				mapobjects.push_back(mo);
+			}
 		}
 	}
 
@@ -793,6 +802,7 @@ MapObject::MapObject(Object m)
 	data.ms.weapon = m.weapon;
 	data.ms.hurtwait = 0;
 	data.ms.hurtpause = m.hurtpause;
+	data.ms.blood = m.blood;
 
 	switch (t)
 	{
@@ -825,6 +835,11 @@ MapObject::MapObject(Object m)
 			data.ms.logic = GhoulLogic;
 			data.ms.hit = NullLogicComp;
 			data.ms.die = BlowObjectNoChunks;
+			break;
+		case ObjectGraphics::OLT_LIZARD:
+			data.ms.logic = LizardLogic;
+			data.ms.hit = LizHurt;
+			data.ms.die = BlowObject;
 			break;
 		case ObjectGraphics::OLT_WEAPON1:
 		case ObjectGraphics::OLT_WEAPON2:

@@ -98,6 +98,7 @@ class Object
 	int16_t hitpoints;
 	int16_t weapon;
 	int16_t hurtpause;
+	uint16_t blood;
 	std::vector<Shape>* shape;
 };
 
@@ -163,6 +164,8 @@ class MapObjectSideBand
 	//bouncy bullets
 	int16_t bouncecnt;
 	int16_t bounce;
+
+	uint16_t blood;
 
 	void(*logic)(MapObject&, GameLogic*);
 	void(*oldlogic)(MapObject&, GameLogic*);
