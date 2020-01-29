@@ -1,8 +1,8 @@
 // zgloom.cpp : Defines the entry point for the console application.
 //
 
-#include "SDL.h"
-#include "SDL_mixer.h"
+#include <SDL2/SDL.h>
+#include <SDL2/SDL_mixer.h>
 #include "xmp/include/xmp.h"
 
 #include "config.h"

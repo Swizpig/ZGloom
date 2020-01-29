@@ -6,7 +6,7 @@
 #include "quick.h"
 #include "objectgraphics.h"
 
-#include "SDL.h"
+#include <SDL2/SDL.h>
 
 class GloomMap;
 

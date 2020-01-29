@@ -3,6 +3,7 @@
 #include <cstdint>
 #include <vector>
 #include <list>
+#include <string>
 #include "crmfile.h"
 #include "quick.h"
 #include "objectgraphics.h"
