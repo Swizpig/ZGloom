@@ -154,6 +154,12 @@ ObjectGraphics::ObjectGraphics()
 	maxwidths[OLT_WEAPON4] = LoadGraphicBin(BinResource::bullet4, BulletShapes[3]);
 	maxwidths[OLT_WEAPON5] = LoadGraphicBin(BinResource::bullet5, BulletShapes[4]);
 
+	LoadGraphicBin(BinResource::sparks1, SparkShapes[0]);
+	LoadGraphicBin(BinResource::sparks2, SparkShapes[1]);
+	LoadGraphicBin(BinResource::sparks3, SparkShapes[2]);
+	LoadGraphicBin(BinResource::sparks4, SparkShapes[3]);
+	LoadGraphicBin(BinResource::sparks5, SparkShapes[4]);
+
 	maxwidthsgore[OLT_MARINE] = LoadGraphic(Config::GetGoreFilename(OGT_MARINE).c_str(), MarineGore);
 	maxwidthsgore[OLT_BALDY] = LoadGraphic(Config::GetGoreFilename(OGT_BALDY).c_str(), BaldyGore);
 	maxwidthsgore[OLT_TERRA] = LoadGraphic(Config::GetGoreFilename(OGT_TERRA).c_str(), TerraGore);
@@ -207,6 +213,12 @@ ObjectGraphics::ObjectGraphics()
 	objectlogic[OLT_LIZARD].shape = &LizardShapes;
 	objectlogic[OLT_DEATHHEAD].shape = &DeathheadShapes;
 	objectlogic[OLT_TROLL].shape = &TrollShapes;
+
+	objectlogic[OLT_WEAPON1].spark = &(SparkShapes[0]); // TODO: sparks and that
+	objectlogic[OLT_WEAPON2].spark = &(SparkShapes[1]); // TODO: sparks and that;
+	objectlogic[OLT_WEAPON3].spark = &(SparkShapes[2]); // TODO: sparks and that;
+	objectlogic[OLT_WEAPON4].spark = &(SparkShapes[3]); // TODO: sparks and that;
+	objectlogic[OLT_WEAPON5].spark = &(SparkShapes[4]); // TODO: sparks and that;
 
 	objectlogic[OLT_PLAYER1].frame	=0x0	  ;
 	objectlogic[OLT_PLAYER2].frame	=0x0	  ;

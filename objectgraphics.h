@@ -23,6 +23,7 @@ class ObjectLogic
 {
 	public:
 	std::vector<Shape>* shape;
+	std::vector<Shape>* spark;
 	uint32_t frame;
 	uint32_t framespeed;
 	uint32_t render; // "is 8 frame rotatable sprite", basically
@@ -111,6 +112,7 @@ class ObjectGraphics
 		std::vector<Shape> DeathheadShapes;
 		std::vector<Shape> TrollShapes;
 		std::vector<Shape> BulletShapes[5];
+		std::vector<Shape> SparkShapes[5];
 
 		//ORGANS
 		std::vector<Shape> MarineGore;

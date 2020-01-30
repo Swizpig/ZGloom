@@ -354,6 +354,7 @@ bool GloomMap::Load(const char* name, ObjectGraphics* nobj)
 		o.movspeed = objectlogic->objectlogic[o.t].movspeed;
 
 		o.shape = objectlogic->objectlogic[o.t].shape;
+		o.chunk = objectlogic->objectlogic[o.t].spark;
 		o.firey = objectlogic->objectlogic[o.t].firey;
 
 		o.base = objectlogic->objectlogic[o.t].base;
@@ -779,6 +780,7 @@ MapObject::MapObject(Object m)
 	data.ms.rot = m.rot;
 	data.ms.movspeed = m.movspeed;
 	data.ms.shape = m.shape;
+	data.ms.chunks = m.chunk;
 	data.ms.firey = m.firey;
 
 	data.ms.delay = 0;

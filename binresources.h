@@ -10,4 +10,10 @@ class BinResource
 		static const uint8_t bullet3[];
 		static const uint8_t bullet4[];
 		static const uint8_t bullet5[];
+
+		static const uint8_t sparks1[];
+		static const uint8_t sparks2[];
+		static const uint8_t sparks3[];
+		static const uint8_t sparks4[];
+		static const uint8_t sparks5[];
 };

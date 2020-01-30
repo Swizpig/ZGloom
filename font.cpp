@@ -174,12 +174,12 @@ void Font::Blit(int x, int y, int character, SDL_Surface* dest)
 {
 	SDL_Rect srcrect, dstrect;
 
-	srcrect.w = w;
+	srcrect.w = w+1;
 	srcrect.h = h;
 	srcrect.x = 0;
 	srcrect.y = 0;
 
-	dstrect.w = w;
+	dstrect.w = w+1;
 	dstrect.h = h;
 	dstrect.x = x;
 	dstrect.y = y;
@@ -227,4 +227,24 @@ void Font::PrintMessage(std::string message, int y, SDL_Surface* dest)
 
 		xstart += w;
 	}
+}
+
+void Font::PrintMultiLineMessage(std::string message, int y, SDL_Surface* dest)
+{
+	size_t charsinline = dest->w / w;
+
+	while (message.size() > charsinline)
+	{
+		for (int i = message.size() - 1; i >= 0; i--)
+		{
+			if ((message[i] == ' ') && (i <= (int)charsinline))
+			{
+				PrintMessage(message.substr(0, i), y, dest);
+				message = message.substr(i + 1, std::string::npos);
+				y += h;
+				break;
+			}
+		}
+	}
+	PrintMessage(message, y, dest);
 }

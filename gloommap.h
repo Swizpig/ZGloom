@@ -101,6 +101,7 @@ class Object
 	int16_t hurtpause;
 	uint16_t blood;
 	std::vector<Shape>* shape;
+	std::vector<Shape>* chunk;
 };
 
 // an object actually in play
@@ -137,6 +138,7 @@ class MapObjectSideBand
 	int16_t firey;
 
 	std::vector<Shape>* shape;
+	std::vector<Shape>* chunks;
 
 	//collision stuff
 	int16_t colltype;

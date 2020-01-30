@@ -260,7 +260,7 @@ int main(int argc, char* argv[])
 #endif
 					SDL_BlitSurface(intermissionscreen, NULL, render8, NULL);
 #if 1
-					smallfont.PrintMessage(intermissiontext, 240, render8);
+					smallfont.PrintMultiLineMessage(intermissiontext, 220, render8);
 #endif
 					break;
 				}

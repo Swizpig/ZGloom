@@ -22,7 +22,7 @@ class GameLogic
 		void AddObject(MapObject o, bool first) { if (first)  gmap->GetMapObjects().push_front(o);  else gmap->GetMapObjects().push_back(o); };
 		uint8_t PickCalc(MapObject& o);
 
-		struct weapontableentry { int32_t hitpoint; int32_t damage; int32_t speed; std::vector<Shape>* shape; SoundHandler::Sounds sound; };
+		struct weapontableentry { int32_t hitpoint; int32_t damage; int32_t speed; std::vector<Shape>* shape; std::vector<Shape>* spark; SoundHandler::Sounds sound; };
 		weapontableentry wtable[5];
 		ObjectGraphics* objectgraphics;
 		std::list<MapObject> newobjects;

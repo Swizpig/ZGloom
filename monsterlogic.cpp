@@ -13,10 +13,59 @@ void NullLogicComp(MapObject& thisobj, MapObject& otherobj, GameLogic* logic)
 	return;
 }
 
+int32_t BloodSpeed()
+{
+	int32_t result = (int16_t)GloomMaths::RndW();
+	result <<= 2;
+	return result;
+}
+
+int32_t BloodSpeed2()
+{
+	int32_t result = (int16_t)GloomMaths::RndW();
+	result <<= 5;
+	return result;
+}
+
+int32_t BloodSpeed3()
+{
+	int32_t result = (int16_t)GloomMaths::RndW();
+	result <<= 4;
+	return result;
+}
+
+void SparksLogic(MapObject& o, GameLogic* logic)
+{
+	/*
+	sparkslogic	subq	#1,ob_delay(a5)
+	ble	killobject
+	movem.l	ob_x(a5),d0-d2
+	add.l	ob_xvec(a5),d0
+	add.l	ob_yvec(a5),d1
+	add.l	ob_zvec(a5),d2
+	movem.l	d0-d2,ob_x(a5)
+	rts
+	*/
+	o.data.ms.delay--;
+
+	if (o.data.ms.delay <= 0)
+	{
+		o.killme = true;
+		return;
+	}
+
+	Quick temp;
+	temp.SetVal(o.data.ms.xvec);
+	o.x = o.x + temp;
+	temp.SetVal(o.data.ms.yvec);
+	o.y = o.y + temp;
+	temp.SetVal(o.data.ms.zvec);
+	o.z = o.z + temp;
+}
 
 void WeaponLogic(MapObject& o, GameLogic* logic)
 {
-	// TODO: Sparks, frames
+	// TODO: Sparks
 	/*
 	weaponlogic;
 	move.l	camrots(pc), a0
@@ -38,7 +87,83 @@ void WeaponLogic(MapObject& o, GameLogic* logic)
 	o.y.SetInt(camrots[1] >> 8);
 
 	o.data.ms.frame += (1 << 16);
-	if ((o.data.ms.frame >> 16) >= o.data.ms.shape->size()) o.data.ms.frame = 0;
+	if ((o.data.ms.frame >> 16) >= o.data.ms.shape->size())
+	{
+		o.data.ms.frame = 0;
+	}
+
+	o.data.ms.delay--;
+
+	if (o.data.ms.delay <= 0)
+	{
+		MapObject sparksobj;
+
+		sparksobj.t = 999;
+		sparksobj.x = o.x;
+		sparksobj.y = o.y;
+		sparksobj.z = o.z;
+
+		sparksobj.data.ms.xvec = BloodSpeed2();
+		sparksobj.data.ms.yvec = BloodSpeed2();
+		sparksobj.data.ms.zvec = BloodSpeed2();
+
+		/*
+		move.l	ob_chunks(a5),a2
+		move.l	a2,ob_shape(a0)
+		move	2(a2),d0
+		bsr	rndn
+		move	d0,ob_frame(a0)
+		move.l	#sparkslogic,ob_logic(a0)
+		move.l	#drawshape_1,ob_render(a0)
+		clr	ob_invisible(a0)
+		clr	ob_colltype(a0)
+		clr	ob_collwith(a0)
+		bsr	rndw
+		and	#15,d0
+		add	#15,d0
+		move	d0,ob_delay(a0)
+		*/
+		sparksobj.data.ms.shape = o.data.ms.chunks;
+		sparksobj.data.ms.frame = GloomMaths::RndN(o.data.ms.chunks->size()) << 16;
+		sparksobj.data.ms.logic = SparksLogic;
+		sparksobj.data.ms.render = 1;
+		sparksobj.data.ms.colltype = 0;
+		sparksobj.data.ms.collwith = 0;
+		sparksobj.data.ms.delay = (GloomMaths::RndW() & 15) + 15;
+		sparksobj.data.ms.blood = 0;
+
+		logic->AddObject(sparksobj, false);
+	}
+}
+
+void MakeSparks(MapObject& o, GameLogic* logic)
+{
+	MapObject sparksobj;
+
+	sparksobj.t = 999;
+	sparksobj.x = o.x;
+	sparksobj.y = o.y;
+	sparksobj.z = o.z;
+
+	int num = o.data.ms.chunks->size();
+
+	for (int i = 0; i < num; i++)
+	{
+		sparksobj.data.ms.xvec = BloodSpeed2();
+		sparksobj.data.ms.yvec = BloodSpeed2();
+		sparksobj.data.ms.zvec = BloodSpeed2();
+
+		sparksobj.data.ms.shape = o.data.ms.chunks;
+		sparksobj.data.ms.frame = GloomMaths::RndN(o.data.ms.chunks->size()) << 16;
+		sparksobj.data.ms.logic = SparksLogic;
+		sparksobj.data.ms.render = 1;
+		sparksobj.data.ms.colltype = 0;
+		sparksobj.data.ms.collwith = 0;
+		sparksobj.data.ms.delay = (GloomMaths::RndW() & 15) + 15;
+		sparksobj.data.ms.blood = 0;
+
+		logic->AddObject(sparksobj, false);
+	}
 }
 
 void CalcVecs(MapObject& o)
@@ -252,7 +377,7 @@ void Fire1(MapObject& o, GameLogic* logic)
 	o.data.ms.logic = PauseLogic;
 	o.data.ms.frame = 0;
 
-	Shoot(o, logic, 4, 0, 1, 1, 20, logic->wtable[0].shape);
+	Shoot(o, logic, 4, 0, 1, 1, 20, logic->wtable[0].shape, logic->wtable[0].spark);
 }
 
 void MonsterFix(MapObject& o, GameLogic* logic)
@@ -368,12 +493,16 @@ void FireLogic(MapObject& o, GameLogic* logic)
  	if (!CheckVecs(o, logic))
 	{
 		// todo: bounce, sparks
+		MakeSparks(o, logic);
 		o.killme = true;
 	}
 	else
 	{
 		o.data.ms.frame+= (1<<16);
-		if ((o.data.ms.frame>>16) >= o.data.ms.shape->size()) o.data.ms.frame = 0;
+		if ((o.data.ms.frame >> 16) >= o.data.ms.shape->size())
+		{
+			o.data.ms.frame = 0;
+		}
 	}
 }
 
@@ -382,7 +511,7 @@ void KillLogicComp(MapObject& thisobj, MapObject& otherobj, GameLogic* logic)
 	thisobj.killme = true;
 }
 
-void Shoot(MapObject& o, GameLogic* logic, int32_t colltype, int32_t collwith, int32_t hitpoints, int32_t damage, int32_t speed, std::vector<Shape>* shape)
+void Shoot(MapObject& o, GameLogic* logic, int32_t colltype, int32_t collwith, int32_t hitpoints, int32_t damage, int32_t speed, std::vector<Shape>* shape, std::vector<Shape>* spark)
 {
 	MapObject newobject;
 
@@ -451,6 +580,7 @@ void Shoot(MapObject& o, GameLogic* logic, int32_t colltype, int32_t collwith, i
 	lea	0(a1,d0*8),a1
 	;
 	*/
+	newobject.data.ms.chunks = spark;
 	int16_t camrots[4];
 	GloomMaths::GetCamRotRaw(o.data.ms.rot & 255, camrots);
 	/*
@@ -536,7 +666,7 @@ void TerraLogic2(MapObject& o, GameLogic* logic)
 	o.data.ms.delay = o.data.ms.firerate;
 	o.data.ms.rot = logic->PickCalc(o);
 	CalcVecs(o);
-	Shoot(o, logic, 4, 0, 1, 3, 16, logic->wtable[3].shape);
+	Shoot(o, logic, 4, 0, 1, 3, 16, logic->wtable[3].shape, logic->wtable[3].spark);
 	SoundHandler::Play(SoundHandler::SOUND_SHOOT3);
 
 	o.data.ms.delay2--;
@@ -652,7 +782,7 @@ void GhoulLogic(MapObject& o, GameLogic* logic)
 	{
 		o.data.ms.frame = 1;
 		o.data.ms.framespeed = 0x2000;
-		Shoot(o, logic, 4, 0, 2, 3, 20, logic->wtable[1].shape);
+		Shoot(o, logic, 4, 0, 2, 3, 20, logic->wtable[1].shape, logic->wtable[1].spark);
 		RndDelay(o);
 	}
 
@@ -847,27 +977,6 @@ void HurtNGrunt(MapObject& thisobj, MapObject& otherobj, GameLogic* logic)
 	}
 
 	HurtObject(thisobj, otherobj, logic);
-}
-
-int32_t BloodSpeed()
-{
-	int32_t result = (int16_t)GloomMaths::RndW();
-	result <<= 2;
-	return result;
-}
-
-int32_t BloodSpeed2()
-{
-	int32_t result = (int16_t)GloomMaths::RndW();
-	result <<= 5;
-	return result;
-}
-
-int32_t BloodSpeed3()
-{
-	int32_t result = (int16_t)GloomMaths::RndW();
-	result <<= 4;
-	return result;
 }
 
 void ChunkLogic(MapObject& o, GameLogic* logic)
@@ -1227,3 +1336,4 @@ void LizHurt(MapObject& thisobj, MapObject& otherobj, GameLogic* logic)
 	SoundHandler::Play(SoundHandler::SOUND_LIZHIT);
 	HurtObject(thisobj, otherobj, logic);
 }
+

@@ -12,8 +12,8 @@ class Font
 	void SetPal(SDL_Surface* palsurface); 
 	void Blit(int x, int y, int character, SDL_Surface* dest);
 	void PrintMessage(std::string message,  int y, SDL_Surface* dest);
+	void PrintMultiLineMessage(std::string message, int y, SDL_Surface* dest);
 	
-
 	private:
 
 	static const int glyphs = 40;

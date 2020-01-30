@@ -59,6 +59,11 @@ void GameLogic::Init(GloomMap* gmapin, Camera* cam, ObjectGraphics* ograph)
 	{
 		wtable[i].shape = &(ograph->BulletShapes[i]);
 	}
+
+	for (auto i = 0; i < 5; i++)
+	{
+		wtable[i].spark = &(ograph->SparkShapes[i]);
+	}
 }
 
 bool GameLogic::AdjustPos(int32_t& overshoot, Quick& x, Quick& z, int32_t r, int32_t& closestzone)
@@ -620,7 +625,7 @@ bool GameLogic::Update(Camera* cam)
 		if (playerobj.data.ms.reloadcnt == 0)
 		{
 			auto wep = playerobj.data.ms.weapon;
-			Shoot(playerobj, this, (playerobj.data.ms.collwith & 3) ^ 3, 0, wtable[wep].hitpoint, wtable[wep].damage, wtable[wep].speed, wtable[wep].shape);
+			Shoot(playerobj, this, (playerobj.data.ms.collwith & 3) ^ 3, 0, wtable[wep].hitpoint, wtable[wep].damage, wtable[wep].speed, wtable[wep].shape, wtable[wep].spark);
 			SoundHandler::Play(wtable[wep].sound);
 			playerobj.data.ms.reloadcnt = playerobj.data.ms.reload;
 		}
