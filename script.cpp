@@ -42,9 +42,20 @@ Script::Script()
 
 Script::ScriptOp Script::NextLine(std::string& name)
 {
+	if (line == lines.size())
+	{
+		line = 0;
+		return SOP_END;
+	}
+
 	while ((lines[line].length() == 0) ||(lines[line][0] == ';'))
 	{
 		line++;
+		if (line == lines.size())
+		{
+			line = 0;
+			return SOP_END;
+		}
 	}
 
 	if (lines[line].substr(0, 5) == "pict_")
@@ -83,5 +94,10 @@ Script::ScriptOp Script::NextLine(std::string& name)
 	}
 
 	line++;
+	if (line == lines.size())
+	{
+		line = 0;
+		return SOP_END;
+	}
 	return SOP_NOP;
 }

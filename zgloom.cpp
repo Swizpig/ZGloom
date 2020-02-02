@@ -16,6 +16,7 @@
 #include "gamelogic.h"
 #include "soundhandler.h"
 #include "font.h"
+#include "titlescreen.h"
 
 Uint32 my_callbackfunc(Uint32 interval, void *param)
 {
@@ -52,6 +53,8 @@ void LoadPic(std::string name, SDL_Surface* render8)
 	picfile.Load(name.c_str());
 	palfile.Load((name+".pal").c_str());
 
+	SDL_FillRect(render8, nullptr, 0);
+
 	// is this some sort of weird AGA/ECS backwards compatible palette encoding? 4 MSBs, then LSBs?
 	// Update: Yes, yes it is. 
 	for (uint32_t c = 0; c < palfile.size / 4; c++)
@@ -77,8 +80,12 @@ void LoadPic(std::string name, SDL_Surface* render8)
 
 	IffHandler::DecodeIff(picfile.data, pic, width);
 
-	if (width == 320)
+	if (width == render8->w)
 	{
+		if (pic.size() > (size_t)(render8->w * render8->h))
+		{
+			pic.resize(render8->w * render8->h);
+		}
 		std::copy(pic.begin(), pic.begin() + pic.size(), (uint8_t*)(render8->pixels));
 	}
 	else
@@ -88,9 +95,14 @@ void LoadPic(std::string name, SDL_Surface* render8)
 		uint32_t p = 0;
 		uint32_t y = 0;
 
+		if (pic.size() > (width * render8->h))
+		{
+			pic.resize(width * render8->h);
+		}
+
 		while (p < pic.size())
 		{
-			std::copy(pic.begin() + p, pic.begin() + p + 320, (uint8_t*)(render8->pixels) + y*320);
+			std::copy(pic.begin() + p, pic.begin() + p + render8->w, (uint8_t*)(render8->pixels) + y*render8->pitch);
 
 			p += width;
 			y++;
@@ -98,11 +110,21 @@ void LoadPic(std::string name, SDL_Surface* render8)
 	}
 }
 
+enum GameState
+{
+	STATE_PLAYING,
+	STATE_PARSING,
+	STATE_WAITING,
+	STATE_TITLE
+};
+
 
 int main(int argc, char* argv[])
 {
 	GloomMap gmap;
 	Script script;
+	TitleScreen titlescreen;
+	GameState state = STATE_TITLE;
 	Config::Init();
 
 	xmp_context ctx;
@@ -124,6 +146,7 @@ int main(int argc, char* argv[])
 
 	CrmFile titlemusic;
 	CrmFile intermissionmusic;
+	CrmFile titlepic;
 
 	titlemusic.Load(Config::GetMusicFilename(0).c_str());
 	intermissionmusic.Load(Config::GetMusicFilename(1).c_str());
@@ -162,6 +185,7 @@ int main(int argc, char* argv[])
 	SDL_Surface* fontsurface = SDL_CreateRGBSurface(0, 320, 256, 8, 0, 0, 0, 0);
 	SDL_Surface* render8 = SDL_CreateRGBSurface(0, 320, 256, 8, 0, 0, 0, 0);
 	SDL_Surface* intermissionscreen = SDL_CreateRGBSurface(0, 320, 256, 8, 0, 0, 0, 0);
+	SDL_Surface* titlebitmap = SDL_CreateRGBSurface(0, 320, 256, 8, 0, 0, 0, 0);
 	SDL_Surface* render32 = SDL_CreateRGBSurface(0, renderwidth, renderheight, 32, 0x00FF0000, 0x0000FF00, 0x000000FF, 0xFF000000);
 
 	ObjectGraphics objgraphics;
@@ -174,7 +198,7 @@ int main(int argc, char* argv[])
 
 	SDL_Event sEvent;
 
-	bool done = true;
+	bool notdone = true;
 
 #if 1
 	Font smallfont, bigfont;
@@ -194,20 +218,43 @@ int main(int argc, char* argv[])
 	}
 #endif
 
+	titlepic.Load((Config::GetPicsDir() + "title").c_str());
+
+	if (titlepic.data)
+	{
+		LoadPic(Config::GetPicsDir() + "title", titlebitmap);
+	}
+	else
+	{
+		LoadPic(Config::GetPicsDir() + "blackmagic", titlebitmap);
+	}
+
+	if (titlemusic.data)
+	{
+		if (xmp_load_module_from_memory(ctx, titlemusic.data, titlemusic.size))
+		{
+			std::cout << "music error";
+		}
+
+		if (xmp_start_player(ctx, 22050, 0))
+		{
+			std::cout << "music error";
+		}
+		Mix_HookMusic(fill_audio, ctx);
+	}
+
 	std::string intermissiontext;
 
-	bool showscreen = false;
-	bool waiting = false;
-	bool playing = false;
+	bool intermissionmusplaying = false;
 	bool fullscreen = false;
 	bool printscreen = false;
 	int screennum = 0;
 
 	Mix_Volume(-1, 32);
 
-	while (done)
+	while (notdone)
 	{
-		if ((playing == false) && (waiting == false))
+		if (state == STATE_PARSING)
 		{
 			std::string scriptstring;
 			Script::ScriptOp sop;
@@ -236,8 +283,6 @@ int main(int argc, char* argv[])
 				}
 				case Script::SOP_DRAW:
 				{
-					showscreen = true;
-
 					if (intermissionmusic.data)
 					{
 						if (xmp_load_module_from_memory(ctx, intermissionmusic.data, intermissionmusic.size))
@@ -250,20 +295,18 @@ int main(int argc, char* argv[])
 							std::cout << "music error";
 						}
 						Mix_HookMusic(fill_audio, ctx);
+						intermissionmusplaying = true;
 					}
 					break;
 				}
 				case Script::SOP_WAIT:
 				{
-					waiting = true;
+					state = STATE_WAITING;
 
-#if 1
+
 					SDL_SetPaletteColors(render8->format->palette, smallfont.GetPalette()->colors, 0, 16);
-#endif
 					SDL_BlitSurface(intermissionscreen, NULL, render8, NULL);
-#if 1
 					smallfont.PrintMultiLineMessage(intermissiontext, 220, render8);
-#endif
 					break;
 				}
 				case Script::SOP_PLAY:
@@ -277,10 +320,41 @@ int main(int argc, char* argv[])
 					//gmap.Load("maps/map1_4", &objgraphics);
 					renderer.Init(render32, &gmap, &objgraphics);
 					logic.InitLevel(&gmap, &cam, &objgraphics);
-					showscreen = false;
-					playing = true;
+					state = STATE_PLAYING;
+					break;
+				}
+				case Script::SOP_END:
+				{
+					state = STATE_TITLE;
+					if (intermissionmusic.data && intermissionmusplaying)
+					{
+						Mix_HookMusic(nullptr, nullptr);
+						xmp_end_player(ctx);
+						xmp_release_module(ctx);
+						intermissionmusplaying = false;
+					}
+					if (titlemusic.data)
+					{
+						if (xmp_load_module_from_memory(ctx, titlemusic.data, titlemusic.size))
+						{
+							std::cout << "music error";
+						}
+
+						if (xmp_start_player(ctx, 22050, 0))
+						{
+							std::cout << "music error";
+						}
+						Mix_HookMusic(fill_audio, ctx);
+					}
+					break;
 				}
 			}
+		}
+
+		if (state == STATE_TITLE)
+		{
+			SDL_SetPaletteColors(render8->format->palette, titlebitmap->format->palette->colors, 0, 256);
+			titlescreen.Render(titlebitmap, render8, smallfont);
 		}
 
 		while (SDL_PollEvent(&sEvent))
@@ -289,20 +363,45 @@ int main(int argc, char* argv[])
 			{
 				if (sEvent.window.event == SDL_WINDOWEVENT_CLOSE)
 				{
-					done = false;
+					notdone = false;
 				}
 			}
 
 			if ((sEvent.type == SDL_KEYDOWN) && (sEvent.key.keysym.sym == SDLK_SPACE))
 			{
-				if (waiting)
+				if (state == STATE_WAITING)
 				{
-					waiting = false;
+					state = STATE_PARSING;
 					if (intermissionmusic.data)
 					{
 						Mix_HookMusic(nullptr, nullptr);
 						xmp_end_player(ctx);
 						xmp_release_module(ctx);
+						intermissionmusplaying = false;
+					}
+				}
+			}
+
+			if (sEvent.type == SDL_KEYDOWN)
+			{
+				if (state == STATE_TITLE)
+				{
+					switch (titlescreen.Update(sEvent))
+					{
+						case TitleScreen::TITLERET_PLAY:
+							state = STATE_PARSING;
+							if (titlemusic.data)
+							{
+								Mix_HookMusic(nullptr, nullptr);
+								xmp_end_player(ctx);
+								xmp_release_module(ctx);
+							}
+							break;
+						case TitleScreen::TITLERET_QUIT:
+							notdone = false;
+							break;
+						default:
+							break;
 					}
 				}
 			}
@@ -328,24 +427,28 @@ int main(int argc, char* argv[])
 
 			if (sEvent.type == SDL_USEREVENT)
 			{
-				if (playing)
+				if (state == STATE_PLAYING)
 				{
 					if (logic.Update(&cam))
 					{
-						playing = false;
+						state = STATE_PARSING;
 					}
+				}
+				if (state == STATE_TITLE)
+				{
+					titlescreen.Clock();
 				}
 			}
 		}
 
 		SDL_FillRect(render32, NULL, 0);
 
-		if (playing)
+		if (state == STATE_PLAYING)
 		{
 			renderer.SetEffect(logic.GetEffect());
 			renderer.Render(&cam);
 		}
-		if (showscreen)
+		if ((state == STATE_WAITING) || (state == STATE_TITLE))
 		{
 			SDL_BlitSurface(render8, NULL, render32, NULL);
 		}

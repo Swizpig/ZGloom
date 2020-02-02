@@ -429,7 +429,7 @@ bool GloomMap::Load(const char* name, ObjectGraphics* nobj)
 		}
 	}
 
-	DumpDebug();
+	//DumpDebug();
 
 	return true;
 }

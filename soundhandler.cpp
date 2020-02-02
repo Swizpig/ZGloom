@@ -107,7 +107,7 @@ namespace SoundHandler
 			{
 				uint8_t* wavdata = CreateWAV(sounddata[i].data, sounddata[i].size);
 
-#if 1
+#if 0
 				std::string fname = Config::GetSoundFilename((SoundHandler::Sounds)i);
 
 				fname += ".wav";
