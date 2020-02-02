@@ -227,6 +227,7 @@ bool GloomMap::Load(const char* name, ObjectGraphics* nobj)
 	rotpolys.clear();
 	activerotpolys.clear();
 	teles.clear();
+	activeblood.clear();
 
 	objectlogic = nobj;
 

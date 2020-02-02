@@ -8,6 +8,21 @@
 #include "quick.h"
 #include "objectgraphics.h"
 
+// blood
+class Blood
+{
+	public:
+		Quick x;
+		Quick y;
+		Quick z;
+		Quick xvec;
+		Quick dest;
+		Quick yvec;
+		Quick zvec;
+		uint32_t color; // colour AND
+		bool killme;
+};
+
 // rot/morph poly
 
 class ActiveRotPoly
@@ -329,6 +344,7 @@ class GloomMap
 		Flat& GetFloor() { return floor; };
 		std::list<MapObject>& GetMapObjects() { return mapobjects; };
 		std::list<ActiveDoor>& GetActiveDoors() { return activedoors; };
+		std::list<Blood>& GetBlood() { return activeblood; };
 		std::vector<ActiveRotPoly>& GetActiveRotPolys() { return activerotpolys; };
 		Column** GetTexPointers(){ return texturepointers;};
 		Column** GetTexPointersOrig(){ return texturepointersorig; };
@@ -360,6 +376,7 @@ class GloomMap
 		std::list<ActiveDoor> activedoors;
 		std::list<MapObject> mapobjects;
 		std::vector<ActiveRotPoly> activerotpolys;
+		std::list<Blood> activeblood;
 
 		// texture pointers, used for remapping anims. 160 = 20 * 8;
 		Column* texturepointers[160];

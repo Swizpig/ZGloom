@@ -37,6 +37,117 @@ int32_t BloodSpeed3()
 	return result;
 }
 
+int16_t RndDelay(MapObject&o)
+{
+	/*
+	rnddelay	move	ob_range(a5), d0
+	bsr	rndn
+	add	ob_base(a5), d0
+	move	d0, ob_delay(a5)
+	;
+	rts
+	*/
+
+	o.data.ms.delay = GloomMaths::RndN(o.data.ms.range) + o.data.ms.base;
+	return o.data.ms.delay;
+}
+
+
+void BloodyMess(MapObject& o, GameLogic* logic, int count)
+{
+	/*
+	bloodymess	;throw random blood splots everywhere!
+	;
+	bsr	bloodspeed2
+	add.l	ob_x(a5),d0
+	move.l	d0,d2
+	bsr	bloodspeed2
+	add.l	ob_gutsy(a5),d0
+	move.l	d0,d3
+	bsr	bloodspeed2
+	add.l	ob_z(a5),d0
+	move.l	d0,d4
+	;
+.loop	addlast	blood
+	beq.s	.done
+	;
+	movem.l	d2-d4,bl_x(a0)
+	bsr	bloodspeed
+	move.l	d0,bl_xvec(a0)
+	bsr	bloodspeed
+	move.l	d0,bl_yvec(a0)
+	bsr	bloodspeed
+	move.l	d0,bl_zvec(a0)
+	move	ob_blood(a5),bl_color(a0)
+	;
+	dbf	d7,.loop
+	;
+.done	rts
+
+	*/
+
+	Quick x, y, z, temp;
+
+	x = o.x;
+	y.SetInt(-64);// TODO: wire up gutsy
+	z = o.z;
+
+	temp.SetVal(BloodSpeed2());
+	x = x + temp;
+	temp.SetVal(BloodSpeed2());
+	y = y + temp;
+	temp.SetVal(BloodSpeed2());
+	z = z + temp;
+
+	for (int b = 0; b < count; b++)
+	{
+		Blood bloodobj;
+
+		bloodobj.x = x;
+		bloodobj.y = y;
+		bloodobj.z = z;
+
+		bloodobj.xvec.SetVal(BloodSpeed());
+		bloodobj.yvec.SetVal(BloodSpeed());
+		bloodobj.zvec.SetVal(BloodSpeed());
+		bloodobj.color = o.data.ms.blood;
+
+		logic->AddBlood(bloodobj);
+	}
+}
+
+void BloodyMess2(MapObject& o, GameLogic* logic, int count)
+{
+	Quick x, y, z, temp;
+
+	x = o.x;
+	y.SetInt(-64);// TODO: wire up gutsy
+	z = o.z;
+
+	temp.SetVal(BloodSpeed2());
+	x = x + temp;
+	temp.SetVal(BloodSpeed2());
+	y = y + temp;
+	temp.SetVal(BloodSpeed2());
+	z = z + temp;
+
+	for (int b = 0; b < count; b++)
+	{
+		Blood bloodobj;
+
+		bloodobj.x = x;
+		bloodobj.y = y;
+		bloodobj.z = z;
+
+		bloodobj.xvec.SetVal(BloodSpeed3());
+		bloodobj.yvec.SetVal(BloodSpeed3());
+		bloodobj.zvec.SetVal(BloodSpeed3());
+		bloodobj.color = o.data.ms.blood;
+
+		logic->AddBlood(bloodobj);
+	}
+}
+
 void SparksLogic(MapObject& o, GameLogic* logic)
 {
 	/*
@@ -68,7 +179,6 @@ void SparksLogic(MapObject& o, GameLogic* logic)
 
 void WeaponLogic(MapObject& o, GameLogic* logic)
 {
-	// TODO: Sparks
 	/*
 	weaponlogic;
 	move.l	camrots(pc), a0
@@ -99,6 +209,7 @@ void WeaponLogic(MapObject& o, GameLogic* logic)
 
 	if (o.data.ms.delay <= 0)
 	{
+		RndDelay(o);
 		MapObject sparksobj;
 
 		sparksobj.t = 999;
@@ -263,21 +374,6 @@ bool CheckVecs(MapObject& o, GameLogic* logic)
 
 		return true;
 	}
-}
-
-int16_t RndDelay(MapObject&o)
-{
-	/*
-	rnddelay	move	ob_range(a5), d0
-		bsr	rndn
-		add	ob_base(a5), d0
-		move	d0, ob_delay(a5)
-		;
-	rts
-	*/
-
-	o.data.ms.delay = GloomMaths::RndN(o.data.ms.range) + o.data.ms.base;
-	return o.data.ms.delay;
 }
 
 void PauseLogic(MapObject&o, GameLogic* logic)
@@ -917,7 +1013,7 @@ void HurtObject(MapObject& thisobj, MapObject& otherobj, GameLogic* logic)
 	// this checks so it doesn't flinch on collision with the player (as opposed to the players *bullets*)
 	if (!(otherobj.data.ms.colltype & 24))
 	{
-		// TODO: blud
+		BloodyMess(thisobj, logic, 23);
 
 		thisobj.data.ms.hurtwait = thisobj.data.ms.hurtpause;
 
@@ -1106,6 +1202,7 @@ void BlowChunx(MapObject& thisobj, MapObject& otherobj, GameLogic* logic)
 void BlowObject(MapObject& thisobj, MapObject& otherobj, GameLogic* logic)
 {
 	SoundHandler::Play(SoundHandler::SOUND_DIE);
+	BloodyMess2(thisobj, logic, 31);
 	BlowChunx(thisobj, otherobj, logic);
 	thisobj.killme = true;
 }
@@ -1113,6 +1210,8 @@ void BlowObject(MapObject& thisobj, MapObject& otherobj, GameLogic* logic)
 void BlowObjectNoChunks(MapObject& thisobj, MapObject& otherobj, GameLogic* logic)
 {
 	SoundHandler::Play(SoundHandler::SOUND_DIE);
+	BloodyMess2(thisobj, logic, 31);
+	BloodyMess2(thisobj, logic, 15);
 	thisobj.killme = true;
 }
 

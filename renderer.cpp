@@ -389,6 +389,64 @@ bool zcompare(const MapObject& first, const MapObject& second)
 	return first.rotz > second.rotz;
 }
 
+void Renderer::DrawBlood(Camera* camera)
+{
+	Quick x, z, temp;
+	Quick cammatrix[4];
+	int32_t rotx, rotz;
+
+	GloomMaths::GetCamRot(-camera->rot, cammatrix);
+
+	uint32_t* surface = (uint32_t*)(rendersurface->pixels);
+
+	for (auto &b : gloommap->GetBlood())
+	{
+		x = b.x;
+		z = b.z;
+
+		x = x - camera->x;
+		z = z - camera->z;
+
+		temp = x;
+		x = (x * cammatrix[0]) + (z * cammatrix[1]);
+		z = (temp * cammatrix[2]) + (z * cammatrix[3]);
+
+		rotx = x.GetInt();
+		rotz = z.GetInt();
+
+		int32_t ix = rotx;
+		int32_t iz = rotz;
+		int32_t iy = -b.y.GetInt();
+		iy -= camera->y;
+
+		if (iz > 0)
+		{
+			ix <<= focshift;
+			ix /= iz;
+
+			iy <<= focshift;
+			iy /= iz;
+
+			ix += halfrenderwidth;
+			iy = halfrenderheight - iy;
+
+			int32_t mask = b.color & 0xf;
+			mask |= (b.color & 0xF0) << 4;
+			mask |= (b.color & 0xF00) << 8;
+			mask |= mask << 4;
+			mask |= 0xFF000000;
+
+			if ((ix >= 0) && (ix < renderwidth))
+			{
+				if ((iy>0) && (iy < renderheight))
+				{
+					surface[ix + iy*renderwidth] &= mask;
+				}
+			}
+		}
+	}
+}
+
 void Renderer::DrawObjects(Camera* camera)
 {
 	Quick x, z, temp;
@@ -487,6 +545,14 @@ void Renderer::DrawObjects(Camera* camera)
 						else
 						{
 							frametouse = o.data.ms.frame >> 16;
+						}
+
+						//TODO: Gloom 3 seems to be missing baldy punch frames
+						//update - it is, they vanish in the original when they punch you
+
+						if ((size_t)frametouse >= s->size())
+						{
+							frametouse = s->size() - 1;
 						}
 
 						auto scale = 2;
@@ -849,6 +915,7 @@ void Renderer::Render(Camera* camera)
 
 	DrawFlat(ceilend, floorstart, camera);
 	DrawObjects(camera);
+	DrawBlood(camera);
 
 #if 1
 	//DEBUG

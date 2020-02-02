@@ -60,6 +60,7 @@ class Renderer
 		void DrawColumn(int32_t x, int32_t ystart, int32_t h, Column* texturedata, int32_t z, int32_t palused);
 		void DrawFlat(std::vector<int32_t>& ceilend, std::vector<int32_t>& floorstart, Camera* camera);
 		void DrawObjects(Camera* camera);
+		void DrawBlood(Camera* camera);
 		Column* GetTexColumn(int hitzone, Quick texpos, int& basetexture);
 
 		SDL_Surface* rendersurface;

@@ -155,6 +155,36 @@ bool GameLogic::AdjustPos(int32_t& overshoot, Quick& x, Quick& z, int32_t r, int
 	return Collision(false, x.GetInt(), z.GetInt(), r, overshoot, closestzone);
 }
 
+void GameLogic::MoveBlood()
+{
+	for (auto &b : gmap->GetBlood())
+	{
+		//TODO: sucking, screen splatter
+		b.x = b.x + b.xvec;
+		b.y = b.y + b.yvec;
+		b.z = b.z + b.zvec;
+
+		Quick temp;
+		temp.SetVal(0x8000);
+		b.yvec = b.yvec + temp;
+	}
+
+	// kill pass
+	auto b = gmap->GetBlood().begin();
+
+	while (b != gmap->GetBlood().end())
+	{
+		if (b->y.GetInt()>=0)
+		{
+			b = gmap->GetBlood().erase(b);
+		}
+		else
+		{
+			++b;
+		}
+	}
+}
+
 void GameLogic::DoDoor()
 {
 	for (auto &d : gmap->GetActiveDoors())
@@ -774,6 +804,8 @@ bool GameLogic::Update(Camera* cam)
 	}
 
 	if (playerobj.data.ms.pixsize == 0) playerobj.data.ms.pixsizeadd = 0;
+
+	MoveBlood();
 
 	// move any doors
 	DoDoor();
