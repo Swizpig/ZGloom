@@ -371,6 +371,7 @@ bool GloomMap::Load(const char* name, ObjectGraphics* nobj)
 		o.weapon = objectlogic->objectlogic[o.t].weapon;
 		o.hurtpause = objectlogic->objectlogic[o.t].hurtpause;
 		o.blood = objectlogic->objectlogic[o.t].blood;
+		o.punchrate = objectlogic->objectlogic[o.t].punchrate;
 	}
 
 	// load wall anims
@@ -805,6 +806,7 @@ MapObject::MapObject(Object m)
 	data.ms.hurtwait = 0;
 	data.ms.hurtpause = m.hurtpause;
 	data.ms.blood = m.blood;
+	data.ms.punchrate = m.punchrate;
 
 	switch (t)
 	{
@@ -841,6 +843,11 @@ MapObject::MapObject(Object m)
 		case ObjectGraphics::OLT_LIZARD:
 			data.ms.logic = LizardLogic;
 			data.ms.hit = LizHurt;
+			data.ms.die = BlowObject;
+			break;
+		case ObjectGraphics::OLT_TROLL:
+			data.ms.logic = TrollLogic;
+			data.ms.hit = TrollHurt;
 			data.ms.die = BlowObject;
 			break;
 		case ObjectGraphics::OLT_WEAPON1:
@@ -883,6 +890,7 @@ MapObject::MapObject()
 	data.ms.weapon = 0;
 	data.ms.hurtwait = 0;
 	data.ms.hurtpause = 0;
+	data.ms.punchrate = 0;
 
 	// avoid zero as I need to flag nothing
 	identifier = counter + 1;

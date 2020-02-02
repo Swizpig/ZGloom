@@ -570,5 +570,14 @@ ObjectGraphics::ObjectGraphics()
 	objectlogic[    OLT_TROLL].blood	= 0xf00	 ;
 
 
+	for (int i = 0; i < OLT_END; i++)
+	{
+		objectlogic[i].punchrate = 0;
+	}
+	objectlogic[OLT_BALDY].punchrate = 4;
+	objectlogic[OLT_LIZARD].punchrate = 3;
+	objectlogic[OLT_TROLL].punchrate = 3;
+
+
 	return;
 }

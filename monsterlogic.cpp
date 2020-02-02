@@ -3,6 +3,9 @@
 #include "gamelogic.h"
 #include "monsterlogic.h"
 
+void BaldyPunch(MapObject& o, GameLogic* logic);
+int8_t CheckColl(MapObject& o1, MapObject &o2);
+
 void NullLogic(MapObject& o, GameLogic* logic)
 {
 	return;
@@ -820,11 +823,12 @@ void GhoulLogic(MapObject& o, GameLogic* logic)
 	;
 	.rts	rts
 	*/
-	int16_t rndval = GloomMaths::RndW();
+	int32_t rndval = GloomMaths::RndW();
+	rndval &= 0xFFFF;
 
-	if (rndval < 0)
+	//BCC IS UNSIGNED COMPARISON!
+	if ((rndval - (o.data.ms.movspeed>>16<<8))<0)
 	{
-		// what is going on here
 		SoundHandler::Play(SoundHandler::SOUND_GHOUL);
 		CalcVecs(o);
 	}
@@ -1214,7 +1218,7 @@ void BaldyCharge(MapObject& o, GameLogic* logic)
 		return;
 	}
 
-	//TODO: Punching!
+	// Punching!
 	/*
 	move.l	a0,ob_washit(a5)
 	bsr	checkcoll
@@ -1227,9 +1231,20 @@ void BaldyCharge(MapObject& o, GameLogic* logic)
 	clr.l	ob_frame(a5)
 	rts*/
 
-	o.data.ms.frame += o.data.ms.framespeed;
-	o.data.ms.frame &= 0x3FFFF;
+	MapObject playerobj = logic->GetPlayerObj();
 
+	o.data.ms.washit = playerobj.identifier;
+
+	if (!CheckColl(playerobj, o))
+	{
+		o.data.ms.frame += o.data.ms.framespeed;
+		o.data.ms.frame &= 0x3FFFF;
+		return;
+	}
+
+	o.data.ms.logic = BaldyPunch;
+	o.data.ms.delay = o.data.ms.punchrate;
+	o.data.ms.frame = 0;
 }
 
 void BL2(MapObject& o, GameLogic* logic)
@@ -1272,6 +1287,113 @@ void BaldyLogic(MapObject& o, GameLogic* logic)
 	BL2(o, logic);
 }
 
+int8_t CheckColl(MapObject& o1, MapObject &o2)
+{
+	/*
+	checkcoll	;check for collision between a5, and a0
+	;
+	move	ob_rad(a5),d1
+	move	ob_rad(a0),d2
+	add	d1,d2	;r sum
+	;
+	move	ob_x(a0),d3
+	sub	ob_x(a5),d3
+	bpl.s	.xpl
+	neg	d3
+	.xpl	cmp	d2,d3
+	bcc.s	.no
+	;
+	move	ob_z(a0),d4
+	sub	ob_z(a5),d4
+	bpl.s	.ypl
+	neg	d4
+	.ypl	cmp	d2,d4
+	bcc.s	.no
+	;
+	mulu	d2,d2
+	mulu	d3,d3
+	mulu	d4,d4
+	add.l	d4,d3
+	cmp.l	d2,d3
+	bcc.s	.no
+	;
+	moveq	#-1,d0
+	rts
+	;
+	.no	moveq	#0,d0
+	rts
+	*/
+	int32_t radsum = o1.data.ms.rad + o2.data.ms.rad;
+
+	int32_t dx = o1.x.GetInt() - o2.x.GetInt();
+	int32_t dz = o1.z.GetInt() - o2.z.GetInt();
+
+	if (dx < 0) dx = -dx;
+	if (dz < 0) dz = -dz;
+
+	if (dx>radsum) return 0;
+	if (dz>radsum) return 0;
+
+	dx = dx*dx + dz*dz;
+	radsum *= radsum;
+
+	return (dx > radsum) ? 0 : -1;
+}
+
+void BaldyPunch(MapObject& o, GameLogic* logic)
+{
+	/*
+	baldypunch	;
+	bsr	pickplayer
+	bsr	checkcoll
+	bne.s	.doit
+	;
+	clr.l	ob_frame(a5)
+	bra	baldy_tonorm
+	;
+	.doit	subq	#1,ob_delay(a5)
+	ble.s	.punch
+	rts
+	.punch	move	ob_punchrate(a5),ob_delay(a5)
+	moveq	#0,d0	;stand frame
+	cmp	ob_frame(a5),d0
+	bne	.skip
+	;
+	clr.l	ob_washit(a5)	;punch!
+	bsr	calcangle
+	move	d0,ob_rot(a5)
+	moveq	#5,d0
+	.skip	move	d0,ob_frame(a5)
+	rts
+	*/
+	MapObject playerobj = logic->GetPlayerObj();
+
+	if (!CheckColl(o, playerobj))
+	{
+		o.data.ms.frame = 0;
+		Baldy2Norm(o, logic);
+		return;
+	}
+
+	o.data.ms.delay--;
+	if (o.data.ms.delay>0) return;
+
+	 o.data.ms.delay = o.data.ms.punchrate;
+
+	if (o.data.ms.frame == 0)
+	{
+		o.data.ms.washit = 0;
+		o.data.ms.rot = logic->PickCalc(o);
+		o.data.ms.frame = 5 << 16;
+	}
+	else
+	{
+		o.data.ms.frame = 0;
+	}
+
+	
+}
+
 void LizardLogic(MapObject& o, GameLogic* logic)
 {
 	/*
@@ -1309,8 +1431,8 @@ void LizardLogic(MapObject& o, GameLogic* logic)
 
 	MapObject player = logic->GetPlayerObj();
 
-	int16_t dx = o.x.GetFrac() - player.x.GetFrac();
-	int16_t dz = o.z.GetFrac() - player.z.GetFrac();
+	int16_t dx = o.x.GetInt() - player.x.GetInt();
+	int16_t dz = o.z.GetInt() - player.z.GetInt();
 
 	int32_t res = (int32_t)dx * (int32_t)dx + (int32_t)dz * (int32_t)dz;
 
@@ -1336,4 +1458,85 @@ void LizHurt(MapObject& thisobj, MapObject& otherobj, GameLogic* logic)
 	SoundHandler::Play(SoundHandler::SOUND_LIZHIT);
 	HurtObject(thisobj, otherobj, logic);
 }
+
+void TrollHurt(MapObject& thisobj, MapObject& otherobj, GameLogic* logic)
+{
+	SoundHandler::Play(SoundHandler::SOUND_TROLLHIT);
+	HurtObject(thisobj, otherobj, logic);
+}
+
+void TrollLogic2(MapObject& o, GameLogic* logic)
+{
+	/*
+	trolllogic2	subq	#1, ob_delay(a5)
+		bgt	monstermove; charge ?
+		;
+	bsr	pickcalc; pic player in a0!
+		move	ob_x(a5), d0
+		sub	ob_x(a0), d0
+		muls	d0, d0
+		move	ob_z(a5), d1
+		sub	ob_z(a0), d1
+		muls	d1, d1
+		add.l	d1, d0
+		cmp.l	#320 * 320, d0
+		bcc	bl2
+		;
+	move.l	trollsfx(pc), a0
+		moveq	#64, d0
+		moveq	#5, d1
+		bsr	playsfx
+		;
+	bra	bl2
+	*/
+
+	o.data.ms.delay--;
+
+	if (o.data.ms.delay>0)
+	{
+		MonsterMove(o, logic);
+		return;
+	}
+
+	uint8_t ang = logic->PickCalc(o);
+
+	MapObject player = logic->GetPlayerObj();
+
+	int16_t dx = o.x.GetInt() - player.x.GetInt();
+	int16_t dz = o.z.GetInt() - player.z.GetInt();
+
+	int32_t res = (int32_t)dx * (int32_t)dx + (int32_t)dz * (int32_t)dz;
+
+	if (res < (320 * 320))
+	{
+		SoundHandler::Play(SoundHandler::SOUND_TROLLMAD);
+	}
+
+	BL2(o, logic);
+}
+
+void TrollLogic(MapObject& o, GameLogic* logic)
+{
+	/*trolllogic	
+	move	ob_rad(a5),d0
+	mulu	#$a000,d0
+	swap	d0
+	move	d0,ob_rad(a5)
+	mulu	d0,d0
+	move.l	d0,ob_radsq(a5)
+	move.l	#trolllogic2,ob_logic(a5)
+	;
+	*/
+
+	int32_t newrad = o.data.ms.rad;
+
+	newrad *= 0xa000;
+	newrad >>= 16;
+
+	o.data.ms.rad = newrad;
+	o.data.ms.radsq = newrad*newrad;
+	o.data.ms.logic = TrollLogic2;
+	TrollLogic2(o, logic);
+}
+
 

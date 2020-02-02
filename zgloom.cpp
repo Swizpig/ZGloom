@@ -53,6 +53,7 @@ void LoadPic(std::string name, SDL_Surface* render8)
 	palfile.Load((name+".pal").c_str());
 
 	// is this some sort of weird AGA/ECS backwards compatible palette encoding? 4 MSBs, then LSBs?
+	// Update: Yes, yes it is. 
 	for (uint32_t c = 0; c < palfile.size / 4; c++)
 	{
 		SDL_Color col;
@@ -168,6 +169,7 @@ int main(int argc, char* argv[])
 	GameLogic logic;
 	Camera cam;
 
+	logic.Init(&objgraphics);
 	SDL_AddTimer(1000 / 25, my_callbackfunc, NULL);
 
 	SDL_Event sEvent;
@@ -274,7 +276,7 @@ int main(int argc, char* argv[])
 					gmap.Load(scriptstring.c_str(), &objgraphics);
 					//gmap.Load("maps/map1_4", &objgraphics);
 					renderer.Init(render32, &gmap, &objgraphics);
-					logic.Init(&gmap, &cam, &objgraphics);
+					logic.InitLevel(&gmap, &cam, &objgraphics);
 					showscreen = false;
 					playing = true;
 				}

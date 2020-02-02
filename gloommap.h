@@ -100,6 +100,7 @@ class Object
 	int16_t weapon;
 	int16_t hurtpause;
 	uint16_t blood;
+	int16_t punchrate;
 	std::vector<Shape>* shape;
 	std::vector<Shape>* chunk;
 };
@@ -163,6 +164,7 @@ class MapObjectSideBand
 	int16_t firecnt;
 	int16_t firerate;
 	int16_t weapon;
+	int16_t punchrate;
 
 	//bouncy bullets
 	int16_t bouncecnt;

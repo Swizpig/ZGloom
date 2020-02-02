@@ -3,7 +3,51 @@
 #include "monsterlogic.h"
 #include "soundhandler.h"
 
-void GameLogic::Init(GloomMap* gmapin, Camera* cam, ObjectGraphics* ograph)
+void GameLogic::Init(ObjectGraphics* ograph)
+{
+	// note weird order of SFX.
+	wtable[0].hitpoint = 1;
+	wtable[0].damage = 1;
+	wtable[0].speed = 32;
+	wtable[0].sound = SoundHandler::SOUND_SHOOT3;
+
+	wtable[1].hitpoint = 5;
+	wtable[1].damage = 2;
+	wtable[1].speed = 36;
+	wtable[1].sound = SoundHandler::SOUND_SHOOT5;
+
+	wtable[2].hitpoint = 10;
+	wtable[2].damage = 2;
+	wtable[2].speed = 40;
+	wtable[2].sound = SoundHandler::SOUND_SHOOT;
+
+	wtable[3].hitpoint = 15;
+	wtable[3].damage = 3;
+	wtable[3].speed = 40;
+	wtable[3].sound = SoundHandler::SOUND_SHOOT4;
+
+	wtable[4].hitpoint = 20;
+	wtable[4].damage = 5;
+	wtable[4].speed = 24;
+	wtable[4].sound = SoundHandler::SOUND_SHOOT5;
+
+	for (auto i = 0; i < 5; i++)
+	{
+		wtable[i].shape = &(ograph->BulletShapes[i]);
+	}
+
+	for (auto i = 0; i < 5; i++)
+	{
+		wtable[i].spark = &(ograph->SparkShapes[i]);
+	}
+
+	p1lives = 3;
+	p1health = 25;
+	p1weapon = 0;
+	p1reload = 5;
+}
+
+void GameLogic::InitLevel(GloomMap* gmapin, Camera* cam, ObjectGraphics* ograph)
 {
 	gmap = gmapin;
 	objectgraphics = ograph;
@@ -17,7 +61,7 @@ void GameLogic::Init(GloomMap* gmapin, Camera* cam, ObjectGraphics* ograph)
 		eventhit[e] = false;
 	}
 
-	for (auto o : gmap->GetMapObjects())
+	for (auto &o : gmap->GetMapObjects())
 	{
 		if (o.t == 0)// player
 		{
@@ -25,6 +69,11 @@ void GameLogic::Init(GloomMap* gmapin, Camera* cam, ObjectGraphics* ograph)
 			cam->y = 120; //TODO, and rotation
 			cam->z = o.z;
 			cam->rot = o.data.ms.rot;
+
+			o.data.ms.hitpoints = p1health;
+			//o.data.ms.lives = p1lives; TODO
+			o.data.ms.weapon = p1weapon;
+			o.data.ms.reload = p1reload;
 		}
 	}
 
@@ -64,6 +113,11 @@ void GameLogic::Init(GloomMap* gmapin, Camera* cam, ObjectGraphics* ograph)
 	{
 		wtable[i].spark = &(ograph->SparkShapes[i]);
 	}
+
+	p1lives = 3;
+	p1health = 25;
+	p1weapon = 0;
+	p1reload = 5;
 }
 
 bool GameLogic::AdjustPos(int32_t& overshoot, Quick& x, Quick& z, int32_t r, int32_t& closestzone)
@@ -622,13 +676,18 @@ bool GameLogic::Update(Camera* cam)
 	if (keystate[SDL_SCANCODE_LCTRL])
 	{
 		//Shoot!
-		if (playerobj.data.ms.reloadcnt == 0)
+		if ((playerobj.data.ms.reloadcnt == 0) && (!firedown))
 		{
 			auto wep = playerobj.data.ms.weapon;
 			Shoot(playerobj, this, (playerobj.data.ms.collwith & 3) ^ 3, 0, wtable[wep].hitpoint, wtable[wep].damage, wtable[wep].speed, wtable[wep].shape, wtable[wep].spark);
 			SoundHandler::Play(wtable[wep].sound);
 			playerobj.data.ms.reloadcnt = playerobj.data.ms.reload;
+			firedown = true;
 		}
+	}
+	else
+	{
+		firedown = false;
 	}
 
 	if (playerobj.data.ms.reloadcnt > 0) playerobj.data.ms.reloadcnt--;
@@ -791,6 +850,15 @@ bool GameLogic::Update(Camera* cam)
 		if (o.t == ObjectGraphics::OLT_PLAYER1)
 		{
 			o = playerobj;
+
+			if (done)
+			{
+				//p1lives = 3; TODO
+				p1health = o.data.ms.hitpoints;
+				p1weapon = o.data.ms.weapon;
+				p1reload = o.data.ms.reload;
+			}
+
 			break;
 		}
 	}
@@ -825,7 +893,7 @@ void GameLogic::ObjectCollision()
 					o.data.ms.washit = 0;
 
 					// note goes back to the outer loop in the original? But that seems to mess with the asymettric nature of the collision system?
-					// UPDATE: this may be way objects get added to both the back and front of the list
+					// UPDATE: this may be why objects get added to both the back and front of the list
 					break;
 				}
 

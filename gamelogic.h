@@ -10,7 +10,8 @@ class GloomMap;
 class GameLogic
 {
 	public:
-		void Init(GloomMap* gmapin, Camera* cam, ObjectGraphics* ograph);
+		void Init(ObjectGraphics* ograph);
+		void InitLevel(GloomMap* gmapin, Camera* cam, ObjectGraphics* ograph);
 		bool Update(Camera* cam);
 		int32_t GetEffect();
 
@@ -42,5 +43,13 @@ class GameLogic
 		void ObjectCollision();
 		uint32_t animframe[160];
 		bool eventhit[25];
+
+		bool firedown;
+
+		//storage for data saved between levels
+		int16_t p1health;
+		int16_t p1lives;
+		int16_t p1weapon;
+		int16_t p1reload;
 
 };
