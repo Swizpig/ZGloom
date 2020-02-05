@@ -815,11 +815,13 @@ MapObject::MapObject(Object m)
 			data.ms.logic = NullLogic;
 			data.ms.hit = NullLogicComp;
 			data.ms.die = NullLogicComp;
+			data.ms.eyey = -110;
 			break;
 		case ObjectGraphics::OLT_PLAYER2:
 			data.ms.logic = NullLogic;
 			data.ms.hit = NullLogicComp;
 			data.ms.die = NullLogicComp;
+			data.ms.eyey = -110;
 			break;
 		case ObjectGraphics::OLT_MARINE:
 			data.ms.logic = MonsterLogic;
@@ -828,6 +830,16 @@ MapObject::MapObject(Object m)
 			break;
 		case ObjectGraphics::OLT_BALDY:
 			data.ms.logic = BaldyLogic;
+			data.ms.hit = HurtNGrunt;
+			data.ms.die = BlowObject;
+			break;
+		case ObjectGraphics::OLT_PHANTOM:
+			data.ms.logic = PhantomLogic;
+			data.ms.hit = HurtNGrunt;
+			data.ms.die = BlowObject;
+			break;
+		case ObjectGraphics::OLT_DEMON:
+			data.ms.logic = PhantomLogic;
 			data.ms.hit = HurtNGrunt;
 			data.ms.die = BlowObject;
 			break;

@@ -52,8 +52,6 @@ void GameLogic::InitLevel(GloomMap* gmapin, Camera* cam, ObjectGraphics* ograph)
 	gmap = gmapin;
 	objectgraphics = ograph;
 	levelfinished = false;
-
-	camdir = 1;
 	std::fill(animframe, animframe + 160, 0);
 
 	for (auto e = 0; e < 25; e++)
@@ -636,6 +634,7 @@ bool GameLogic::Update(Camera* cam)
 {
 	Quick inc;
 	bool done = false;
+	bool moved = false;
 
 	inc.SetVal(0xd0000);
 	newobjects.clear();
@@ -654,24 +653,23 @@ bool GameLogic::Update(Camera* cam)
 	playerobj.x = cam->x;
 	playerobj.y.SetInt(0);
 	playerobj.z = cam->z;
-	//I've fouled up the coord system here
-	playerobj.data.ms.rot = -cam->rot;
+	playerobj.data.ms.rot = cam->rot;
 
 	inc.SetVal(playerobj.data.ms.movspeed);
 
 	if (keystate[SDL_SCANCODE_UP])
 	{
 		// U 
-		newx = cam->x + camrots[1] * inc;
+		newx = cam->x - camrots[1] * inc;
 		newz = cam->z + camrots[0] * inc;
-		cam->y += camdir;
+		moved = true;
 	}
 	if (keystate[SDL_SCANCODE_DOWN])
 	{
 		// D
-		newx = cam->x - camrots[1] * inc;
+		newx = cam->x + camrots[1] * inc;
 		newz = cam->z - camrots[0] * inc;
-		cam->y += camdir;
+		moved = true;
 	}
 	if (keystate[SDL_SCANCODE_LEFT])
 	{
@@ -681,11 +679,12 @@ bool GameLogic::Update(Camera* cam)
 		{
 			//strafe
 			newx = newx + camrotstrafe[1] * inc;
-			newz = newz + camrotstrafe[0] * inc;
+			newz = newz - camrotstrafe[0] * inc;
+			moved = true;
 		}
 		else
 		{
-			cam->rot += 4;
+			cam->rot -= 4;
 		}
 	}
 	if (keystate[SDL_SCANCODE_RIGHT])
@@ -695,11 +694,56 @@ bool GameLogic::Update(Camera* cam)
 		{
 			//strafe
 			newx = newx - camrotstrafe[1] * inc;
-			newz = newz - camrotstrafe[0] * inc;
+			newz = newz + camrotstrafe[0] * inc;
+			moved = true;
 		}
 		else
 		{
-			cam->rot -= 4;
+			cam->rot += 4;
+		}
+	}
+
+	if (!moved)
+	{
+		//unbounce
+		if (playerobj.data.ms.bounce)
+		{
+			playerobj.data.ms.bounce += 30;
+
+			if ((playerobj.data.ms.bounce & 127) < 30)
+			{
+				playerobj.data.ms.bounce = 0;
+				SoundHandler::Play(SoundHandler::SOUND_FOOTSTEP);
+			}
+		}
+	}
+	else
+	{
+		// bounce!
+		/*
+		.bounce	move	ob_bounce(a5),d2
+		add	#20,ob_bounce(a5)
+		move	ob_bounce(a5),d1
+		and	#255,d2
+		cmp	#64,d2
+		bcc.s	.fskip
+		and	#255,d1
+		cmp	#64,d1
+		bcs.s	.fskip
+		;
+		bsr	footstep
+		*/
+
+		int16_t d2 = playerobj.data.ms.bounce;
+		playerobj.data.ms.bounce += 20;
+		int16_t d1 = playerobj.data.ms.bounce;
+
+		d2 &= 255;
+		d1 &= 255;
+
+		if ((d1 >= 64) && (d2 < 64))
+		{
+			SoundHandler::Play(SoundHandler::SOUND_FOOTSTEP);
 		}
 	}
 
@@ -750,6 +794,12 @@ bool GameLogic::Update(Camera* cam)
 			cam->z = newz;
 		}
 	}
+
+	cam->y = -(playerobj.y.GetInt() + playerobj.data.ms.eyey);
+	// add bounce
+	int16_t camrotsraw[4];
+	GloomMaths::GetCamRotRaw(playerobj.data.ms.bounce & 255, camrotsraw);
+	cam->y -= (camrotsraw[1] * 20) >> 16;
 
 	// event check
 	Teleport tele;
@@ -840,9 +890,6 @@ bool GameLogic::Update(Camera* cam)
 			tp[a.first] = to[a.first + curframe];
 		}
 	}
-
-	if (cam->y > 136) camdir = -1;
-	if (cam->y < 120) camdir = 1;
 
 	for (auto &o : gmap->GetMapObjects())
 	{

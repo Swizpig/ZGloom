@@ -152,6 +152,7 @@ class MapObjectSideBand
 	int16_t telerot;
 
 	int16_t firey;
+	int16_t eyey;
 
 	std::vector<Shape>* shape;
 	std::vector<Shape>* chunks;

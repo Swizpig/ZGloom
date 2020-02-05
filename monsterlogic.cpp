@@ -1638,4 +1638,159 @@ void TrollLogic(MapObject& o, GameLogic* logic)
 	TrollLogic2(o, logic);
 }
 
+void PhantomLogic(MapObject& o, GameLogic* logic)
+{
+	/*
+	phantomlogic	;
+	move	ob_rot(a5),ob_oldrot(a5)
+	subq	#1,ob_delay(a5)
+	bgt	monstermove
+	;
+	bsr	pickcalc
+	;
+	move	d0,ob_rot(a5)
+	bsr	calcvecs
+	move	#7,ob_delay(a5)
+	move.l	ob_logic(a5),ob_oldlogic(a5)
+	move.l	#pauselogic,ob_logic(a5)
+	move	#5,ob_frame(a5)
+	;
+	moveq	#4,d2	;colltype
+	moveq	#0,d3	;collwith
+	moveq	#1,d4	;hitpoints
+	moveq	#3,d5	;damage
+	moveq	#20,d6	;speed
+	moveq	#0,d7	;acceleration!
+	lea	bullet3,a2
+	lea	sparks3,a3
+	;
+	bra	shoot
+	*/
+	o.data.ms.oldrot = o.data.ms.rot;
+	o.data.ms.delay--;
 
+	if (o.data.ms.delay > 0)
+	{
+		MonsterMove(o, logic);
+		return;
+	}
+
+	o.data.ms.rot = logic->PickCalc(o);
+	CalcVecs(o);
+	o.data.ms.delay = 7;
+	o.data.ms.oldlogic = o.data.ms.logic;
+	o.data.ms.logic = PauseLogic;
+	o.data.ms.frame = 5 << 16;
+	Shoot(o, logic, 4, 0, 1, 3, 20, logic->wtable[2].shape, logic->wtable[2].spark);
+	return;
+}
+
+void DemonPause(MapObject& o, GameLogic* logic)
+{
+	/*
+	demonpause	
+	move	ob_delay(a5),d0
+	move	d0,d1
+	and	#4,d0
+	sne	d0
+	ext	d0
+	and	#5,d0	;0 or 5
+	move	d0,ob_frame(a5)
+	;
+	and	#7,d1	;do a fire?
+	cmp	#7,d1
+	bne.s	.nofire
+	;
+	*/
+	uint32_t frame = (o.data.ms.delay & 4) ? 0 : 0xFFFFFFFF;
+	frame &= 5;
+	o.data.ms.frame = frame << 16;
+	if ((o.data.ms.delay & 7) == 7)
+	{
+		/*
+		move	ob_delay(a5),d0
+		lsr	#3,d0
+		mulu	#18,d0
+		lea	wtable(pc),a0
+		moveq	#4,d2	;colltype
+		moveq	#0,d3	;collwith
+		movem	0(a0,d0),d4-d6	;hits,dam,speed
+		mulu	#$c000,d5
+		swap	d5	;3/4 damage!
+		moveq	#0,d7	;acc
+		movem.l	6(a0,d0),a2-a3	;bullets/sparks
+		move.l	14(a0,d0),-(a7)	;sfx!
+		;
+		bsr	shoot
+		;
+		move.l	(a7)+,a0
+		move.l	(a0),a0
+		moveq	#32,d0
+		moveq	#0,d1
+		bsr	playsfx
+		*/
+		uint32_t wep = (o.data.ms.delay>>3);
+		if (wep > 4)//this should never happen?
+		{
+			wep = 4;
+		}
+		Shoot(o, logic, 4, 0, logic->wtable[wep].hitpoint, logic->wtable[wep].damage*3/4, logic->wtable[wep].speed, logic->wtable[wep].shape, logic->wtable[wep].spark);
+		SoundHandler::Play(SoundHandler::SOUND_SHOOT + wep);
+	}
+	/*
+	;
+	.nofire	subq	#1,ob_delay(a5)
+	bgt.s	.rts
+	;
+	bsr	rnddelay
+	move.l	ob_oldlogic(a5),ob_logic(a5)
+	;
+	.rts	rts
+	*/
+	o.data.ms.delay--;
+
+	if (o.data.ms.delay <= 0)
+	{
+		o.data.ms.delay = RndDelay(o);
+		o.data.ms.logic = o.data.ms.oldlogic;
+	}
+}
+
+void DemonLogic(MapObject& o, GameLogic* logic)
+{
+
+	/*
+	demonlogic	;
+	move	ob_rot(a5),ob_oldrot(a5)
+	subq	#1,ob_delay(a5)
+	bgt	monstermove
+	;
+	bsr	pickcalc
+	;
+	move	d0,ob_rot(a5)
+	bsr	calcvecs
+	move	#5<<3-1,ob_delay(a5)
+	move.l	ob_logic(a5),ob_oldlogic(a5)
+	move.l	#demonpause,ob_logic(a5)
+	;
+	rts
+	*/
+
+	o.data.ms.oldrot = o.data.ms.rot;
+	o.data.ms.delay--;
+
+	if (o.data.ms.delay > 0)
+	{
+		MonsterMove(o, logic);
+		return;
+	}
+
+	o.data.ms.rot = logic->PickCalc(o);
+	CalcVecs(o);
+	// passing in a weapon number. Why not HW into demonpause? I thought it was going to be some kind of random weapon selection
+	o.data.ms.delay = (5<<3)-1;
+	o.data.ms.oldlogic = o.data.ms.logic;
+	o.data.ms.logic = DemonPause;
+	return;
+
+}

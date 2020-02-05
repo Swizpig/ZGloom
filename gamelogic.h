@@ -31,7 +31,6 @@ class GameLogic
 
 	private:
 		GloomMap* gmap;
-		int camdir = 1;
 
 		//currently active teleport
 		Teleport activetele;
