@@ -13,7 +13,8 @@ class GameLogic
 		void Init(ObjectGraphics* ograph);
 		void InitLevel(GloomMap* gmapin, Camera* cam, ObjectGraphics* ograph);
 		bool Update(Camera* cam);
-		int32_t GetEffect();
+		int32_t GetTeleEffect();
+		bool GetPlayerHit() { return playerhit; };
 
 		// needed public for monster logic. This is a mess, needs refactor to split more cleanly
 		MapObject GetPlayerObj();
@@ -46,6 +47,9 @@ class GameLogic
 		bool eventhit[25];
 
 		bool firedown;
+
+		//was I hit this frame?
+		bool playerhit = false;
 
 		//storage for data saved between levels
 		int16_t p1health;

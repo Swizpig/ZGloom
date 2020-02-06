@@ -48,7 +48,8 @@ class Renderer
 	public:
 		void Init(SDL_Surface* nrendersurface, GloomMap* ngloommap, ObjectGraphics* nObjectGraphics);
 		void Render(Camera* Camera);
-		void SetEffect(int32_t timer) {fadetimer = timer;};
+		void SetTeleEffect(int32_t timer) {fadetimer = timer;};
+		void SetPlayerHit(bool hit) { playerhit = hit; };
 
 	private:
 		bool OriginSide(int16_t fx, int16_t fz, int16_t bx, int16_t bz);
@@ -79,6 +80,8 @@ class Renderer
 		int32_t darkpalettes[16][16];
 		//for fadeout/in
 		int32_t fadetimer;
+		//for damage indication
+		bool playerhit;
 
 		void ColourModify(uint8_t rin, uint8_t gin, uint8_t bin, uint32_t& col, int32_t z)
 		{
@@ -97,6 +100,10 @@ class Renderer
 				r = (r * (25 - fadetimer) + 128 * fadetimer) / 25;
 				g = (g * (25 - fadetimer) + 128 * fadetimer) / 25;
 				b = (b * (25 - fadetimer) + 255 * fadetimer) / 25;
+			}
+			if (playerhit)
+			{
+				g = 0; b = 0;
 			}
 
 			col = (r << 16) | (g << 8) | b;

@@ -872,6 +872,11 @@ MapObject::MapObject(Object m)
 			data.ms.hit = WeaponGot;
 			data.ms.die = WeaponGot;
 			break;
+		case ObjectGraphics::OLT_HEALTH:
+			data.ms.logic = NullLogic;
+			data.ms.hit = HealthGot;
+			data.ms.die = HealthGot;
+			break;
 		default:
 			data.ms.logic = NullLogic;
 			data.ms.hit = NullLogicComp;

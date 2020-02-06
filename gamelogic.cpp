@@ -45,6 +45,8 @@ void GameLogic::Init(ObjectGraphics* ograph)
 	p1health = 25;
 	p1weapon = 0;
 	p1reload = 5;
+
+	playerhit = false;
 }
 
 void GameLogic::InitLevel(GloomMap* gmapin, Camera* cam, ObjectGraphics* ograph)
@@ -650,6 +652,8 @@ bool GameLogic::Update(Camera* cam)
 
 	MapObject playerobj = GetPlayerObj();
 
+	int16_t initialhealth = playerobj.data.ms.hitpoints;
+
 	playerobj.x = cam->x;
 	playerobj.y.SetInt(0);
 	playerobj.z = cam->z;
@@ -906,6 +910,8 @@ bool GameLogic::Update(Camera* cam)
 	playerobj.data.ms.weapon = playerobjupdated.data.ms.weapon;
 	playerobj.data.ms.reload = playerobjupdated.data.ms.reload;
 
+	playerhit = playerobj.data.ms.hitpoints < initialhealth;
+
 	//kill pass
 
 	auto i = gmap->GetMapObjects().begin();
@@ -945,7 +951,7 @@ bool GameLogic::Update(Camera* cam)
 	return done;
 }
 
-int32_t GameLogic::GetEffect()
+int32_t GameLogic::GetTeleEffect()
 {
 	for (auto o : gmap->GetMapObjects())
 	{

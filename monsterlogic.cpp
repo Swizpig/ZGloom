@@ -1792,5 +1792,13 @@ void DemonLogic(MapObject& o, GameLogic* logic)
 	o.data.ms.oldlogic = o.data.ms.logic;
 	o.data.ms.logic = DemonPause;
 	return;
+}
 
+void HealthGot(MapObject& thisobj, MapObject& otherobj, GameLogic* logic)
+{
+	SoundHandler::Play(SoundHandler::SOUND_TOKEN);
+
+	otherobj.data.ms.hitpoints += 4;
+	if (otherobj.data.ms.hitpoints > 25) otherobj.data.ms.hitpoints = 25;
+	thisobj.killme = true;
 }

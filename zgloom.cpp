@@ -17,6 +17,7 @@
 #include "soundhandler.h"
 #include "font.h"
 #include "titlescreen.h"
+#include "hud.h"
 
 Uint32 my_callbackfunc(Uint32 interval, void *param)
 {
@@ -192,6 +193,7 @@ int main(int argc, char* argv[])
 	Renderer renderer;
 	GameLogic logic;
 	Camera cam;
+	Hud hud;
 
 	logic.Init(&objgraphics);
 	SDL_AddTimer(1000 / 25, my_callbackfunc, NULL);
@@ -445,9 +447,13 @@ int main(int argc, char* argv[])
 
 		if (state == STATE_PLAYING)
 		{
-			renderer.SetEffect(logic.GetEffect());
+			renderer.SetTeleEffect(logic.GetTeleEffect());
+			renderer.SetPlayerHit(logic.GetPlayerHit());
 			renderer.Render(&cam);
+			MapObject pobj = logic.GetPlayerObj();
+			hud.Render(render32,pobj.data.ms.weapon, pobj.data.ms.reload, pobj.data.ms.hitpoints);
 		}
+
 		if ((state == STATE_WAITING) || (state == STATE_TITLE))
 		{
 			SDL_BlitSurface(render8, NULL, render32, NULL);
