@@ -124,12 +124,19 @@ enum GameState
 
 int main(int argc, char* argv[])
 {
+	/* AUTODETECT ZM FIRST!*/
+	if (FILE* file = fopen("stuf/stages", "r"))
+	{
+		fclose(file);
+		Config::SetZM(true);
+	}
+	Config::Init();
+
 	GloomMap gmap;
 	Script script;
 	TitleScreen titlescreen;
 	MenuScreen menuscreen;
 	GameState state = STATE_TITLE;
-	Config::Init();
 
 	xmp_context ctx;
 

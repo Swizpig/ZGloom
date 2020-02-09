@@ -6,6 +6,7 @@
 
 namespace Config
 {
+	void SetZM(bool zm);
 	std::string GetScriptName();
 	std::string GetPicsDir();
 	std::string GetLevelDir();

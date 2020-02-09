@@ -13,7 +13,7 @@ A re-implementation of [Amiga FPS Gloom](https://en.wikipedia.org/wiki/Gloom_(vi
 
 ## Windows
 
-Drop everything in the bin folder in the root of Gloom (ie, above the misc/, pics/ etc dirs). Run the -zm exe for Zombie Massacre as that game moves some files around. 
+Drop everything in the bin folder in the root of Gloom (ie, above the misc/, pics/ etc dirs). The game will auto-detect Zombie Massacre depending on the presence of the "stuf/stages" file.
 Will need the VS2013 runtime.
 
 ## Linux
@@ -28,11 +28,10 @@ Cursors, left alt to strafe, left ctrl to fire. F1 skips level. F12 toggles full
 # TODO
 
 * Backend of the renderer is mostly mine, and is flaky. There's Z-fighting that doesn't exist in the original, for instance
-* Object scaling not done
 * Sound is deafening on occasion, need variable volume playback and priority system
 * Some monsters are missing their logic still
-* Incomplete HUD and no way to actually die yet
-* No in-game options
+* Incomplete HUD and infinite lives currently
+* Very basic in-game menu
 * No defender sub-game
 * LibXMP's MED playback isn't great on some tunes
 
