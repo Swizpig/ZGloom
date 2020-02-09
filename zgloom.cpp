@@ -17,6 +17,7 @@
 #include "soundhandler.h"
 #include "font.h"
 #include "titlescreen.h"
+#include "menuscreen.h"
 #include "hud.h"
 
 Uint32 my_callbackfunc(Uint32 interval, void *param)
@@ -116,6 +117,7 @@ enum GameState
 	STATE_PLAYING,
 	STATE_PARSING,
 	STATE_WAITING,
+	STATE_MENU,
 	STATE_TITLE
 };
 
@@ -125,6 +127,7 @@ int main(int argc, char* argv[])
 	GloomMap gmap;
 	Script script;
 	TitleScreen titlescreen;
+	MenuScreen menuscreen;
 	GameState state = STATE_TITLE;
 	Config::Init();
 
@@ -392,6 +395,7 @@ int main(int argc, char* argv[])
 					{
 						case TitleScreen::TITLERET_PLAY:
 							state = STATE_PARSING;
+							logic.Init(&objgraphics);
 							if (titlemusic.data)
 							{
 								Mix_HookMusic(nullptr, nullptr);
@@ -405,6 +409,38 @@ int main(int argc, char* argv[])
 						default:
 							break;
 					}
+				}
+				if (state == STATE_MENU)
+				{
+					switch (menuscreen.Update(sEvent))
+					{
+						case MenuScreen::MENURET_PLAY:
+							state = STATE_PLAYING;
+							break;
+						case MenuScreen::MENURET_QUIT:
+							script.Reset();
+							state = STATE_TITLE;
+							if (titlemusic.data)
+							{
+								if (xmp_load_module_from_memory(ctx, titlemusic.data, titlemusic.size))
+								{
+									std::cout << "music error";
+								}
+
+								if (xmp_start_player(ctx, 22050, 0))
+								{
+									std::cout << "music error";
+								}
+								Mix_HookMusic(fill_audio, ctx);
+							}
+							break;
+						default:
+							break;
+					}
+				}
+				if ((state == STATE_PLAYING) && (sEvent.key.keysym.sym == SDLK_ESCAPE))
+				{
+					state = STATE_MENU;
 				}
 			}
 
@@ -440,6 +476,10 @@ int main(int argc, char* argv[])
 				{
 					titlescreen.Clock();
 				}
+				if (state == STATE_MENU)
+				{
+					menuscreen.Clock();
+				}
 			}
 		}
 
@@ -452,6 +492,11 @@ int main(int argc, char* argv[])
 			renderer.Render(&cam);
 			MapObject pobj = logic.GetPlayerObj();
 			hud.Render(render32,pobj.data.ms.weapon, pobj.data.ms.reload, pobj.data.ms.hitpoints);
+		}
+		if (state == STATE_MENU)
+		{
+			renderer.Render(&cam);
+			menuscreen.Render(render32, render32, smallfont);
 		}
 
 		if ((state == STATE_WAITING) || (state == STATE_TITLE))

@@ -442,7 +442,7 @@ ObjectGraphics::ObjectGraphics()
 		objectlogic[i].colltype = 0;
 	}
 	objectlogic[OLT_PLAYER1].colltype = 8;
-	objectlogic[OLT_PLAYER1].colltype = 16;
+	objectlogic[OLT_PLAYER2].colltype = 16;
 
 	objectlogic[OLT_PLAYER1].damage = 1;
 	objectlogic[OLT_PLAYER2].damage = 1;
@@ -568,6 +568,31 @@ ObjectGraphics::ObjectGraphics()
 	objectlogic[   OLT_LIZARD].blood	= 0xf0f	 ;
 	objectlogic[OLT_DEATHHEAD].blood	= 0xf00	 ;
 	objectlogic[    OLT_TROLL].blood	= 0xf00	 ;
+
+	objectlogic[OLT_PLAYER1].scale = 0x200;
+	objectlogic[OLT_PLAYER2].scale = 0x200;
+	objectlogic[OLT_HEALTH].scale = 0x200;
+	objectlogic[OLT_WEAPON].scale = 0x200;
+	objectlogic[OLT_THERMO].scale = 0x200;
+	objectlogic[OLT_INFRA].scale = 0x200;
+	objectlogic[OLT_INVISI].scale = 0x200;
+	objectlogic[OLT_INVINC].scale = 0x200;
+	objectlogic[OLT_DRAGON].scale = 0x300;
+	objectlogic[OLT_BOUNCY].scale = 0x200;
+	objectlogic[OLT_MARINE].scale = 0x200;
+	objectlogic[OLT_BALDY].scale = 0x220;
+	objectlogic[OLT_TERRA].scale = 0x280;
+	objectlogic[OLT_GHOUL].scale = 0x200;
+	objectlogic[OLT_PHANTOM].scale = 0x280;
+	objectlogic[OLT_DEMON].scale = 0x380;
+	objectlogic[OLT_WEAPON1].scale = 0x200;
+	objectlogic[OLT_WEAPON2].scale = 0x200;
+	objectlogic[OLT_WEAPON3].scale = 0x200;
+	objectlogic[OLT_WEAPON4].scale = 0x200;
+	objectlogic[OLT_WEAPON5].scale = 0x200;
+	objectlogic[OLT_LIZARD].scale = 0x240;
+	objectlogic[OLT_DEATHHEAD].scale = 0x200;
+	objectlogic[OLT_TROLL].scale = 0x240;
 
 
 	for (int i = 0; i < OLT_END; i++)

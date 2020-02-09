@@ -49,6 +49,19 @@ void GameLogic::Init(ObjectGraphics* ograph)
 	playerhit = false;
 }
 
+void GameLogic::ResetPlayer(MapObject& o)
+{
+	// reset the player on death
+	o.data.ms.hitpoints = 25;
+	o.data.ms.eyey = -110;
+	o.data.ms.logic = NullLogic;
+	o.data.ms.colltype = 8;
+	o.data.ms.collwith = 4;
+	o.x = origx;
+	o.z = origz;
+	o.data.ms.rot = origrot;
+}
+
 void GameLogic::InitLevel(GloomMap* gmapin, Camera* cam, ObjectGraphics* ograph)
 {
 	gmap = gmapin;
@@ -70,54 +83,16 @@ void GameLogic::InitLevel(GloomMap* gmapin, Camera* cam, ObjectGraphics* ograph)
 			cam->z = o.z;
 			cam->rot = o.data.ms.rot;
 
+			origx = o.x;
+			origz = o.z;
+			origrot = o.data.ms.rot;
+
 			o.data.ms.hitpoints = p1health;
 			//o.data.ms.lives = p1lives; TODO
 			o.data.ms.weapon = p1weapon;
 			o.data.ms.reload = p1reload;
 		}
 	}
-
-	// note weird order of SFX.
-
-	wtable[0].hitpoint = 1;
-	wtable[0].damage = 1;
-	wtable[0].speed = 32;
-	wtable[0].sound = SoundHandler::SOUND_SHOOT3;
-
-	wtable[1].hitpoint = 5;
-	wtable[1].damage = 2;
-	wtable[1].speed = 36;
-	wtable[1].sound = SoundHandler::SOUND_SHOOT5;
-
-	wtable[2].hitpoint = 10;
-	wtable[2].damage = 2;
-	wtable[2].speed = 40;
-	wtable[2].sound = SoundHandler::SOUND_SHOOT;
-
-	wtable[3].hitpoint = 15;
-	wtable[3].damage = 3;
-	wtable[3].speed = 40;
-	wtable[3].sound = SoundHandler::SOUND_SHOOT4;
-
-	wtable[4].hitpoint = 20;
-	wtable[4].damage = 5;
-	wtable[4].speed = 24;
-	wtable[4].sound = SoundHandler::SOUND_SHOOT5;
-
-	for (auto i = 0; i < 5; i++)
-	{
-		wtable[i].shape = &(ograph->BulletShapes[i]);
-	}
-
-	for (auto i = 0; i < 5; i++)
-	{
-		wtable[i].spark = &(ograph->SparkShapes[i]);
-	}
-
-	p1lives = 3;
-	p1health = 25;
-	p1weapon = 0;
-	p1reload = 5;
 }
 
 bool GameLogic::AdjustPos(int32_t& overshoot, Quick& x, Quick& z, int32_t r, int32_t& closestzone)
@@ -651,197 +626,204 @@ bool GameLogic::Update(Camera* cam)
 	Quick newz = cam->z;
 
 	MapObject playerobj = GetPlayerObj();
-
 	int16_t initialhealth = playerobj.data.ms.hitpoints;
 
-	playerobj.x = cam->x;
-	playerobj.y.SetInt(0);
-	playerobj.z = cam->z;
-	playerobj.data.ms.rot = cam->rot;
+	if (playerobj.data.ms.logic == NullLogic)
+	{
+		playerobj.x = cam->x;
+		playerobj.y.SetInt(0);
+		playerobj.z = cam->z;
+		playerobj.data.ms.rot = cam->rot;
 
-	inc.SetVal(playerobj.data.ms.movspeed);
+		inc.SetVal(playerobj.data.ms.movspeed);
 
-	if (keystate[SDL_SCANCODE_UP])
-	{
-		// U 
-		newx = cam->x - camrots[1] * inc;
-		newz = cam->z + camrots[0] * inc;
-		moved = true;
-	}
-	if (keystate[SDL_SCANCODE_DOWN])
-	{
-		// D
-		newx = cam->x + camrots[1] * inc;
-		newz = cam->z - camrots[0] * inc;
-		moved = true;
-	}
-	if (keystate[SDL_SCANCODE_LEFT])
-	{
-		//L
-		//TODO: Rotation acceleration
-		if (keystate[SDL_SCANCODE_LALT])
+		if (keystate[SDL_SCANCODE_UP])
 		{
-			//strafe
-			newx = newx + camrotstrafe[1] * inc;
-			newz = newz - camrotstrafe[0] * inc;
+			// U 
+			newx = cam->x - camrots[1] * inc;
+			newz = cam->z + camrots[0] * inc;
 			moved = true;
 		}
-		else
+		if (keystate[SDL_SCANCODE_DOWN])
 		{
-			cam->rot -= 4;
-		}
-	}
-	if (keystate[SDL_SCANCODE_RIGHT])
-	{
-		//R
-		if (keystate[SDL_SCANCODE_LALT])
-		{
-			//strafe
-			newx = newx - camrotstrafe[1] * inc;
-			newz = newz + camrotstrafe[0] * inc;
+			// D
+			newx = cam->x + camrots[1] * inc;
+			newz = cam->z - camrots[0] * inc;
 			moved = true;
 		}
-		else
+		if (keystate[SDL_SCANCODE_LEFT])
 		{
-			cam->rot += 4;
-		}
-	}
-
-	if (!moved)
-	{
-		//unbounce
-		if (playerobj.data.ms.bounce)
-		{
-			playerobj.data.ms.bounce += 30;
-
-			if ((playerobj.data.ms.bounce & 127) < 30)
+			//L
+			//TODO: Rotation acceleration
+			if (keystate[SDL_SCANCODE_LALT])
 			{
-				playerobj.data.ms.bounce = 0;
+				//strafe
+				newx = newx + camrotstrafe[1] * inc;
+				newz = newz - camrotstrafe[0] * inc;
+				moved = true;
+			}
+			else
+			{
+				cam->rot -= 4;
+			}
+		}
+		if (keystate[SDL_SCANCODE_RIGHT])
+		{
+			//R
+			if (keystate[SDL_SCANCODE_LALT])
+			{
+				//strafe
+				newx = newx - camrotstrafe[1] * inc;
+				newz = newz + camrotstrafe[0] * inc;
+				moved = true;
+			}
+			else
+			{
+				cam->rot += 4;
+			}
+		}
+
+		if (!moved)
+		{
+			//unbounce
+			if (playerobj.data.ms.bounce)
+			{
+				playerobj.data.ms.bounce += 30;
+
+				if ((playerobj.data.ms.bounce & 127) < 30)
+				{
+					playerobj.data.ms.bounce = 0;
+					SoundHandler::Play(SoundHandler::SOUND_FOOTSTEP);
+				}
+			}
+		}
+		else
+		{
+			// bounce!
+			/*
+			.bounce	move	ob_bounce(a5),d2
+			add	#20,ob_bounce(a5)
+			move	ob_bounce(a5),d1
+			and	#255,d2
+			cmp	#64,d2
+			bcc.s	.fskip
+			and	#255,d1
+			cmp	#64,d1
+			bcs.s	.fskip
+			;
+			bsr	footstep
+			*/
+
+			int16_t d2 = playerobj.data.ms.bounce;
+			playerobj.data.ms.bounce += 20;
+			int16_t d1 = playerobj.data.ms.bounce;
+
+			d2 &= 255;
+			d1 &= 255;
+
+			if ((d1 >= 64) && (d2 < 64))
+			{
 				SoundHandler::Play(SoundHandler::SOUND_FOOTSTEP);
 			}
 		}
-	}
-	else
-	{
-		// bounce!
-		/*
-		.bounce	move	ob_bounce(a5),d2
-		add	#20,ob_bounce(a5)
-		move	ob_bounce(a5),d1
-		and	#255,d2
-		cmp	#64,d2
-		bcc.s	.fskip
-		and	#255,d1
-		cmp	#64,d1
-		bcs.s	.fskip
-		;
-		bsr	footstep
-		*/
 
-		int16_t d2 = playerobj.data.ms.bounce;
-		playerobj.data.ms.bounce += 20;
-		int16_t d1 = playerobj.data.ms.bounce;
-
-		d2 &= 255;
-		d1 &= 255;
-
-		if ((d1 >= 64) && (d2 < 64))
+		if (keystate[SDL_SCANCODE_LCTRL])
 		{
-			SoundHandler::Play(SoundHandler::SOUND_FOOTSTEP);
-		}
-	}
-
-	if (keystate[SDL_SCANCODE_LCTRL])
-	{
-		//Shoot!
-		if ((playerobj.data.ms.reloadcnt == 0) && (!firedown))
-		{
-			auto wep = playerobj.data.ms.weapon;
-			Shoot(playerobj, this, (playerobj.data.ms.collwith & 3) ^ 3, 0, wtable[wep].hitpoint, wtable[wep].damage, wtable[wep].speed, wtable[wep].shape, wtable[wep].spark);
-			SoundHandler::Play(wtable[wep].sound);
-			playerobj.data.ms.reloadcnt = playerobj.data.ms.reload;
-			firedown = true;
-		}
-	}
-	else
-	{
-		firedown = false;
-	}
-
-	if (playerobj.data.ms.reloadcnt > 0) playerobj.data.ms.reloadcnt--;
-
-	if (keystate[SDL_SCANCODE_F1])
-	{
-		// cheat for debug
-		done = true;
-	}
-
-
-	int32_t overshoot, closestzone;
-
-	if (!Collision(false, newx.GetInt(), newz.GetInt(), 32, overshoot, closestzone))
-	{
-		cam->x = newx;
-		cam->z = newz;
-	}
-	else
-	{
-		// well, it's what the original seems to do...
-		if (!AdjustPos(overshoot, newx, newz, 32, closestzone))
-		{
-			cam->x = newx;
-			cam->z = newz;
-		}
-		else if (!AdjustPos(overshoot, newx, newz, 32, closestzone))
-		{
-			cam->x = newx;
-			cam->z = newz;
-		}
-	}
-
-	cam->y = -(playerobj.y.GetInt() + playerobj.data.ms.eyey);
-	// add bounce
-	int16_t camrotsraw[4];
-	GloomMaths::GetCamRotRaw(playerobj.data.ms.bounce & 255, camrotsraw);
-	cam->y -= (camrotsraw[1] * 20) >> 16;
-
-	// event check
-	Teleport tele;
-	bool gotele = false;
-
-	// prevent multiple sound playing!
-	if (!playerobj.data.ms.pixsizeadd)
-	{
-		if (Collision(true, cam->x.GetInt(), cam->z.GetInt(), 32, overshoot, closestzone))
-		{
-			if (gmap->GetZones()[closestzone].ev > 1)
+			//Shoot!
+			if ((playerobj.data.ms.reloadcnt == 0) && (!firedown))
 			{
-				if (gmap->GetZones()[closestzone].ev == 24)
-				{
-					levelfinished = true;
-					SoundHandler::Play(SoundHandler::SOUND_TELEPORT);
-					playerobj.data.ms.pixsizeadd = 1;
-				}
+				auto wep = playerobj.data.ms.weapon;
+				Shoot(playerobj, this, (playerobj.data.ms.collwith & 3) ^ 3, 0, wtable[wep].hitpoint, wtable[wep].damage, wtable[wep].speed, wtable[wep].shape, wtable[wep].spark);
+				SoundHandler::Play(wtable[wep].sound);
+				playerobj.data.ms.reloadcnt = playerobj.data.ms.reload;
+				firedown = true;
+			}
+		}
+		else
+		{
+			firedown = false;
+		}
 
-				if (!eventhit[gmap->GetZones()[closestzone].ev])
-				{
-					gmap->ExecuteEvent(gmap->GetZones()[closestzone].ev, gotele, tele);
-				}
+		if (playerobj.data.ms.reloadcnt > 0) playerobj.data.ms.reloadcnt--;
 
-				// these are one-shot
-				if (gmap->GetZones()[closestzone].ev < 19)
+		if (keystate[SDL_SCANCODE_F1])
+		{
+			// cheat for debug
+			done = true;
+		}
+
+
+		int32_t overshoot, closestzone;
+
+		if (!Collision(false, newx.GetInt(), newz.GetInt(), 32, overshoot, closestzone))
+		{
+			cam->x = newx;
+			cam->z = newz;
+		}
+		else
+		{
+			// well, it's what the original seems to do...
+			if (!AdjustPos(overshoot, newx, newz, 32, closestzone))
+			{
+				cam->x = newx;
+				cam->z = newz;
+			}
+			else if (!AdjustPos(overshoot, newx, newz, 32, closestzone))
+			{
+				cam->x = newx;
+				cam->z = newz;
+			}
+		}
+
+		cam->y = -(playerobj.y.GetInt() + playerobj.data.ms.eyey);
+		// add bounce
+		int16_t camrotsraw[4];
+		GloomMaths::GetCamRotRaw(playerobj.data.ms.bounce & 255, camrotsraw);
+		cam->y -= (camrotsraw[1] * 20) >> 16;
+
+		// event check
+		Teleport tele;
+		bool gotele = false;
+
+		// prevent multiple sound playing!
+		if (!playerobj.data.ms.pixsizeadd)
+		{
+			if (Collision(true, cam->x.GetInt(), cam->z.GetInt(), 32, overshoot, closestzone))
+			{
+				if (gmap->GetZones()[closestzone].ev > 1)
 				{
-					eventhit[gmap->GetZones()[closestzone].ev] = true;
+					if (gmap->GetZones()[closestzone].ev == 24)
+					{
+						levelfinished = true;
+						SoundHandler::Play(SoundHandler::SOUND_TELEPORT);
+						playerobj.data.ms.pixsizeadd = 1;
+					}
+
+					if (!eventhit[gmap->GetZones()[closestzone].ev])
+					{
+						gmap->ExecuteEvent(gmap->GetZones()[closestzone].ev, gotele, tele);
+					}
+
+					// these are one-shot
+					if (gmap->GetZones()[closestzone].ev < 19)
+					{
+						eventhit[gmap->GetZones()[closestzone].ev] = true;
+					}
 				}
 			}
 		}
-	}
 
-	if (gotele)
+		if (gotele)
+		{
+			// teleport animation
+			activetele = tele;
+			playerobj.data.ms.pixsizeadd = 2;
+		}
+	}
+	else
 	{
-		// teleport animation
-		activetele = tele;
-		playerobj.data.ms.pixsizeadd = 2;
+		// we're dead, jim
+		//playerobj.data.ms.logic(playerobj, this);
 	}
 
 	// actually do the tele animation
@@ -909,8 +891,26 @@ bool GameLogic::Update(Camera* cam)
 	playerobj.data.ms.hitpoints = playerobjupdated.data.ms.hitpoints;
 	playerobj.data.ms.weapon = playerobjupdated.data.ms.weapon;
 	playerobj.data.ms.reload = playerobjupdated.data.ms.reload;
+	playerobj.data.ms.eyey = playerobjupdated.data.ms.eyey;
+	playerobj.data.ms.delay = playerobjupdated.data.ms.delay;
+	playerobj.data.ms.colltype = playerobjupdated.data.ms.colltype;
+	playerobj.data.ms.collwith = playerobjupdated.data.ms.collwith;
 
 	playerhit = playerobj.data.ms.hitpoints < initialhealth;
+
+	if (playerobj.data.ms.logic != NullLogic)
+	{
+		// we're still dead, jim
+		cam->x = playerobj.x = playerobjupdated.x;
+		playerobj.y = playerobjupdated.y;
+		cam->y = -(playerobj.y.GetInt() + playerobj.data.ms.eyey);
+		cam->z = playerobj.z = playerobjupdated.z;
+		cam->rot = playerobj.data.ms.rot = playerobjupdated.data.ms.rot;
+		playerhit = true;
+	}
+
+	//do this after the above otherwise I don't pick up the player reset on death
+	playerobj.data.ms.logic = playerobjupdated.data.ms.logic;
 
 	//kill pass
 

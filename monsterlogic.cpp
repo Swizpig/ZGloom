@@ -1802,3 +1802,263 @@ void HealthGot(MapObject& thisobj, MapObject& otherobj, GameLogic* logic)
 	if (otherobj.data.ms.hitpoints > 25) otherobj.data.ms.hitpoints = 25;
 	thisobj.killme = true;
 }
+
+void PlayerDead(MapObject& o, GameLogic* logic)
+{
+	/*
+	playerdead	bsr	getcntrl
+	;
+	subq	#1,ob_delay(a5)
+	bgt.s	.rts
+	;
+	cmp	#2,gametype
+	bne.s	.notcom
+	;
+	;combat game!
+	;
+	move	#4,finished2
+	move	#1,ob_pixsizeadd(a5)
+	move.l	#rts,ob_logic(a5)
+	bsr	getother
+	move	#1,ob_pixsizeadd(a0)
+	.rts	rts
+	;
+	.notcom	;
+	tst	ob_lives(a5)
+	beq.s	.dead
+	move.l	#waitrestart,ob_logic(a5)
+	rts
+	;
+	.dead	move.l	#rts,ob_logic(a5)
+	tst	gametype
+	bne.s	.not1p
+	.allover	move	#2,finished
+	rts
+	;
+	.not1p	;OK, I'm all out of lives...what about other guy...
+	bsr	getother
+	tst	ob_lives(a0)
+	beq.s	.allover
+	rts
+	*/
+	o.data.ms.delay--;
+
+	if (o.data.ms.delay) return;
+
+	logic->ResetPlayer(o);
+}
+
+void PlayerDeath(MapObject& o, GameLogic* logic)
+{
+	/*
+	playerdeath	bsr	getcntrl
+		;
+	addq	#4, ob_rot(a5)
+		addq	#4, ob_eyey(a5)
+		cmp	# - 32, ob_eyey(a5)
+		blt.rts
+		;
+
+	*/
+	o.data.ms.rot += 4;
+	o.data.ms.eyey += 4;
+
+	if (o.data.ms.eyey < -32)
+	{
+		return;
+	}
+	/*
+	move	# - 32, ob_eyey(a5)
+	move.l	#playerdead, ob_logic(a5)
+	move	#63, ob_delay(a5)
+		;
+	.... combat game logic follows. TODO: Lives check
+	*/
+
+	o.data.ms.eyey = -32;
+	o.data.ms.logic = PlayerDead;
+	o.data.ms.delay = 63;
+}
+
+void PlayerDie(MapObject& thisobj, MapObject& otherobj, GameLogic* logic)
+{
+	/*
+	clr	ob_hitpoints(a5)
+	st	ob_update(a5)
+	move.l	#playerdeath, ob_logic(a5)
+	clr	ob_colltype(a5)
+	clr	ob_collwith(a5)
+	*/
+
+	thisobj.data.ms.hitpoints = 0;
+	thisobj.data.ms.logic = PlayerDeath;
+
+	thisobj.data.ms.colltype = 0;
+	thisobj.data.ms.collwith = 0;
+}
+
+void DeathBounce(MapObject& o, GameLogic* logic)
+{
+	/*
+	deathbounce	addq	#4, ob_bounce(a5)
+		move	ob_bounce(a5), d0
+		move.l	camrots(pc), a0
+		and	#255, d0
+		move	0(a0, d0 * 8), d0
+		ext.l	d0
+		lsl.l	#5, d0; +/ -64
+		swap	d0
+		add	#  - 48, d0
+		move	d0, ob_y(a5)
+		rts
+	*/
+
+	o.data.ms.bounce += 4;
+	int16_t camrots[4];
+	GloomMaths::GetCamRotRaw(o.data.ms.bounce&255, camrots);
+	int32_t  ang = camrots[0];
+	ang <<= 5;
+	ang >>= 16;
+	ang -= 48;
+	o.y.SetInt(ang);
+}
+
+void DeathAnim(MapObject& o, GameLogic* logic)
+{
+	/*
+	deathanim	move.l	ob_framespeed(a5), d0
+		add.l	d0, ob_frame(a5)
+		cmp.l	#$8000, ob_frame(a5)
+		blt.s.fix
+		cmp.l	#$28000, ob_frame(a5)
+		blt.s.fok
+		.fix	neg.l	d0
+		add.l	d0, ob_frame(a5)
+		move.l	d0, ob_framespeed(a5)
+		;
+	.fok	rts
+	*/
+	int32_t speed = o.data.ms.framespeed;
+	o.data.ms.frame += speed;
+
+	if ((o.data.ms.frame < 0x8000) || (o.data.ms.frame >= 0x28000))
+	{
+		speed = -speed;
+		o.data.ms.frame += speed;
+		o.data.ms.framespeed = speed;
+	}
+}
+
+void DeathCharge(MapObject& o, GameLogic* logic)
+{
+	/*
+	deathcharge	bsr	deathbounce
+	bsr	deathanim
+	;
+	bsr	pickcalc
+	move	ob_rot(a5),d1
+	and	#255,d1
+	sub	d1,d0	;am I near?
+	bpl.s	.ansk
+	neg	d0
+	.ansk	cmp	#128,d0
+	bcc.s	.hit
+	bsr	checkvecs
+	bne.s	.hit2
+	rts
+	.hit2	add	#128,ob_rot(a5)
+	.hit	move.l	#deathheadlogic,ob_logic(a5)
+	move.l	#$8000,ob_frame(a5)
+	bra	rnddelay
+	*/
+	DeathBounce(o, logic);
+	DeathAnim(o, logic);
+
+	int32_t ang = logic->PickCalc(o) & 255 - o.data.ms.rot & 255;
+
+	if (ang < 0) ang = -ang;
+
+	if (ang < 128)
+	{
+		if (CheckVecs(o, logic))
+		{
+			return;
+		}
+		else
+		{
+			o.data.ms.rot += 128;
+			o.data.ms.logic = DeathLogic;
+			o.data.ms.frame = 0x8000;
+			RndDelay(o);
+		}
+	}
+	else
+	{
+		o.data.ms.logic = DeathLogic;
+		o.data.ms.frame = 0x8000;
+		RndDelay(o);
+	}
+}
+
+void DeathLogic(MapObject& o, GameLogic* logic)
+{
+	/*
+	;cruises around rotating at speed ob_delay
+	;
+	bsr	deathbounce
+	;
+	bsr	checkvecs
+	bne.s	.hit
+	;
+	;charge player?
+	;
+	bsr	pickcalc	;find angle to player
+	move	ob_rot(a5),d1
+	and	#255,d1
+	sub	d0,d1	;am I near?
+	bpl.s	.ansk
+	neg	d1
+	.ansk	cmp	#16,d1
+	bcc.s	.notnear
+	;
+	;OK! chargaroony!
+	;
+	move	d0,ob_rot(a5)
+	move.l	#deathcharge,ob_logic(a5)
+	bra	calcvecs
+	.hit	add	#128,ob_rot(a5)
+	bsr	rnddelay
+	.notnear	move	ob_delay(a5),d0
+	add	d0,ob_rot(a5)
+	bsr	calcvecs
+	rts
+	*/
+	DeathBounce(o, logic);
+
+	if (CheckVecs(o, logic))
+	{
+		int32_t ang = logic->PickCalc(o)&255 - o.data.ms.rot&255;
+
+		if (ang < 0) ang = -ang;
+		
+		if (ang < 16)
+		{
+			o.data.ms.rot = logic->PickCalc(o) & 255;
+			o.data.ms.logic = DeathCharge;
+			CalcVecs(o);
+			return;
+		}
+		else
+		{
+			o.data.ms.rot += o.data.ms.delay;
+			CalcVecs(o);
+		}
+	}
+	else
+	{
+		o.data.ms.rot += 128;
+		RndDelay(o);
+		o.data.ms.rot += o.data.ms.delay;
+		CalcVecs(o);
+	}
+}

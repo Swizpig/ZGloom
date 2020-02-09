@@ -373,6 +373,8 @@ bool GloomMap::Load(const char* name, ObjectGraphics* nobj)
 		o.hurtpause = objectlogic->objectlogic[o.t].hurtpause;
 		o.blood = objectlogic->objectlogic[o.t].blood;
 		o.punchrate = objectlogic->objectlogic[o.t].punchrate;
+
+		o.scale = objectlogic->objectlogic[o.t].scale;
 	}
 
 	// load wall anims
@@ -808,13 +810,14 @@ MapObject::MapObject(Object m)
 	data.ms.hurtpause = m.hurtpause;
 	data.ms.blood = m.blood;
 	data.ms.punchrate = m.punchrate;
+	data.ms.scale = m.scale;
 
 	switch (t)
 	{
 		case ObjectGraphics::OLT_PLAYER1:
 			data.ms.logic = NullLogic;
 			data.ms.hit = NullLogicComp;
-			data.ms.die = NullLogicComp;
+			data.ms.die = PlayerDie;
 			data.ms.eyey = -110;
 			break;
 		case ObjectGraphics::OLT_PLAYER2:
@@ -863,6 +866,11 @@ MapObject::MapObject(Object m)
 			data.ms.hit = TrollHurt;
 			data.ms.die = BlowObject;
 			break;
+		case ObjectGraphics::OLT_DEATHHEAD:
+			data.ms.logic = DeathLogic;
+			data.ms.hit = NullLogicComp;
+			data.ms.die = KillLogicComp;
+			break;
 		case ObjectGraphics::OLT_WEAPON1:
 		case ObjectGraphics::OLT_WEAPON2:
 		case ObjectGraphics::OLT_WEAPON3:
@@ -909,6 +917,7 @@ MapObject::MapObject()
 	data.ms.hurtwait = 0;
 	data.ms.hurtpause = 0;
 	data.ms.punchrate = 0;
+	data.ms.scale = 0x200;
 
 	// avoid zero as I need to flag nothing
 	identifier = counter + 1;

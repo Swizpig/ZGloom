@@ -16,6 +16,11 @@ class GameLogic
 		int32_t GetTeleEffect();
 		bool GetPlayerHit() { return playerhit; };
 
+		//deathhead suck logic
+		void SetSucking(uint64_t ns){ sucking = ns; };
+		void SetSucker(uint64_t ns){ sucker = ns; };
+		void SetSuckAngle(uint8_t ns){ suckangle = ns; };
+
 		// needed public for monster logic. This is a mess, needs refactor to split more cleanly
 		MapObject GetPlayerObj();
 
@@ -23,6 +28,7 @@ class GameLogic
 		bool AdjustPos(int32_t& overshoot, Quick& x, Quick& z, int32_t r, int32_t& closestzone);
 		void AddObject(MapObject o, bool first) { if (first)  gmap->GetMapObjects().push_front(o);  else gmap->GetMapObjects().push_back(o); };
 		void AddBlood(Blood b) { gmap->GetBlood().push_back(b); };
+		void ResetPlayer(MapObject& o);
 		uint8_t PickCalc(MapObject& o);
 
 		struct weapontableentry { int32_t hitpoint; int32_t damage; int32_t speed; std::vector<Shape>* shape; std::vector<Shape>* spark; SoundHandler::Sounds sound; };
@@ -57,4 +63,13 @@ class GameLogic
 		int16_t p1weapon;
 		int16_t p1reload;
 
+		// and if I die in a level
+		Quick origx;
+		Quick origz;
+		uint32_t origrot;
+
+		//deathhead suck logic
+		uint64_t sucking;
+		uint64_t sucker;
+		uint8_t suckangle;
 };

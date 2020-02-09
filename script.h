@@ -10,6 +10,10 @@ class Script
 		Script();
 		uint32_t numlines;
 		std::vector<std::string> lines;
+		void Reset()
+		{
+			line = 0;
+		};
 
 		enum ScriptOp
 		{

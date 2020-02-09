@@ -116,6 +116,7 @@ class Object
 	int16_t hurtpause;
 	uint16_t blood;
 	int16_t punchrate;
+	int16_t scale;
 	std::vector<Shape>* shape;
 	std::vector<Shape>* chunk;
 };
@@ -187,6 +188,7 @@ class MapObjectSideBand
 	int16_t bounce;
 
 	uint16_t blood;
+	int16_t scale;
 
 	void(*logic)(MapObject&, GameLogic*);
 	void(*oldlogic)(MapObject&, GameLogic*);

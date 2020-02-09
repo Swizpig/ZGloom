@@ -506,7 +506,7 @@ void Renderer::DrawObjects(Camera* camera)
 				iy = -o.y.GetInt();
 				iy -= camera->y;
 
-				if (iz > 0)
+				if (iz > 5) // add a bit of nearclip to prevent slowdown
 				{
 					ix <<= focshift;
 					ix /= iz;
@@ -555,12 +555,12 @@ void Renderer::DrawObjects(Camera* camera)
 							frametouse = s->size() - 1;
 						}
 
-						auto scale = 2;
+						auto scale = o.data.ms.scale;
 						auto shapewidth = (*s)[frametouse].w;
 						auto shapeheight = (*s)[frametouse].h;
 
-						int h = ((shapeheight * scale) << focshift) / iz;
-						int w = ((shapewidth * scale) << focshift) / iz;
+						int h = ((shapeheight * scale / 0x100) << focshift) / iz;
+						int w = ((shapewidth * scale / 0x100) << focshift) / iz;
 
 						if ((w > 0) && (h > 0))
 						{

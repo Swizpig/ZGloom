@@ -24,5 +24,7 @@ void TrollHurt(MapObject& thisobj, MapObject& otherobj, GameLogic* logic);
 void TrollLogic(MapObject& o, GameLogic* logic);
 void PhantomLogic(MapObject& o, GameLogic* logic);
 void DemonLogic(MapObject& o, GameLogic* logic);
+void PlayerDie(MapObject& thisobj, MapObject& otherobj, GameLogic* logic);
+void DeathLogic(MapObject& o, GameLogic* logic);
 
 void Shoot(MapObject& o, GameLogic* logic, int32_t colltype, int32_t collwith, int32_t hitpoints, int32_t damage, int32_t speed, std::vector<Shape>* shape, std::vector<Shape>* spark);

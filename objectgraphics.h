@@ -42,6 +42,7 @@ class ObjectLogic
 	int16_t hurtpause;
 	uint16_t blood;
 	int16_t punchrate;
+	int16_t scale;
 };
 
 class ObjectGraphics
