@@ -2062,3 +2062,208 @@ void DeathLogic(MapObject& o, GameLogic* logic)
 		CalcVecs(o);
 	}
 }
+
+void BlowDeath(MapObject& thisobj, MapObject& otherobj, GameLogic* logic)
+{
+	if (logic->GetSucker())
+	{
+		logic->SetSucker(0);
+		logic->SetSucking(0);
+	}
+
+	BlowObjectNoChunks(thisobj, otherobj, logic);
+}
+
+void AddSoul(int num, uint8_t ang, MapObject& o, MapObject& pobj, GameLogic* logic)
+{
+	int16_t camrots[4];
+
+	GloomMaths::GetCamRotRaw(ang, camrots);
+	/*
+
+	addsoul; d7 times!
+		;
+	addlast	blood
+		beq.rts
+		;
+	move	2(a3), d2
+		ext.l	d2
+		lsl.l	#5, d2
+		neg.l	d2
+		move	6(a3), d3
+		ext.l	d3
+		lsl.l	#5, d3
+		;
+	move.l	d2, bl_xvec(a0)
+		move.l	a5, bl_yvec(a0)
+		move.l	d3, bl_zvec(a0)
+		;
+	swap	d2
+		swap	d3
+		add	d2, d2
+		add	d3, d3
+		add	ob_x(a2), d2
+		add	ob_z(a2), d3
+		;
+	bsr	rndw
+		and	#63, d0
+		sub	#32, d0
+		add	d2, d0
+		move	d0, bl_x(a0)
+		;
+	bsr	rndw
+		and	#63, d0
+		sub	#32, d0
+		add	#110, d0
+		move	d0, bl_y(a0); >0 = funny blood!
+		;
+	bsr	rndw
+		and	#63, d0
+		sub	#32, d0
+		add	d3, d0
+		move	d0, bl_z(a0)
+		;
+	bsr	rndw
+		and	#1, d0
+		move	soulcols(pc, d0 * 2), bl_color(a0)
+		;
+	dbf	d7, addsoul
+		;
+	.rts	rts
+	*/
+
+	for (int i = 0; i < num; i++)
+	{
+		Blood bloodobj;
+		int32_t xvec = camrots[1];
+		xvec <<= 5;
+		xvec = -xvec;
+
+		int32_t zvec = camrots[3];
+		zvec <<= 5;
+
+		bloodobj.xvec.SetVal(xvec);
+		bloodobj.zvec.SetVal(zvec);
+		bloodobj.dest = o.identifier;
+
+		xvec >>= 16;
+		zvec >>= 16;
+		xvec *= 2;
+		zvec *= 2;
+
+		xvec += pobj.x.GetInt();
+		zvec += pobj.z.GetInt();
+
+		bloodobj.x.SetInt(xvec + (GloomMaths::RndW() & 63) - 32);
+		bloodobj.y.SetInt(110  + (GloomMaths::RndW() & 63) - 32);
+		bloodobj.z.SetInt(zvec + (GloomMaths::RndW() & 63) - 32);
+
+		bloodobj.color = (GloomMaths::RndW() & 1) ? 0x0ff : 0x0f0;
+
+		logic->AddBlood(bloodobj);
+	}
+}
+
+void DeathSuck(MapObject& o, GameLogic* logic)
+{
+	/*
+	deathsuck	;death head sucking out a players soul!
+	;
+	bsr	deathbounce
+	bsr	deathanim
+	subq	#1,ob_delay(a5)
+	bgt.s	.more
+	move	ob_oldrot(a5),ob_rot(a5)
+	move.l	ob_oldlogic(a5),ob_logic(a5)
+	move.l	#hurtdeath,ob_hit(a5)
+	clr.l	sucker
+	clr.l	sucking
+	bra	rnddelay
+	;
+	.more	move.l	sucking(pc),a0
+	move.l	a0,a2
+	bsr	calcangle	;point at player!
+	move	d0,ob_rot(a5)
+	;
+	add	#128,d0
+	and	#255,d0
+	move.l	camrots(pc),a3
+	lea	0(a3,d0*8),a3
+	;
+	move.l	a3,suckangle
+	;
+	;calc x/z vecs
+	;
+	moveq	#3,d7
+	bsr	addsoul
+	;
+	.rts	rts
+	*/
+
+	DeathBounce(o, logic);
+	DeathAnim(o, logic);
+
+	o.data.ms.delay--;
+
+	if (o.data.ms.delay <= 0)
+	{
+		o.data.ms.rot = o.data.ms.oldrot;
+		o.data.ms.logic = o.data.ms.oldlogic;
+		o.data.ms.hit = HurtDeath;
+		logic->SetSucker(0);
+		logic->SetSucking(0);
+		RndDelay(o);
+		return;
+	}
+
+	o.data.ms.rot = logic->PickCalc(o);
+
+	uint8_t ang = (o.data.ms.rot + 128);
+	logic->SetSuckAngle(ang);
+
+	AddSoul(3, ang, o, logic->GetPlayerObj(), logic);
+}
+
+void HurtDeath(MapObject& thisobj, MapObject& otherobj, GameLogic* logic)
+{
+	/*
+	hurtdeath	;OK! death head hit!
+	;
+	;point at player, and start to suck his soul!
+	;
+	move.l	sucking(pc),d0
+	bne.s	.rts
+	;
+	bsr	pickplayer
+	cmp.l	#playerlogic,ob_logic(a0)
+	bne.s	.rts
+	;
+	move.l	a0,sucking
+	move.l	a5,sucker
+	;
+	move	ob_rot(a5),ob_oldrot(a5)
+	move.l	ob_logic(a5),ob_oldlogic(a5)
+	move.l	#deathsuck,ob_logic(a5)
+	move.l	#rts,ob_hit(a5)
+	move	#64,ob_delay(a5)
+	bra.s	deathsuck
+	;
+	.rts	rts
+	*/
+
+	if (logic->GetSucking()) return;
+	MapObject pobj = logic->GetPlayerObj();
+
+	if (pobj.data.ms.logic != NullLogic) return;
+
+	logic->SetSucking(pobj.identifier);
+	logic->SetSucker(thisobj.identifier);
+
+	thisobj.data.ms.oldrot = thisobj.data.ms.rot;
+	thisobj.data.ms.oldlogic = thisobj.data.ms.logic;
+
+	thisobj.data.ms.logic = DeathSuck;
+	thisobj.data.ms.hit = NullLogicComp;
+	thisobj.data.ms.delay = 64;
+	DeathSuck(thisobj, logic);
+}

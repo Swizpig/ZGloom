@@ -16,11 +16,13 @@ class Blood
 		Quick y;
 		Quick z;
 		Quick xvec;
-		Quick dest;
+		uint64_t dest;
 		Quick yvec;
 		Quick zvec;
 		uint32_t color; // colour AND
 		bool killme;
+
+		Blood() { killme = false; };
 };
 
 // rot/morph poly

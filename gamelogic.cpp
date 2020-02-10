@@ -135,13 +135,66 @@ void GameLogic::MoveBlood()
 	for (auto &b : gmap->GetBlood())
 	{
 		//TODO: sucking, screen splatter
-		b.x = b.x + b.xvec;
-		b.y = b.y + b.yvec;
-		b.z = b.z + b.zvec;
 
-		Quick temp;
-		temp.SetVal(0x8000);
-		b.yvec = b.yvec + temp;
+		if (b.y.GetInt() < 0)
+		{
+			// normal blood
+			b.x = b.x + b.xvec;
+			b.y = b.y + b.yvec;
+			b.z = b.z + b.zvec;
+
+			Quick temp;
+			temp.SetVal(0x8000);
+			b.yvec = b.yvec + temp;
+
+			if (b.y.GetInt() >= 0)
+			{
+				b.killme = true;
+			}
+		}
+		else
+		{
+			// deaths head suck!
+			/*
+			move.l	bl_xvec(a5),d0
+			add.l	d0,bl_x(a5)
+			move.l	bl_zvec(a5),d1
+			add.l	d1,bl_z(a5)
+			;
+			move.l	bl_dest(a5),a0
+			move	bl_x(a5),d0
+			sub	ob_x(a0),d0
+			muls	d0,d0
+			move	bl_z(a5),d1
+			sub	ob_z(a0),d1
+			muls	d1,d1
+			add.l	d1,d0
+			cmp.l	#64*64,d0
+			bcc.s	.loop
+			bra.s	.kill
+			*/
+
+			if (!sucking) 
+			{
+				b.killme = true;
+			}
+			else
+			{
+				b.x = b.x + b.xvec;
+				b.z = b.z + b.zvec;
+
+				MapObject o = GetNamedObj(b.dest);
+
+				int32_t dist = (o.x.GetInt() - b.x.GetInt()) *  (o.x.GetInt() - b.x.GetInt());
+
+				dist += (o.z.GetInt() - b.z.GetInt()) *  (o.z.GetInt() - b.z.GetInt());
+
+				if (dist < 64 * 64)
+				{
+					b.killme = true;
+				}
+			}
+		}
 	}
 
 	// kill pass
@@ -149,7 +202,7 @@ void GameLogic::MoveBlood()
 
 	while (b != gmap->GetBlood().end())
 	{
-		if (b->y.GetInt()>=0)
+		if (b->killme)
 		{
 			b = gmap->GetBlood().erase(b);
 		}
@@ -279,6 +332,22 @@ MapObject GameLogic::GetPlayerObj()
 	for (auto o : gmap->GetMapObjects())
 	{
 		if (o.t == ObjectGraphics::OLT_PLAYER1)
+		{
+			return o;
+			break;
+		}
+	}
+
+	// warning squash
+
+	return gmap->GetMapObjects().front();
+}
+
+MapObject GameLogic::GetNamedObj(uint64_t id)
+{
+	for (auto o : gmap->GetMapObjects())
+	{
+		if (o.identifier == id)
 		{
 			return o;
 			break;
@@ -775,6 +844,8 @@ bool GameLogic::Update(Camera* cam)
 			}
 		}
 
+		CheckSuck(cam);
+
 		cam->y = -(playerobj.y.GetInt() + playerobj.data.ms.eyey);
 		// add bounce
 		int16_t camrotsraw[4];
@@ -1038,4 +1109,77 @@ void GameLogic::ObjectCollision()
 			}
 		}
 	}
+}
+
+void GameLogic::CheckSuck(Camera* cam)
+{
+	/*
+	checksuck	cmp.l	sucking(pc),a5
+	bne.s	.nosuck
+	;
+	move.l	suckangle(pc),a0
+	moveq	#25,d0
+	move	d0,d1
+	muls	2(a0),d0
+	neg.l	d0
+	add.l	d0,d6
+	;
+	muls	6(a0),d1
+	add.l	d1,d7
+	bsr	checknewslow
+	beq.s	.newok
+	bsr	adjustpos
+	beq.s	.newok
+	bsr	adjustpos
+	beq.s	.newok
+	;
+	move.l	ob_x(a5),d6
+	move.l	ob_z(a5),d7
+	bra.s	.nosuck
+	;
+	.newok	move.l	d6,ob_x(a5)
+	move.l	d7,ob_z(a5)
+	;
+	.nosuck	rts
+
+	*/
+	Quick xpos, zpos;
+
+	xpos = cam->x;
+	zpos = cam->z;
+
+	if (!sucking) return;
+
+	int16_t camrots[4];
+	GloomMaths::GetCamRotRaw(suckangle, camrots);
+
+	int32_t xvec = 25 * camrots[1];
+	int32_t zvec = 25 * camrots[3];
+
+	xvec = -xvec;
+
+	xpos.SetVal(xpos.GetVal() + xvec);
+	zpos.SetVal(zpos.GetVal() + zvec);
+
+	int32_t overshoot, closestzone;
+
+	if (!Collision(false, xpos.GetInt(), zpos.GetInt(), 32, overshoot, closestzone))
+	{
+		cam->x = xpos;
+		cam->z = zpos;
+	}
+	else
+	{
+		if (!AdjustPos(overshoot, xpos, zpos, 32, closestzone))
+		{
+			cam->x = xpos;
+			cam->z = zpos;
+		}
+		else if (!AdjustPos(overshoot, xpos, zpos, 32, closestzone))
+		{
+			cam->x = xpos;
+			cam->z = zpos;
+		}
+	}
+
 }

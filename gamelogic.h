@@ -20,9 +20,12 @@ class GameLogic
 		void SetSucking(uint64_t ns){ sucking = ns; };
 		void SetSucker(uint64_t ns){ sucker = ns; };
 		void SetSuckAngle(uint8_t ns){ suckangle = ns; };
+		uint64_t GetSucking(){ return sucking; };
+		uint64_t GetSucker(){ return sucker; };
 
 		// needed public for monster logic. This is a mess, needs refactor to split more cleanly
 		MapObject GetPlayerObj();
+		MapObject GetNamedObj(uint64_t id);
 
 		bool Collision(bool event, int32_t x, int32_t z, int32_t r, int32_t& overshoot, int32_t& closestzone);
 		bool AdjustPos(int32_t& overshoot, Quick& x, Quick& z, int32_t r, int32_t& closestzone);
@@ -44,6 +47,7 @@ class GameLogic
 		bool levelfinished;
 
 		int32_t FindSegDist(int32_t x, int32_t z, Zone& zone);
+		void CheckSuck(Camera* cam);
 		void DoDoor();
 		void DoRot();
 		void Rotter(int16_t x, int16_t z, int16_t&nx, int16_t& nz, int16_t camrots[4]);

@@ -417,6 +417,9 @@ void Renderer::DrawBlood(Camera* camera)
 		int32_t ix = rotx;
 		int32_t iz = rotz;
 		int32_t iy = -b.y.GetInt();
+
+		if (iy<0) iy = -iy;// this encodes deathheads soul logic
+
 		iy -= camera->y;
 
 		if (iz > 0)

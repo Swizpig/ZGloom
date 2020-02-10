@@ -868,8 +868,8 @@ MapObject::MapObject(Object m)
 			break;
 		case ObjectGraphics::OLT_DEATHHEAD:
 			data.ms.logic = DeathLogic;
-			data.ms.hit = NullLogicComp;
-			data.ms.die = KillLogicComp;
+			data.ms.hit = HurtDeath;
+			data.ms.die = BlowDeath;
 			break;
 		case ObjectGraphics::OLT_WEAPON1:
 		case ObjectGraphics::OLT_WEAPON2:
