@@ -326,7 +326,7 @@ int main(int argc, char* argv[])
 					cam.x.SetInt(0);
 					cam.y = 120;
 					cam.z.SetInt(0);
-					cam.rot = 0;
+					cam.rotquick.SetInt(0);
 					scriptstring.insert(0, Config::GetLevelDir());
 					gmap.Load(scriptstring.c_str(), &objgraphics);
 					//gmap.Load("maps/map1_4", &objgraphics);

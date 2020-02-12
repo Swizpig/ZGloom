@@ -213,7 +213,7 @@ void Renderer::DrawFlat(std::vector<int32_t>& ceilend, std::vector<int32_t>& flo
 	if (minstart <= halfrenderheight) minstart = halfrenderheight + 1;
 	if (maxend >= halfrenderheight) maxend = halfrenderheight - 1;
 
-	GloomMaths::GetCamRot(-camera->rot, camrots);
+	GloomMaths::GetCamRot(-camera->rotquick.GetInt(), camrots);
 
 	for (int32_t y = 0; y < maxend; y++)
 	{
@@ -395,7 +395,7 @@ void Renderer::DrawBlood(Camera* camera)
 	Quick cammatrix[4];
 	int32_t rotx, rotz;
 
-	GloomMaths::GetCamRot(camera->rot, cammatrix);
+	GloomMaths::GetCamRot(camera->rotquick.GetInt(), cammatrix);
 
 	uint32_t* surface = (uint32_t*)(rendersurface->pixels);
 
@@ -456,7 +456,7 @@ void Renderer::DrawObjects(Camera* camera)
 	Quick cammatrix[4];
 	int32_t ix, iz, iy;
 
-	GloomMaths::GetCamRot(camera->rot, cammatrix);
+	GloomMaths::GetCamRot(camera->rotquick.GetInt(), cammatrix);
 
 	uint32_t* surface = (uint32_t*)(rendersurface->pixels);
 
@@ -502,7 +502,7 @@ void Renderer::DrawObjects(Camera* camera)
 		else
 		{
 			// don't draw the player!
-			if ((o.t > 1) && (o.t != 3))
+			if ((o.t > 1) && (o.t != 3) && o.data.ms.render)
 			{
 				ix = o.rotx;
 				iz = o.rotz;
@@ -540,7 +540,7 @@ void Renderer::DrawObjects(Camera* camera)
 							uint16_t ang = GloomMaths::CalcAngle(camera->x.GetInt(), camera->z.GetInt(), o.x.GetInt(), o.z.GetInt());
 
 							ang += 16;
-							ang -= o.data.ms.rot;
+							ang -= o.data.ms.rotquick.GetInt();
 							ang >>= 5;
 							ang &= 7;
 							frametouse = ang | (((o.data.ms.frame >> 16) & 7) << 3);
@@ -751,7 +751,7 @@ void Renderer::Render(Camera* camera)
 			x2 = x2 - camera->x;
 			z2 = z2 - camera->z;
 
-			GloomMaths::GetCamRot(camera->rot, cammatrix);
+			GloomMaths::GetCamRot(camera->rotquick.GetInt(), cammatrix);
 
 			walls[z].wl_lx = ((x1 * cammatrix[0]) + (z1 * cammatrix[1])).GetInt();
 			walls[z].wl_lz = ((x1 * cammatrix[2]) + (z1 * cammatrix[3])).GetInt();

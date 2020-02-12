@@ -137,7 +137,8 @@ class MapObjectSideBand
 
 	uint32_t render;
 
-	uint32_t rot;
+	Quick rotquick;
+	int32_t rotspeed;
 	uint32_t oldrot;
 	int32_t movspeed;
 	int32_t xvec;

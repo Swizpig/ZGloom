@@ -28,5 +28,6 @@ void PlayerDie(MapObject& thisobj, MapObject& otherobj, GameLogic* logic);
 void DeathLogic(MapObject& o, GameLogic* logic);
 void BlowDeath(MapObject& thisobj, MapObject& otherobj, GameLogic* logic);
 void HurtDeath(MapObject& thisobj, MapObject& otherobj, GameLogic* logic);
+void BlowDragon(MapObject& thisobj, MapObject& otherobj, GameLogic* logic);
 
 void Shoot(MapObject& o, GameLogic* logic, int32_t colltype, int32_t collwith, int32_t hitpoints, int32_t damage, int32_t speed, std::vector<Shape>* shape, std::vector<Shape>* spark);

@@ -777,11 +777,13 @@ MapObject::MapObject(Object m)
 	z.SetInt(m.z);
 	t = m.t;
 
+	data.ms.rotspeed = 0;
+
 	data.ms.frame = m.frame;
 	data.ms.framespeed = m.framespeed;
 
 	data.ms.render = m.render;
-	data.ms.rot = m.rot;
+	data.ms.rotquick.SetInt(m.rot);
 	data.ms.movspeed = m.movspeed;
 	data.ms.shape = m.shape;
 	data.ms.chunks = m.chunk;
@@ -871,6 +873,11 @@ MapObject::MapObject(Object m)
 			data.ms.hit = HurtDeath;
 			data.ms.die = BlowDeath;
 			break;
+		case ObjectGraphics::OLT_DRAGON:
+			data.ms.logic = NullLogic;
+			data.ms.hit = NullLogicComp;
+			data.ms.die = BlowDragon;
+			break;
 		case ObjectGraphics::OLT_WEAPON1:
 		case ObjectGraphics::OLT_WEAPON2:
 		case ObjectGraphics::OLT_WEAPON3:
@@ -918,6 +925,7 @@ MapObject::MapObject()
 	data.ms.hurtpause = 0;
 	data.ms.punchrate = 0;
 	data.ms.scale = 0x200;
+	data.ms.rotspeed = 0;
 
 	// avoid zero as I need to flag nothing
 	identifier = counter + 1;

@@ -301,7 +301,7 @@ void CalcVecs(MapObject& o)
 		rts
 	*/
 
-	uint32_t ang = o.data.ms.rot & 255;
+	uint32_t ang = o.data.ms.rotquick.GetInt() & 255;
 
 	Quick camrots[4], t;
 	GloomMaths::GetCamRot(ang, camrots);
@@ -414,13 +414,13 @@ void PauseLogic(MapObject&o, GameLogic* logic)
 
 		uint8_t ang = logic->PickCalc(o);
 
-		int16_t compang = (int16_t)(player.data.ms.rot&0xFF) - ang;
+		int16_t compang = (int16_t)(player.data.ms.rotquick.GetInt()&0xFF) - ang;
 
 		if (compang < 0) compang = -compang;
 
 		if ((compang>64) && (compang < 192))
 		{
-			o.data.ms.rot = o.data.ms.oldrot;
+			o.data.ms.rotquick.SetInt(o.data.ms.oldrot);
 			CalcVecs(o);
 		}
 	}
@@ -467,7 +467,7 @@ void Fire1(MapObject& o, GameLogic* logic)
 	ang += (rand & 31) - 16;
 	ang &= 0xFF;
 
-	o.data.ms.rot = ang;
+	o.data.ms.rotquick.SetInt(ang);
 	CalcVecs(o);
 	o.data.ms.delay = 7;
 
@@ -484,15 +484,15 @@ void MonsterFix(MapObject& o, GameLogic* logic)
 	if (1)//!CheckVecs(o, logic))
 	{
 		// try +/- 90 degrees
-		o.data.ms.rot += (GloomMaths::RndW() > 0) ? 64 : -64;
+		o.data.ms.rotquick.SetInt(((GloomMaths::RndW() > 0) ? 64 : -64) + o.data.ms.rotquick.GetInt());
 		CalcVecs(o);
 		if (CheckVecs(o, logic)) goto good;
 
-		o.data.ms.rot += 128;
+		o.data.ms.rotquick.SetInt(128 + o.data.ms.rotquick.GetInt());
 		CalcVecs(o);
 		if (CheckVecs(o, logic)) goto good;
 
-		o.data.ms.rot = o.data.ms.oldrot + 128;
+		o.data.ms.rotquick.SetInt(o.data.ms.oldrot + 128);
 		CalcVecs(o);
 		CheckVecs(o, logic);
 	}
@@ -542,15 +542,15 @@ void MonsterMove(MapObject& o, GameLogic* logic)
 	if (!CheckVecs(o, logic))
 	{
 		// try +/- 90 degrees
-		o.data.ms.rot += (GloomMaths::RndW() > 0) ? 64 : -64;
+		o.data.ms.rotquick.SetInt(((GloomMaths::RndW() > 0) ? 64 : -64) + o.data.ms.rotquick.GetInt());
 		CalcVecs(o);
 		if (CheckVecs(o, logic)) goto good;
 
-		o.data.ms.rot += 128;
+		o.data.ms.rotquick.SetInt(128 + o.data.ms.rotquick.GetInt());
 		CalcVecs(o);
 		if (CheckVecs(o, logic)) goto good;
 
-		o.data.ms.rot = o.data.ms.oldrot + 128;
+		o.data.ms.rotquick.SetInt(o.data.ms.oldrot + 128);
 		CalcVecs(o);
 		CheckVecs(o, logic);
 	}
@@ -569,7 +569,7 @@ void MonsterLogic(MapObject& o, GameLogic* logic)
 	;
 	*/
 
-	o.data.ms.oldrot = o.data.ms.rot;
+	o.data.ms.oldrot = o.data.ms.rotquick.GetInt();
 	/* 
 		subq	#1, ob_delay(a5)
 		ble	fire1
@@ -681,7 +681,7 @@ void Shoot(MapObject& o, GameLogic* logic, int32_t colltype, int32_t collwith, i
 	*/
 	newobject.data.ms.chunks = spark;
 	int16_t camrots[4];
-	GloomMaths::GetCamRotRaw(o.data.ms.rot & 255, camrots);
+	GloomMaths::GetCamRotRaw(o.data.ms.rotquick.GetInt() & 255, camrots);
 	/*
 	move	2(a1),d0
 	move	d0,ob_nxvec(a0)
@@ -763,7 +763,7 @@ void TerraLogic2(MapObject& o, GameLogic* logic)
 	if (o.data.ms.delay) return;
 
 	o.data.ms.delay = o.data.ms.firerate;
-	o.data.ms.rot = logic->PickCalc(o);
+	o.data.ms.rotquick.SetInt(logic->PickCalc(o));
 	CalcVecs(o);
 	Shoot(o, logic, 4, 0, 1, 3, 16, logic->wtable[3].shape, logic->wtable[3].spark);
 	SoundHandler::Play(SoundHandler::SOUND_SHOOT3);
@@ -802,7 +802,7 @@ void TerraLogic(MapObject& o, GameLogic* logic)
 	move.l	#terralogic2,ob_logic(a5)
 	rts
 	*/
-	o.data.ms.oldrot = o.data.ms.rot;
+	o.data.ms.oldrot = o.data.ms.rotquick.GetInt();
 	o.data.ms.delay--;
 
 	if (o.data.ms.delay > 0)
@@ -874,7 +874,7 @@ void GhoulLogic(MapObject& o, GameLogic* logic)
 	*/
 
 	uint8_t ang = logic->PickCalc(o);
-	o.data.ms.rot = ang;
+	o.data.ms.rotquick.SetInt(ang);
 	o.data.ms.delay--;
 
 	if (o.data.ms.delay<=0)
@@ -1304,7 +1304,7 @@ void BaldyCharge(MapObject& o, GameLogic* logic)
 
 	*/
 	int8_t ang = logic->PickCalc(o);
-	ang -= o.data.ms.rot;
+	ang -= o.data.ms.rotquick.GetInt();
 
 	if (ang > 32)
 	{
@@ -1365,7 +1365,7 @@ void BL2(MapObject& o, GameLogic* logic)
 	;
 	rts
 	*/
-	o.data.ms.rot = logic->PickCalc(o);
+	o.data.ms.rotquick.SetInt(logic->PickCalc(o));
 	o.data.ms.movspeed <<= 2;
 	o.data.ms.framespeed <<= 2;
 	CalcVecs(o);
@@ -1482,7 +1482,7 @@ void BaldyPunch(MapObject& o, GameLogic* logic)
 	if (o.data.ms.frame == 0)
 	{
 		o.data.ms.washit = 0;
-		o.data.ms.rot = logic->PickCalc(o);
+		o.data.ms.rotquick.SetInt(logic->PickCalc(o));
 		o.data.ms.frame = 5 << 16;
 	}
 	else
@@ -1666,7 +1666,7 @@ void PhantomLogic(MapObject& o, GameLogic* logic)
 	;
 	bra	shoot
 	*/
-	o.data.ms.oldrot = o.data.ms.rot;
+	o.data.ms.oldrot = o.data.ms.rotquick.GetInt();
 	o.data.ms.delay--;
 
 	if (o.data.ms.delay > 0)
@@ -1675,7 +1675,7 @@ void PhantomLogic(MapObject& o, GameLogic* logic)
 		return;
 	}
 
-	o.data.ms.rot = logic->PickCalc(o);
+	o.data.ms.rotquick.SetInt(logic->PickCalc(o));
 	CalcVecs(o);
 	o.data.ms.delay = 7;
 	o.data.ms.oldlogic = o.data.ms.logic;
@@ -1776,7 +1776,7 @@ void DemonLogic(MapObject& o, GameLogic* logic)
 	rts
 	*/
 
-	o.data.ms.oldrot = o.data.ms.rot;
+	o.data.ms.oldrot = o.data.ms.rotquick.GetInt();
 	o.data.ms.delay--;
 
 	if (o.data.ms.delay > 0)
@@ -1785,7 +1785,7 @@ void DemonLogic(MapObject& o, GameLogic* logic)
 		return;
 	}
 
-	o.data.ms.rot = logic->PickCalc(o);
+	o.data.ms.rotquick.SetInt(logic->PickCalc(o));
 	CalcVecs(o);
 	// passing in a weapon number. Why not HW into demonpause? I thought it was going to be some kind of random weapon selection
 	o.data.ms.delay = (5<<3)-1;
@@ -1860,7 +1860,7 @@ void PlayerDeath(MapObject& o, GameLogic* logic)
 		;
 
 	*/
-	o.data.ms.rot += 4;
+	o.data.ms.rotquick.SetInt(o.data.ms.rotquick.GetInt() + 4);
 	o.data.ms.eyey += 4;
 
 	if (o.data.ms.eyey < -32)
@@ -1974,7 +1974,7 @@ void DeathCharge(MapObject& o, GameLogic* logic)
 	DeathBounce(o, logic);
 	DeathAnim(o, logic);
 
-	int32_t ang = logic->PickCalc(o) & 255 - o.data.ms.rot & 255;
+	int32_t ang = logic->PickCalc(o) & 255 - o.data.ms.rotquick.GetInt() & 255;
 
 	if (ang < 0) ang = -ang;
 
@@ -1986,7 +1986,7 @@ void DeathCharge(MapObject& o, GameLogic* logic)
 		}
 		else
 		{
-			o.data.ms.rot += 128;
+			o.data.ms.rotquick.SetInt(o.data.ms.rotquick.GetInt() +  128);
 			o.data.ms.logic = DeathLogic;
 			o.data.ms.frame = 0x8000;
 			RndDelay(o);
@@ -2037,28 +2037,28 @@ void DeathLogic(MapObject& o, GameLogic* logic)
 
 	if (CheckVecs(o, logic))
 	{
-		int32_t ang = logic->PickCalc(o)&255 - o.data.ms.rot&255;
+		int32_t ang = logic->PickCalc(o)&255 - o.data.ms.rotquick.GetInt()&255;
 
 		if (ang < 0) ang = -ang;
 		
 		if (ang < 16)
 		{
-			o.data.ms.rot = logic->PickCalc(o) & 255;
+			o.data.ms.rotquick.SetInt(logic->PickCalc(o) & 255);
 			o.data.ms.logic = DeathCharge;
 			CalcVecs(o);
 			return;
 		}
 		else
 		{
-			o.data.ms.rot += o.data.ms.delay;
+			o.data.ms.rotquick.SetInt(o.data.ms.rotquick.GetInt() + o.data.ms.delay);
 			CalcVecs(o);
 		}
 	}
 	else
 	{
-		o.data.ms.rot += 128;
+		o.data.ms.rotquick.SetInt(o.data.ms.rotquick.GetInt() + 128);
 		RndDelay(o);
-		o.data.ms.rot += o.data.ms.delay;
+		o.data.ms.rotquick.SetInt(o.data.ms.rotquick.GetInt() + o.data.ms.delay);
 		CalcVecs(o);
 	}
 }
@@ -2207,7 +2207,7 @@ void DeathSuck(MapObject& o, GameLogic* logic)
 
 	if (o.data.ms.delay <= 0)
 	{
-		o.data.ms.rot = o.data.ms.oldrot;
+		o.data.ms.rotquick.SetInt(o.data.ms.oldrot);
 		o.data.ms.logic = o.data.ms.oldlogic;
 		o.data.ms.hit = HurtDeath;
 		logic->SetSucker(0);
@@ -2216,9 +2216,9 @@ void DeathSuck(MapObject& o, GameLogic* logic)
 		return;
 	}
 
-	o.data.ms.rot = logic->PickCalc(o);
+	o.data.ms.rotquick.SetInt(logic->PickCalc(o));
 
-	uint8_t ang = (o.data.ms.rot + 128);
+	uint8_t ang = (o.data.ms.rotquick.GetInt() + 128);
 	logic->SetSuckAngle(ang);
 
 	AddSoul(3, ang, o, logic->GetPlayerObj(), logic);
@@ -2259,11 +2259,107 @@ void HurtDeath(MapObject& thisobj, MapObject& otherobj, GameLogic* logic)
 	logic->SetSucking(pobj.identifier);
 	logic->SetSucker(thisobj.identifier);
 
-	thisobj.data.ms.oldrot = thisobj.data.ms.rot;
+	thisobj.data.ms.oldrot = thisobj.data.ms.rotquick.GetInt();
 	thisobj.data.ms.oldlogic = thisobj.data.ms.logic;
 
 	thisobj.data.ms.logic = DeathSuck;
 	thisobj.data.ms.hit = NullLogicComp;
 	thisobj.data.ms.delay = 64;
 	DeathSuck(thisobj, logic);
+}
+
+void DragonDead(MapObject& o, GameLogic* logic)
+{
+	//TODO: RAISE FINISH!
+}
+
+void BlowDragon(MapObject& thisobj, MapObject& otherobj, GameLogic* logic)
+{
+	/*
+	blowdragon	;same, but messier...
+	;
+	;loud!
+	;
+	move.l	diesfx(pc),a0
+	moveq	#64,d0
+	moveq	#50,d1
+	bsr	playsfx
+	move.l	diesfx(pc),a0
+	moveq	#64,d0
+	moveq	#50,d1
+	bsr	playsfx
+	move.l	robodiesfx(pc),a0
+	moveq	#64,d0
+	moveq	#50,d1
+	bsr	playsfx
+	move.l	robodiesfx(pc),a0
+	moveq	#64,d0
+	moveq	#50,d1
+	bsr	playsfx
+	;
+	moveq	#63,d7
+	bsr	bloodymess2
+	;
+	move.l	ob_chunks(a5),a4
+	bsr	blowchunx
+	bsr	blowchunx
+	bsr	blowchunx
+	bsr	blowchunx
+	;
+	move.l	#dragondead,ob_logic(a5)
+	move.l	#rts,ob_render(a5)
+	clr	ob_colltype(a5)
+	clr	ob_collwith(a5)
+	move	#127,ob_delay(a5)
+	rts
+	*/
+
+	SoundHandler::Play(SoundHandler::SOUND_DIE);
+	SoundHandler::Play(SoundHandler::SOUND_DIE);
+	SoundHandler::Play(SoundHandler::SOUND_ROBODIE);
+	SoundHandler::Play(SoundHandler::SOUND_ROBODIE);
+
+	BloodyMess2(thisobj, logic, 63);
+
+	BlowChunx(thisobj, otherobj, logic);
+	BlowChunx(thisobj, otherobj, logic);
+	BlowChunx(thisobj, otherobj, logic);
+	BlowChunx(thisobj, otherobj, logic);
+
+	thisobj.data.ms.logic = DragonDead;
+	thisobj.data.ms.render = 0;
+	thisobj.data.ms.colltype = 0;
+	thisobj.data.ms.collwith = 0;
+	thisobj.data.ms.delay = 127;
+}
+
+void DragonAnim(MapObject& o)
+{
+	o.data.ms.frame += o.data.ms.framespeed;
+	o.data.ms.frame &= 0x30000;
+}
+
+void GetObRot(MapObject& o)
+{
+	/*
+	getobrot	move	ob_rotspeed(a5),d0
+	bne.s	.addr
+	;
+	;OK, randomly left/rite!
+	;
+	bsr	rndw
+	and	#1,d0
+	bne.s	.addr2
+	moveq	#-1,d0
+	;
+	.addr2	lsl	#2,d0
+	move	d0,ob_rotspeed(a5)
+	;
+	.addr	rts
+	*/
+
+	if (!o.data.ms.rotspeed)
+	{
+		o.data.ms.rotspeed = (GloomMaths::RndW() & 1) ? -0x40000 : 40000;
+	}
 }

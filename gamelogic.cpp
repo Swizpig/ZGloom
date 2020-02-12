@@ -59,7 +59,7 @@ void GameLogic::ResetPlayer(MapObject& o)
 	o.data.ms.collwith = 4;
 	o.x = origx;
 	o.z = origz;
-	o.data.ms.rot = origrot;
+	o.data.ms.rotquick.SetInt(origrot);
 }
 
 void GameLogic::InitLevel(GloomMap* gmapin, Camera* cam, ObjectGraphics* ograph)
@@ -81,11 +81,11 @@ void GameLogic::InitLevel(GloomMap* gmapin, Camera* cam, ObjectGraphics* ograph)
 			cam->x = o.x;
 			cam->y = 120; //TODO, and rotation
 			cam->z = o.z;
-			cam->rot = o.data.ms.rot;
+			cam->rotquick = o.data.ms.rotquick;
 
 			origx = o.x;
 			origz = o.z;
-			origrot = o.data.ms.rot;
+			origrot = o.data.ms.rotquick.GetInt();
 
 			o.data.ms.hitpoints = p1health;
 			//o.data.ms.lives = p1lives; TODO
@@ -687,8 +687,8 @@ bool GameLogic::Update(Camera* cam)
 
 	Quick camrots[4], camrotstrafe[4];
 
-	GloomMaths::GetCamRot(cam->rot, camrots);
-	GloomMaths::GetCamRot((cam->rot)+64&0xFF, camrotstrafe);
+	GloomMaths::GetCamRot(cam->rotquick.GetInt()&0xFF, camrots);
+	GloomMaths::GetCamRot((cam->rotquick.GetInt())+64&0xFF, camrotstrafe);
 	const Uint8 *keystate = SDL_GetKeyboardState(NULL);
 
 	Quick newx = cam->x;
@@ -702,7 +702,7 @@ bool GameLogic::Update(Camera* cam)
 		playerobj.x = cam->x;
 		playerobj.y.SetInt(0);
 		playerobj.z = cam->z;
-		playerobj.data.ms.rot = cam->rot;
+		playerobj.data.ms.rotquick = cam->rotquick;
 
 		inc.SetVal(playerobj.data.ms.movspeed);
 
@@ -733,7 +733,7 @@ bool GameLogic::Update(Camera* cam)
 			}
 			else
 			{
-				cam->rot -= 4;
+				cam->rotquick.SetInt(cam->rotquick.GetInt() - 4);
 			}
 		}
 		if (keystate[SDL_SCANCODE_RIGHT])
@@ -748,7 +748,7 @@ bool GameLogic::Update(Camera* cam)
 			}
 			else
 			{
-				cam->rot += 4;
+				cam->rotquick.SetInt(cam->rotquick.GetInt() + 4);
 			}
 		}
 
@@ -905,7 +905,7 @@ bool GameLogic::Update(Camera* cam)
 	{
 		cam->x.SetInt(activetele.x);
 		cam->z.SetInt(activetele.z);
-		cam->rot = (uint8_t)activetele.rot;
+		cam->rotquick.SetInt((uint8_t)activetele.rot);
 		playerobj.data.ms.pixsizeadd = -playerobj.data.ms.pixsizeadd;
 		if (levelfinished) done = true;
 	}
@@ -976,7 +976,9 @@ bool GameLogic::Update(Camera* cam)
 		playerobj.y = playerobjupdated.y;
 		cam->y = -(playerobj.y.GetInt() + playerobj.data.ms.eyey);
 		cam->z = playerobj.z = playerobjupdated.z;
-		cam->rot = playerobj.data.ms.rot = playerobjupdated.data.ms.rot;
+
+		playerobj.data.ms.rotquick = playerobjupdated.data.ms.rotquick;
+		cam->rotquick = playerobj.data.ms.rotquick;
 		playerhit = true;
 	}
 

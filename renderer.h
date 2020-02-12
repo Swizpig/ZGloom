@@ -16,7 +16,7 @@ class Camera
 	Quick x;
 	int16_t y;
 	Quick z;
-	uint8_t rot;
+	Quick rotquick;
 };
 
 class Wall
