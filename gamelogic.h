@@ -15,6 +15,7 @@ class GameLogic
 		bool Update(Camera* cam);
 		int32_t GetTeleEffect();
 		bool GetPlayerHit() { return playerhit; };
+		void WereDoneHere() { levelfinishednow = true; };
 
 		//deathhead suck logic
 		void SetSucking(uint64_t ns){ sucking = ns; };
@@ -45,6 +46,8 @@ class GameLogic
 		//currently active teleport
 		Teleport activetele;
 		bool levelfinished;
+		//Game has ended!
+		bool levelfinishednow;
 
 		int32_t FindSegDist(int32_t x, int32_t z, Zone& zone);
 		void CheckSuck(Camera* cam);

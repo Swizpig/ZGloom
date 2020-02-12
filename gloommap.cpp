@@ -874,7 +874,7 @@ MapObject::MapObject(Object m)
 			data.ms.die = BlowDeath;
 			break;
 		case ObjectGraphics::OLT_DRAGON:
-			data.ms.logic = NullLogic;
+			data.ms.logic = DragonLogic;
 			data.ms.hit = NullLogicComp;
 			data.ms.die = BlowDragon;
 			break;

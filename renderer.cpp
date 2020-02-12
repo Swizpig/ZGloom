@@ -395,7 +395,7 @@ void Renderer::DrawBlood(Camera* camera)
 	Quick cammatrix[4];
 	int32_t rotx, rotz;
 
-	GloomMaths::GetCamRot(camera->rotquick.GetInt(), cammatrix);
+	GloomMaths::GetCamRot(camera->rotquick.GetInt()&0xFF, cammatrix);
 
 	uint32_t* surface = (uint32_t*)(rendersurface->pixels);
 
@@ -456,7 +456,7 @@ void Renderer::DrawObjects(Camera* camera)
 	Quick cammatrix[4];
 	int32_t ix, iz, iy;
 
-	GloomMaths::GetCamRot(camera->rotquick.GetInt(), cammatrix);
+	GloomMaths::GetCamRot(camera->rotquick.GetInt()&0xFF, cammatrix);
 
 	uint32_t* surface = (uint32_t*)(rendersurface->pixels);
 
@@ -751,7 +751,7 @@ void Renderer::Render(Camera* camera)
 			x2 = x2 - camera->x;
 			z2 = z2 - camera->z;
 
-			GloomMaths::GetCamRot(camera->rotquick.GetInt(), cammatrix);
+			GloomMaths::GetCamRot(camera->rotquick.GetInt()&0xFF, cammatrix);
 
 			walls[z].wl_lx = ((x1 * cammatrix[0]) + (z1 * cammatrix[1])).GetInt();
 			walls[z].wl_lz = ((x1 * cammatrix[2]) + (z1 * cammatrix[3])).GetInt();

@@ -67,6 +67,7 @@ void GameLogic::InitLevel(GloomMap* gmapin, Camera* cam, ObjectGraphics* ograph)
 	gmap = gmapin;
 	objectgraphics = ograph;
 	levelfinished = false;
+	levelfinishednow = false;
 	std::fill(animframe, animframe + 160, 0);
 
 	for (auto e = 0; e < 25; e++)
@@ -909,6 +910,8 @@ bool GameLogic::Update(Camera* cam)
 		playerobj.data.ms.pixsizeadd = -playerobj.data.ms.pixsizeadd;
 		if (levelfinished) done = true;
 	}
+
+	if (levelfinishednow) done = true;
 
 	if (playerobj.data.ms.pixsize == 0) playerobj.data.ms.pixsizeadd = 0;
 

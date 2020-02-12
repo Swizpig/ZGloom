@@ -280,6 +280,11 @@ void MakeSparks(MapObject& o, GameLogic* logic)
 	}
 }
 
+void MakeSparksQ(MapObject& thisobj, MapObject& otherobj, GameLogic* logic)
+{
+	MakeSparks(thisobj, logic);
+}
+
 void CalcVecs(MapObject& o)
 {
 	/*
@@ -602,6 +607,15 @@ void FireLogic(MapObject& o, GameLogic* logic)
 		{
 			o.data.ms.frame = 0;
 		}
+	}
+}
+
+void PutFire(MapObject& o, GameLogic* logic)
+{
+	o.data.ms.frame += (1 << 16);
+	if ((o.data.ms.frame >> 16) >= o.data.ms.shape->size())
+	{
+		o.data.ms.frame = 0;
 	}
 }
 
@@ -2270,7 +2284,12 @@ void HurtDeath(MapObject& thisobj, MapObject& otherobj, GameLogic* logic)
 
 void DragonDead(MapObject& o, GameLogic* logic)
 {
-	//TODO: RAISE FINISH!
+	o.data.ms.delay--;
+
+	if (o.data.ms.delay <= 0)
+	{
+		logic->WereDoneHere();
+	}
 }
 
 void BlowDragon(MapObject& thisobj, MapObject& otherobj, GameLogic* logic)
@@ -2336,7 +2355,7 @@ void BlowDragon(MapObject& thisobj, MapObject& otherobj, GameLogic* logic)
 void DragonAnim(MapObject& o)
 {
 	o.data.ms.frame += o.data.ms.framespeed;
-	o.data.ms.frame &= 0x30000;
+	o.data.ms.frame &= 0x3FFFF;
 }
 
 void GetObRot(MapObject& o)
@@ -2362,4 +2381,293 @@ void GetObRot(MapObject& o)
 	{
 		o.data.ms.rotspeed = (GloomMaths::RndW() & 1) ? -0x40000 : 40000;
 	}
+}
+
+void BlowDB(MapObject& thisobj, MapObject& otherobj, GameLogic* logic)
+{
+	MakeSparksQ(thisobj, otherobj, logic);
+	thisobj.killme = true;
+}
+
+void HomeInLogic(MapObject& o, GameLogic* logic)
+{
+
+	/*
+	homeinlogic	bsr	checkvecs
+	bne.s	blowdb
+	bsr	pickcalc	;find angle to player!
+	move.l	camrots(pc),a0
+	lea	0(a0,d0*8),a0
+	*/
+	
+	if (!CheckVecs(o, logic))
+	{
+		BlowDB(o, o, logic);
+		return;
+	}
+
+	int16_t camrots[4];
+
+	GloomMaths::GetCamRotRaw(logic->PickCalc(o), camrots);
+	/*
+	move	2(a0),d4	;x acc.
+	neg	d4
+	ext.l	d4
+	lsl.l	#2,d4
+	move	6(a0),d5	;z acc.
+	ext.l	d5
+	lsl.l	#2,d5
+	;
+	*/
+	int32_t xacc, zacc;
+	xacc = -camrots[1];
+	xacc <<= 2;
+	zacc = camrots[3];
+	zacc <<= 2;
+	/*
+	add.l	ob_xvec(a5),d4
+	move.l	d4,d0
+	bpl.s	.pl1
+	neg.l	d0
+	.pl1	cmp.l	#$200000,d0	;max speed
+	bcc.s	.sk1
+	move.l	d4,ob_xvec(a5)
+	;
+	.sk1	add.l	ob_zvec(a5),d5
+	move.l	d5,d0
+	bpl.s	.pl2
+	neg.l	d0
+	.pl2	cmp.l	#$200000,d0
+	bcc.s	.sk2
+	move.l	d5,ob_zvec(a5)
+	.sk2	;
+	bra	putfire
+	*/
+	o.data.ms.xvec += xacc;
+	if (abs(o.data.ms.xvec) > 0x200000) o.data.ms.xvec -= xacc;
+
+	o.data.ms.zvec += zacc;
+	if (abs(o.data.ms.zvec) > 0x200000) o.data.ms.zvec -= zacc;
+	PutFire(o, logic);
+}
+
+void DragonFire(MapObject& o, GameLogic* logic) // starring Sylvester McCoy as Doctor Who
+{
+	/*
+	dragonfire	;dragon fires at you!
+	;
+	;d2 : colltype
+	;d3 : collwith
+	;d4 : hitpoints
+	;d5 : damage
+	;d6 : speed
+	;a2=bullet shape
+	;a3=sparks shape
+	;
+	subq	#1,ob_delay(a5)
+	bpl	.rts
+	move	ob_delay(a5),d0
+	cmp	#-16*8,d0
+	bgt.s	.try
+	move	#47,ob_delay(a5)
+	rts
+	.try	and	#7,d0
+	bne	.rts
+	;
+	*/
+	o.data.ms.delay--;
+	if (o.data.ms.delay > 0) return;
+	if (o.data.ms.delay > (-16 * 8))
+	{
+		if ((o.data.ms.delay & 7) != 0)
+		{
+			return;
+		}
+	}
+	else
+	{
+		o.data.ms.delay = 47;
+		return;
+	}
+	/*
+	.fire	moveq	#0,d2	;colltype
+	moveq	#24+3,d3	;collwith - p1/p2/bullets
+	moveq	#1,d4	;hitpoints
+	moveq	#3,d5	;damage
+	moveq	#16,d6	;speed
+	lea	bullet5,a2
+	lea	sparks5,a3
+	;
+	addlast	objects
+	beq	.rts
+	*/
+	MapObject b;
+	b.t = 999;
+	b.data.ms.blood = 0;
+	b.data.ms.colltype = 0;
+	b.data.ms.collwith = 24 + 3;
+	b.data.ms.hitpoints = 1;
+	b.data.ms.damage = 3;
+	b.data.ms.movspeed = 16;
+	b.data.ms.shape = logic->wtable[4].shape;
+	b.data.ms.chunks = logic->wtable[4].spark;
+	/*
+	;
+	move	ob_bouncecnt(a5),ob_bouncecnt(a0)
+	move	ob_x(a5),ob_x(a0)
+	move	ob_y(a5),d0
+	add	ob_firey(a5),d0
+	move	d0,ob_y(a0)
+	move	ob_z(a5),ob_z(a0)
+	move.l	#homeinlogic,ob_logic(a0)
+	move.l	#drawshape_1,ob_render(a0)
+	move.l	#makesparksq,ob_hit(a0)
+	move.l	#blowdb,ob_die(a0)
+	*/
+	b.data.ms.bouncecnt = o.data.ms.bouncecnt;
+	b.x = o.x;
+	b.y.SetInt(o.y.GetInt() + o.data.ms.firey);
+	b.z = o.z;
+	b.data.ms.logic = HomeInLogic;
+	b.data.ms.render = 1;
+	b.data.ms.hit = MakeSparksQ;
+	b.data.ms.die = BlowDB;
+	/*
+	move	d2,ob_colltype(a0)
+	move	d3,ob_collwith(a0)
+	move	d4,ob_hitpoints(a0)
+	move	d5,ob_damage(a0)
+	move	d6,ob_movspeed(a0)
+	move.l	a2,ob_shape(a0)
+	clr	ob_invisible(a0)
+	clr	ob_frame(a0)
+	move.l	a3,ob_chunks(a0)
+	*/
+	// todo INVISIBLE
+	b.data.ms.frame = 0;
+	/*
+	;
+	move	ob_rot(a5),d0
+	and	#255,d0
+	move.l	camrots(pc),a1
+	lea	0(a1,d0*8),a1
+	;
+	move	2(a1),d0
+	move	d0,ob_nxvec(a0)
+	neg	d0
+	muls	d6,d0
+	add.l	d0,d0
+	move	6(a1),d1
+	move	d1,ob_nzvec(a0)
+	muls	d6,d1
+	add.l	d1,d1
+	;
+	movem.l	d0-d1,ob_xvec(a0)
+	;
+	move	#32,ob_rad(a0)
+	move.l	#32*32,ob_radsq(a0)
+	;
+	.rts	rts
+	*/
+
+	int16_t camrots[4];
+	GloomMaths::GetCamRotRaw(o.data.ms.rotquick.GetInt() & 0xFF, camrots);
+
+	b.data.ms.nxvec = camrots[1];
+	b.data.ms.xvec = -(int32_t)camrots[1];
+	b.data.ms.xvec *= 16;
+	b.data.ms.xvec += o.data.ms.xvec;
+	
+	b.data.ms.nzvec = camrots[3];
+	b.data.ms.zvec = (int32_t)camrots[1];
+	b.data.ms.zvec *= 16;
+	b.data.ms.zvec += o.data.ms.zvec;
+
+	b.data.ms.rad = 32;
+	b.data.ms.radsq = 32;
+
+	logic->AddObject(b, false);
+}
+
+void DragonLogic(MapObject& o, GameLogic* logic)
+{
+	/*
+	dragonlogic	;OK! end of game baddy!
+	;
+	;how about cruising around in a circle a-la
+	;deathhead!
+	;
+	bsr	dragonanim
+	bsr	dragonfire
+	bsr	checkvecs
+	beq.s	.nohit
+	;
+	;OK, dragon has hit a wall...rot him around till he's clear!
+	;
+	bsr	getobrot
+	lsl	#2,d0
+	add	d0,ob_rot(a5)
+	bra	calcvecs
+	*/
+	DragonAnim(o);
+	DragonFire(o, logic);
+
+	if (!CheckVecs(o, logic))
+	{
+		GetObRot(o);
+		o.data.ms.rotquick.SetVal(o.data.ms.rotquick.GetVal() + (o.data.ms.rotspeed << 2));
+		CalcVecs(o);
+		return;
+	}
+	/*
+	.nohit	;
+	bsr	pickcalc
+	move	ob_rot(a5),d1
+	and	#255,d1
+	sub	d0,d1	;am I near?
+	bpl.s	.ansk
+	neg	d1
+	*/
+	int16_t ang = (o.data.ms.rotquick.GetInt()&255)-logic->PickCalc(o);
+
+	if (ang < 0) ang = -ang;
+	/*
+	.ansk	moveq	#6,d0
+	tst	ob_rotspeed(a5)
+	bne.s	.sh
+	moveq	#24,d0
+	*/
+	int16_t d0 = o.data.ms.rotspeed ? 6 : 24;
+
+	/*
+	.sh	cmp	d0,d1
+	bcs.s	.near
+	;
+	;not pointed at player!
+	bsr	getobrot
+	add	d0,ob_rot(a5)
+	bra	calcvecs
+	;
+	.near	tst	ob_rotspeed(a5)
+	beq.s	.near2
+	clr	ob_rotspeed(a5)	;towards player!
+	;
+	move.l	dragonsfx(pc),a0
+	moveq	#64,d0
+	moveq	#20,d1
+	bsr	playsfx
+	;
+	.near2	rts
+	*/
+	if (ang > d0)
+	{
+		GetObRot(o);
+		o.data.ms.rotquick.SetVal(o.data.ms.rotquick.GetVal() + o.data.ms.rotspeed);
+		CalcVecs(o);
+		return;
+	}
+
+	if (o.data.ms.rotspeed == 0) return;
+	o.data.ms.rotspeed = 0;
+	SoundHandler::Play(SoundHandler::SOUND_DRAGON);
 }
