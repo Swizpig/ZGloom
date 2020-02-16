@@ -1,5 +1,8 @@
 #include "hud.h"
 #include "font.h"
+#include "config.h"
+#include "objectgraphics.h"
+#include "gloommaths.h"
 
 // ripped from PPM conversion
 static const uint32_t wepraw[5][81*3] =
@@ -111,16 +114,16 @@ Hud::Hud()
 	{
 		for (int y = 0; y < 9; y++)
 		{
-			uint32_t* pix = (uint32_t*)(healthbar->pixels) + x + y*(healthbar->pitch/4);
+			uint32_t* pix = (uint32_t*)(healthbar->pixels) + x + y*(healthbar->pitch / 4);
 			uint32_t* hpix = (uint32_t*)(healthbaron->pixels) + x + y*(healthbar->pitch / 4);
 			uint32_t* wpix = (uint32_t*)(weaponbar->pixels) + x + y*(weaponbar->pitch / 4);
 
-			if ((y == 0) || (x==0))
+			if ((y == 0) || (x == 0))
 			{
 				*pix = 0xFF008866;
 				*hpix = 0xFF008866;
 			}
-			else if ((y == 8) || (x == (2*25+1)))
+			else if ((y == 8) || (x == (2 * 25 + 1)))
 			{
 				*pix = 0xFF004400;
 				*hpix = 0xFF004400;
@@ -151,8 +154,8 @@ Hud::Hud()
 				uint32_t pix = 0xFF000000;
 
 				pix |= wepraw[i][3 * (x + y * 9) + 0] << 16;
-				pix |= wepraw[i][3 * (x + y * 9) + 1] <<  8;
-				pix |= wepraw[i][3 * (x + y * 9) + 2] <<  0;
+				pix |= wepraw[i][3 * (x + y * 9) + 1] << 8;
+				pix |= wepraw[i][3 * (x + y * 9) + 2] << 0;
 				if (pix == 0xFF000000) pix = 0;
 
 				*((uint32_t*)(weaponsprites[i]->pixels) + x + y*weaponsprites[i]->pitch / 4) = pix;
@@ -160,7 +163,7 @@ Hud::Hud()
 		}
 	}
 
-	
+
 	messages.push_back("dummy");
 	messages.push_back("health bonus!");
 	messages.push_back("weapon boosted to full!");
@@ -176,6 +179,52 @@ Hud::Hud()
 	messages.push_back("thermo glasses out...");
 	messages.push_back("invisibility out...");
 	messages.push_back("hyper out...");
+
+	CrmFile gundata;
+
+	ObjectGraphics::LoadGraphic((Config::GetMiscDir() + "gun.bin").c_str(), gunshapes);
+
+#if 0
+	for (size_t i = 0; i < gunshapes.size(); i++)
+	{
+		std::string name = "gunshapes";
+
+		gunshapes[i].DumpDebug((name + std::to_string(i) + ".ppm").c_str());
+	}
+#endif
+
+	gunsurfaces.resize(gunshapes.size());
+
+	for (size_t i = 0; i < gunshapes.size(); i++)
+	{
+		// Do I need to worry about endianness here?
+		std::vector<uint32_t> tempdata;
+
+		// get alpha right
+		tempdata = gunshapes[i].data;
+
+		for (auto &i : tempdata)
+		{
+			if (i == 1)
+			{
+				i = 0;
+			}
+			else
+			{
+				i |= 0xFF000000;
+			}
+		}
+
+		gunsurfaces[i] = SDL_CreateRGBSurface(0, gunshapes[i].w, gunshapes[i].h, 32, 0x00FF0000, 0x0000FF00, 0x000000FF, 0xFF000000);
+
+		for (uint32_t y = 0; y < gunshapes[i].h; y++)
+		{
+			for (uint32_t x = 0; x < gunshapes[i].w; x++)
+			{
+				((uint32_t*)gunsurfaces[i]->pixels)[x + gunsurfaces[i]->pitch / 4 * y] = tempdata[y + x*gunshapes[i].h];
+			}
+		}
+	}
 }
 
 void Hud::Render(SDL_Surface* surface, const MapObject& player, Font& font)
@@ -214,5 +263,67 @@ void Hud::Render(SDL_Surface* surface, const MapObject& player, Font& font)
 	if (player.data.ms.messtimer < 0)
 	{
 		font.PrintMessage(messages[player.data.ms.mess], 40, surface);
+	}
+
+	//GUN. This is largely guesswork, it's not in the available gloom deluxe soure as far as I can tell. There's not even a reference to gun.bin
+
+	if (gunshapes.size())
+	{
+		dstrect.x = surface->w / 2 - gunshapes[0].xh;
+		dstrect.y = surface->h - gunshapes[0].h;
+		dstrect.w = gunshapes[0].w;
+		dstrect.h = gunshapes[0].h;
+
+		if (player.data.ms.fired)
+		{
+			SDL_Rect bullrect;
+
+			// G3 does not have fire anims?
+			if (gunshapes.size() > 2)
+			{
+				int wepshape = 2 + (player.data.ms.weapon + 1) / 2;
+				bullrect.x = (surface->w - gunshapes[wepshape].w) / 2;
+				bullrect.y = surface->h - gunshapes[wepshape].h;
+				bullrect.w = gunshapes[wepshape].w;
+				bullrect.h = gunshapes[wepshape].h;
+
+				int zoom = GloomMaths::RndW() & 3;
+
+				bullrect.x -= zoom;
+				bullrect.y -= zoom;
+				bullrect.w += 2*zoom;
+				bullrect.h += 2*zoom;
+
+				SDL_BlitScaled(gunsurfaces[wepshape], NULL, surface, &bullrect);
+			}
+
+
+			dstrect.y += 10;
+		}
+		else if (player.data.ms.bounce)
+		{
+			int16_t camrots[4];
+			uint8_t ang = (player.data.ms.bounce>>1) * 0xff;
+
+			GloomMaths::GetCamRotRaw(ang, camrots);
+
+			int32_t xoffset = camrots[1];
+
+			xoffset <<= 5;
+
+			xoffset >>= 16;
+
+			dstrect.x += xoffset;
+
+			int32_t yoffset = xoffset/2;
+
+			if (yoffset < 0) yoffset = -yoffset;
+
+			dstrect.y -= yoffset;
+		}
+
+		dstrect.y += 25;
+
+		SDL_BlitSurface(gunsurfaces[player.data.ms.fired?1:0], NULL, surface, &dstrect);
 	}
 }

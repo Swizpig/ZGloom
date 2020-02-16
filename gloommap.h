@@ -193,6 +193,9 @@ class MapObjectSideBand
 	int16_t mega;
 	int16_t mess;
 	int16_t messtimer;
+	
+	//purely used for gun
+	int16_t fired;
 
 	uint16_t blood;
 	int16_t scale;

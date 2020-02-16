@@ -101,8 +101,8 @@ class ObjectGraphics
 		uint32_t maxwidthsgore[OLT_END];
 
 		ObjectGraphics();
-		uint32_t LoadGraphic(const char* name, std::vector<Shape>& shape);
-		uint32_t LoadGraphicBin(const uint8_t* bindata, std::vector<Shape>& shape);
+		static uint32_t LoadGraphic(const char* name, std::vector<Shape>& shape);
+		static uint32_t LoadGraphicBin(const uint8_t* bindata, std::vector<Shape>& shape);
 
 		std::vector<Shape> TokenShapes;
 		std::vector<Shape> MarineShapes;

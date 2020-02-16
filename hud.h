@@ -6,6 +6,7 @@
 #include <string>
 #include "gloommap.h"
 #include "font.h"
+#include "objectgraphics.h"
 
 class Hud
 {
@@ -38,5 +39,9 @@ class Hud
 		SDL_Surface* weaponbar;
 		SDL_Surface* weaponsprites[5];
 
+		std::vector<Shape> gunshapes;
+		std::vector<SDL_Surface*> gunsurfaces;
+
 		std::vector<std::string> messages;
+		
 };

@@ -817,6 +817,7 @@ MapObject::MapObject(Object m)
 	data.ms.blood = m.blood;
 	data.ms.punchrate = m.punchrate;
 	data.ms.scale = m.scale;
+	data.ms.fired = 0;
 
 	switch (t)
 	{
@@ -934,6 +935,8 @@ MapObject::MapObject()
 
 	data.ms.messtimer = 0;
 	data.ms.mess = 0;
+
+	data.ms.fired = 0;
 
 	// avoid zero as I need to flag nothing
 	identifier = counter + 1;

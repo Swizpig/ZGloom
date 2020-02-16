@@ -820,6 +820,7 @@ bool GameLogic::Update(Camera* cam)
 				SoundHandler::Play(wtable[wep].sound);
 				playerobj.data.ms.reloadcnt = playerobj.data.ms.reload;
 				firedown = true;
+				playerobj.data.ms.fired = 10;
 			}
 		}
 		else
@@ -999,6 +1000,10 @@ bool GameLogic::Update(Camera* cam)
 	if (playerobj.data.ms.messtimer < 0)
 	{
 		playerobj.data.ms.messtimer++;
+	}
+	if (playerobj.data.ms.fired>0)
+	{
+		playerobj.data.ms.fired--;
 	}
 
 	playerhit = playerobj.data.ms.hitpoints < initialhealth;
