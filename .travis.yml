@@ -11,7 +11,7 @@ matrix:
     script:
     - make
   - name: macOS
-    compiler: clang
+    #compiler: clang
     os: osx
     osx_image: xcode10.2
     before_script:
