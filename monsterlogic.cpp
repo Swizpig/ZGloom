@@ -2250,7 +2250,9 @@ void DeathSuck(MapObject& o, GameLogic* logic)
 	uint8_t ang = (o.data.ms.rotquick.GetInt() + 128);
 	logic->SetSuckAngle(ang);
 
-	AddSoul(3, ang, o, logic->GetPlayerObj(), logic);
+	MapObject pobj = logic->GetPlayerObj();
+
+	AddSoul(3, ang, o, pobj, logic);
 }
 
 void HurtDeath(MapObject& thisobj, MapObject& otherobj, GameLogic* logic)
