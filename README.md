@@ -29,11 +29,12 @@ Cursors, left alt to strafe, left ctrl to fire. F1 skips level. F12 toggles full
 
 * Backend of the renderer is mostly mine, and is flaky. There's Z-fighting that doesn't exist in the original, for instance
 * Sound is deafening on occasion, need variable volume playback and priority system
-* Some monsters are missing their logic still
+* Player rotation acceleration
 * Incomplete HUD and infinite lives currently
-* Very basic in-game menu
+* Very basic in-game menu. Much more stuff needs to be configurable
 * No defender sub-game
 * LibXMP's MED playback isn't great on some tunes
+* Most power-ups don't do anything yet
 
 # License
 
