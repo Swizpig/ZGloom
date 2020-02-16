@@ -1,0 +1,18 @@
+language: cpp
+dist: bionic
+matrix:
+  include:
+  - name: Linux
+    addons:
+      apt_packages:
+      - libsdl2-dev
+    script:
+    - make
+  - name: macOS
+    compiler: clang
+    os: osx
+    osx_image: xcode10.2
+    before_script:
+    - brew install sdl2
+    script:
+    - make
