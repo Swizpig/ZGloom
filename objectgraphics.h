@@ -10,6 +10,8 @@
 class Shape
 {
 	public:
+		int32_t xh;
+		int32_t yh;
 		uint32_t w;
 		uint32_t h;
 

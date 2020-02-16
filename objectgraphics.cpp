@@ -18,6 +18,8 @@ static uint32_t Get32(const uint8_t* p)
 void Shape::Load(const uint8_t* indata, const uint8_t* palette)
 {
 	// first 2 entries are handles
+	xh = Get16(indata + 0);
+	yh = Get16(indata + 2);
 	w = Get16(indata + 4);
 	h = Get16(indata + 6);
 

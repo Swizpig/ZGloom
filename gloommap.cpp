@@ -799,6 +799,10 @@ MapObject::MapObject(Object m)
 	data.ms.reloadcnt = 0;
 
 	data.ms.bounce = 0;
+	data.ms.mega = 0;
+
+	data.ms.messtimer = 0;
+	data.ms.mess = 0;
 
 	data.ms.colltype = m.colltype;
 	data.ms.collwith = m.collwith;
@@ -926,6 +930,10 @@ MapObject::MapObject()
 	data.ms.punchrate = 0;
 	data.ms.scale = 0x200;
 	data.ms.rotspeed = 0;
+	data.ms.mega = 0;
+
+	data.ms.messtimer = 0;
+	data.ms.mess = 0;
 
 	// avoid zero as I need to flag nothing
 	identifier = counter + 1;

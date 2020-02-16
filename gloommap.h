@@ -190,6 +190,10 @@ class MapObjectSideBand
 	int16_t bouncecnt;
 	int16_t bounce;
 
+	int16_t mega;
+	int16_t mess;
+	int16_t messtimer;
+
 	uint16_t blood;
 	int16_t scale;
 

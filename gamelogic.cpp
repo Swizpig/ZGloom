@@ -2,6 +2,7 @@
 #include "renderer.h"
 #include "monsterlogic.h"
 #include "soundhandler.h"
+#include "hud.h"
 
 void GameLogic::Init(ObjectGraphics* ograph)
 {
@@ -803,7 +804,19 @@ bool GameLogic::Update(Camera* cam)
 			if ((playerobj.data.ms.reloadcnt == 0) && (!firedown))
 			{
 				auto wep = playerobj.data.ms.weapon;
-				Shoot(playerobj, this, (playerobj.data.ms.collwith & 3) ^ 3, 0, wtable[wep].hitpoint, wtable[wep].damage, wtable[wep].speed, wtable[wep].shape, wtable[wep].spark);
+
+				if (playerobj.data.ms.mega)
+				{
+					playerobj.data.ms.rotquick.SetInt(playerobj.data.ms.rotquick.GetInt() + 4);
+					Shoot(playerobj, this, (playerobj.data.ms.collwith & 3) ^ 3, 0, wtable[wep].hitpoint, wtable[wep].damage, wtable[wep].speed, wtable[wep].shape, wtable[wep].spark);
+					playerobj.data.ms.rotquick.SetInt(playerobj.data.ms.rotquick.GetInt() - 8);
+					Shoot(playerobj, this, (playerobj.data.ms.collwith & 3) ^ 3, 0, wtable[wep].hitpoint, wtable[wep].damage, wtable[wep].speed, wtable[wep].shape, wtable[wep].spark);
+					playerobj.data.ms.rotquick.SetInt(playerobj.data.ms.rotquick.GetInt() + 4);
+				}
+				else
+				{
+					Shoot(playerobj, this, (playerobj.data.ms.collwith & 3) ^ 3, 0, wtable[wep].hitpoint, wtable[wep].damage, wtable[wep].speed, wtable[wep].shape, wtable[wep].spark);
+				}
 				SoundHandler::Play(wtable[wep].sound);
 				playerobj.data.ms.reloadcnt = playerobj.data.ms.reload;
 				firedown = true;
@@ -969,6 +982,24 @@ bool GameLogic::Update(Camera* cam)
 	playerobj.data.ms.delay = playerobjupdated.data.ms.delay;
 	playerobj.data.ms.colltype = playerobjupdated.data.ms.colltype;
 	playerobj.data.ms.collwith = playerobjupdated.data.ms.collwith;
+	playerobj.data.ms.mega = playerobjupdated.data.ms.mega;
+	playerobj.data.ms.mess = playerobjupdated.data.ms.mess;
+	playerobj.data.ms.messtimer = playerobjupdated.data.ms.messtimer;
+
+	if (playerobj.data.ms.mega)
+	{
+		playerobj.data.ms.mega--;
+
+		if (playerobj.data.ms.mega == 0)
+		{
+			playerobj.data.ms.mess = Hud::MESSAGES_MEGA_WEAPON_OUT;
+			playerobj.data.ms.messtimer = -127;
+		}
+	}
+	if (playerobj.data.ms.messtimer < 0)
+	{
+		playerobj.data.ms.messtimer++;
+	}
 
 	playerhit = playerobj.data.ms.hitpoints < initialhealth;
 

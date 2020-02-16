@@ -1,4 +1,5 @@
 #include "hud.h"
+#include "font.h"
 
 // ripped from PPM conversion
 static const uint32_t wepraw[5][81*3] =
@@ -158,9 +159,26 @@ Hud::Hud()
 			}
 		}
 	}
+
+	
+	messages.push_back("dummy");
+	messages.push_back("health bonus!");
+	messages.push_back("weapon boosted to full!");
+	messages.push_back("weapon boost!");
+	messages.push_back("ultra mega overkill!!!");
+	messages.push_back("mega weapon boost!");
+	messages.push_back("new weapon!");
+	messages.push_back("invisibility!");
+	messages.push_back("hyper!");
+	messages.push_back("bouncy bullets!");
+	messages.push_back("got the thermo glasses!");
+	messages.push_back("mega weapon out...'");
+	messages.push_back("thermo glasses out...");
+	messages.push_back("invisibility out...");
+	messages.push_back("hyper out...");
 }
 
-void Hud::Render(SDL_Surface* surface, int weapon, int reload, int health)
+void Hud::Render(SDL_Surface* surface, const MapObject& player, Font& font)
 {
 	SDL_Rect dstrect;
 	SDL_Rect srcrect;
@@ -171,7 +189,7 @@ void Hud::Render(SDL_Surface* surface, int weapon, int reload, int health)
 
 	srcrect.x = 0;
 	srcrect.y = 0;
-	srcrect.w = health * 2 + 1;
+	srcrect.w = player.data.ms.hitpoints * 2 + 1;
 	srcrect.h = 9;
 
 	SDL_BlitSurface(healthbar, NULL, surface, &dstrect);
@@ -179,11 +197,22 @@ void Hud::Render(SDL_Surface* surface, int weapon, int reload, int health)
 
 	dstrect.y += 12;
 
-	SDL_BlitSurface(weaponbar, NULL, surface, &dstrect);
+	srcrect.x = 0;
+	srcrect.y = 0;
+	srcrect.w = player.data.ms.mega ? player.data.ms.mega / 50 : 0;
+	srcrect.h = 9;
 
-	for (int i = 0; i < (6-reload); i++)
+	SDL_BlitSurface(weaponbar, NULL, surface, &dstrect);
+	SDL_BlitSurface(healthbaron, &srcrect, surface, &dstrect);
+
+	for (int i = 0; i < (6 - player.data.ms.reload); i++)
 	{
 		dstrect.x = 11 + 40 - 10 * i;
-		SDL_BlitSurface(weaponsprites[weapon], NULL, surface, &dstrect);
+		SDL_BlitSurface(weaponsprites[player.data.ms.weapon], NULL, surface, &dstrect);
+	}
+
+	if (player.data.ms.messtimer < 0)
+	{
+		font.PrintMessage(messages[player.data.ms.mess], 40, surface);
 	}
 }

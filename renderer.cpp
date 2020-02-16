@@ -511,133 +511,129 @@ void Renderer::DrawObjects(Camera* camera)
 
 				if (iz > 5) // add a bit of nearclip to prevent slowdown
 				{
-					ix <<= focshift;
-					ix /= iz;
+					std::vector<Shape>* s = o.data.ms.shape;
 
-					iy <<= focshift;
-					iy /= iz;
+					uint16_t column = 0;
 
-					if (1)//o.t == ObjectGraphics::OLT_MARINE)
+					int frametouse = 0;
+
+					if (o.data.ms.render == 8)
 					{
-						std::vector<Shape>* s = o.data.ms.shape;
+						// rotatable!
+						/*
+						bsr	calcangle2
+						add	#16, d0
+						sub	ob_rot(a5), d0
+						lsr	#5, d0
+						and	#7, d0
+						*/
+						//uint16_t ang = GloomMaths::CalcAngle(o.x.GetInt(), o.z.GetInt(), camera->x.GetInt(), camera->z.GetInt());
 
-						uint16_t column = 0;
+						uint16_t ang = GloomMaths::CalcAngle(camera->x.GetInt(), camera->z.GetInt(), o.x.GetInt(), o.z.GetInt());
 
-						int frametouse = 0;
-
-						if (o.data.ms.render == 8)
-						{
-							// rotatable!
-							/*
-							bsr	calcangle2
-							add	#16, d0
-							sub	ob_rot(a5), d0
-							lsr	#5, d0
-							and	#7, d0
-							*/
-							//uint16_t ang = GloomMaths::CalcAngle(o.x.GetInt(), o.z.GetInt(), camera->x.GetInt(), camera->z.GetInt());
-
-							uint16_t ang = GloomMaths::CalcAngle(camera->x.GetInt(), camera->z.GetInt(), o.x.GetInt(), o.z.GetInt());
-
-							ang += 16;
-							ang -= o.data.ms.rotquick.GetInt();
-							ang >>= 5;
-							ang &= 7;
-							frametouse = ang | (((o.data.ms.frame >> 16) & 7) << 3);
-						}
-						else
-						{
-							frametouse = o.data.ms.frame >> 16;
-						}
-
-						//TODO: Gloom 3 seems to be missing baldy punch frames
-						//update - it is, they vanish in the original when they punch you
-
-						if ((size_t)frametouse >= s->size())
-						{
-							frametouse = s->size() - 1;
-						}
-
-						auto scale = o.data.ms.scale;
-						auto shapewidth = (*s)[frametouse].w;
-						auto shapeheight = (*s)[frametouse].h;
-
-						int h = ((shapeheight * scale / 0x100) << focshift) / iz;
-						int w = ((shapewidth * scale / 0x100) << focshift) / iz;
-
-						if ((w > 0) && (h > 0))
-						{
-
-							Quick temp;
-
-							Quick dx;
-							Quick dy;
-							Quick tx, ty;
-
-							tx.SetInt(0);
-							ty.SetInt(0);
-
-							dx.SetInt(shapewidth);
-							dy.SetInt(shapeheight);
-
-							temp.SetInt(w);
-							dx = dx / temp;
-
-							temp.SetInt(h);
-							dy = dy / temp;
-
-							int32_t ystart = halfrenderheight - iy - h;
-
-							if ((ix + halfrenderwidth + w / 2) > 0)
-							{
-								for (int32_t sx = ix + halfrenderwidth - w / 2; sx < (ix + halfrenderwidth + w / 2); sx++)
-								{
-									if (sx >= renderwidth) break;
-									ty.SetInt(0);
-
-									for (int32_t sy = ystart; sy < (ystart + h); sy++)
-									{
-										if ((sx >= 0) && (iz > zbuff[sx])) break;
-										if (sy >= renderheight) break;
-
-										if ((sx >= 0) && (sy >= 0))
-										{
-											auto col = (*s)[frametouse].data[ty.GetInt() + tx.GetInt()*shapeheight];
-
-											if (col != 1)
-											{
-												uint32_t dimcol;
-
-												ColourModify(0xFF & (col >> 16), 0xFF & (col >> 8), 0xFF & col, dimcol, o.rotz);
-
-												//transparency flag!
-												if (!o.isstrip && (o.data.ms.blood & 0x8000))
-												{
-													uint32_t surcol = surface[sx + sy*renderwidth];
-													uint32_t b = (((dimcol >> 0) & 0xFF) + ((surcol >> 0) & 0xFF)) / 2;
-													uint32_t g = (((dimcol >> 8) & 0xFF) + ((surcol >> 8) & 0xFF)) / 2;
-													uint32_t r = (((dimcol >>16) & 0xFF) + ((surcol >>16) & 0xFF)) / 2;
-
-													surface[sx + sy*renderwidth] = (r<<16) | (g<<8) | b;
-												}
-												else
-												{
-													surface[sx + sy*renderwidth] = dimcol;
-												}
-											}
-										}
-
-										ty = ty + dy;
-									}
-									tx = tx + dx;
-								}
-							}
-						}
+						ang += 16;
+						ang -= o.data.ms.rotquick.GetInt();
+						ang >>= 5;
+						ang &= 7;
+						frametouse = ang | (((o.data.ms.frame >> 16) & 7) << 3);
 					}
 					else
 					{
-						debugVline(ix + halfrenderwidth, 0, halfrenderheight - iy, rendersurface, 0xFFFFFF);
+						frametouse = o.data.ms.frame >> 16;
 					}
+
+					//TODO: Gloom 3 seems to be missing baldy punch frames
+					//update - it is, they vanish in the original when they punch you
+
+					if ((size_t)frametouse >= s->size())
+					{
+						frametouse = s->size() - 1;
+					}
+
+					auto scale = o.data.ms.scale;
+					auto shapewidth = (*s)[frametouse].w;
+					auto shapeheight = (*s)[frametouse].h;
+
+					ix <<= focshift;
+					ix /= iz;
+
+					// Add handle! otherwise bullets fill screen
+					iy -= (*s)[frametouse].h - (*s)[frametouse].yh - 1;
+					iy <<= focshift;
+					iy /= iz;
+
+					int h = ((shapeheight * scale / 0x100) << focshift) / iz;
+					int w = ((shapewidth * scale / 0x100) << focshift) / iz;
+
+					if ((w > 0) && (h > 0))
+					{
+
+						Quick temp;
+
+						Quick dx;
+						Quick dy;
+						Quick tx, ty;
+
+						tx.SetInt(0);
+						ty.SetInt(0);
+
+						dx.SetInt(shapewidth);
+						dy.SetInt(shapeheight);
+
+						temp.SetInt(w);
+						dx = dx / temp;
+
+						temp.SetInt(h);
+						dy = dy / temp;
+
+						int32_t ystart = halfrenderheight - iy - h;
+
+						if ((ix + halfrenderwidth + w / 2) > 0)
+						{
+							for (int32_t sx = ix + halfrenderwidth - w / 2; sx < (ix + halfrenderwidth + w / 2); sx++)
+							{
+								if (sx >= renderwidth) break;
+								ty.SetInt(0);
+
+								for (int32_t sy = ystart; sy < (ystart + h); sy++)
+								{
+									if ((sx >= 0) && (iz > zbuff[sx])) break;
+									if (sy >= renderheight) break;
+
+									if ((sx >= 0) && (sy >= 0))
+									{
+										auto col = (*s)[frametouse].data[ty.GetInt() + tx.GetInt()*shapeheight];
+
+										if (col != 1)
+										{
+											uint32_t dimcol;
+
+											ColourModify(0xFF & (col >> 16), 0xFF & (col >> 8), 0xFF & col, dimcol, o.rotz);
+
+											//transparency flag!
+											if (!o.isstrip && (o.data.ms.blood & 0x8000))
+											{
+												uint32_t surcol = surface[sx + sy*renderwidth];
+												uint32_t b = (((dimcol >> 0) & 0xFF) + ((surcol >> 0) & 0xFF)) / 2;
+												uint32_t g = (((dimcol >> 8) & 0xFF) + ((surcol >> 8) & 0xFF)) / 2;
+												uint32_t r = (((dimcol >>16) & 0xFF) + ((surcol >>16) & 0xFF)) / 2;
+
+												surface[sx + sy*renderwidth] = (r<<16) | (g<<8) | b;
+											}
+											else
+											{
+												surface[sx + sy*renderwidth] = dimcol;
+											}
+										}
+									}
+
+									ty = ty + dy;
+								}
+								tx = tx + dx;
+							}
+						}
+					}
+		
 				}
 			}
 		}

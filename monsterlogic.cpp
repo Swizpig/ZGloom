@@ -2,6 +2,7 @@
 #include "gloommaths.h"
 #include "gamelogic.h"
 #include "monsterlogic.h"
+#include "hud.h"
 
 void BaldyPunch(MapObject& o, GameLogic* logic);
 int8_t CheckColl(MapObject& o1, MapObject &o2);
@@ -966,8 +967,10 @@ void WeaponGot(MapObject& thisobj, MapObject& otherobj, GameLogic* logic)
 {
 	SoundHandler::Play(SoundHandler::SOUND_TOKEN);
 
-	if (thisobj.data.ms.weapon > otherobj.data.ms.weapon)
+	if (thisobj.data.ms.weapon != otherobj.data.ms.weapon)
 	{
+		otherobj.data.ms.messtimer = -127;
+		otherobj.data.ms.mess = Hud::MESSAGES_NEW_WEAPON;
 		otherobj.data.ms.weapon = thisobj.data.ms.weapon;
 		otherobj.data.ms.reload = 5;
 	}
@@ -976,7 +979,15 @@ void WeaponGot(MapObject& thisobj, MapObject& otherobj, GameLogic* logic)
 		//todo: megaweapon etc.. .
 		if (otherobj.data.ms.reload > 1)
 		{
+			otherobj.data.ms.messtimer = -127;
+			otherobj.data.ms.mess = (otherobj.data.ms.reload==2)?Hud::MESSAGES_WEAPON_BOOST_FULL : Hud::MESSAGES_WEAPON_BOOST;
 			otherobj.data.ms.reload--;
+		}
+		else
+		{
+			otherobj.data.ms.messtimer = -127;
+			otherobj.data.ms.mess = Hud::MESSAGES_MEGA_WEAPON_BOOST;
+			otherobj.data.ms.mega += 250;
 		}
 	}
 	thisobj.killme = true;
@@ -1812,8 +1823,12 @@ void HealthGot(MapObject& thisobj, MapObject& otherobj, GameLogic* logic)
 {
 	SoundHandler::Play(SoundHandler::SOUND_TOKEN);
 
-	otherobj.data.ms.hitpoints += 4;
+	otherobj.data.ms.hitpoints += 5;
 	if (otherobj.data.ms.hitpoints > 25) otherobj.data.ms.hitpoints = 25;
+
+	otherobj.data.ms.messtimer = -127;
+	otherobj.data.ms.mess = Hud::MESSAGES_HEALTH_BONUS;
+
 	thisobj.killme = true;
 }
 

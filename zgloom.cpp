@@ -498,7 +498,7 @@ int main(int argc, char* argv[])
 			renderer.SetPlayerHit(logic.GetPlayerHit());
 			renderer.Render(&cam);
 			MapObject pobj = logic.GetPlayerObj();
-			hud.Render(render32,pobj.data.ms.weapon, pobj.data.ms.reload, pobj.data.ms.hitpoints);
+			hud.Render(render32, pobj, smallfont);
 		}
 		if (state == STATE_MENU)
 		{
