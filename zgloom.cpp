@@ -379,7 +379,9 @@ int main(int argc, char* argv[])
 				}
 			}
 
-			if ((sEvent.type == SDL_KEYDOWN) && (sEvent.key.keysym.sym == SDLK_SPACE))
+			if ((sEvent.type == SDL_KEYDOWN) && (sEvent.key.keysym.sym == SDLK_SPACE ||
+			   sEvent.key.keysym.sym == SDLK_ENTER ||
+			   sEvent.key.keysym.sym == SDLK_LCTRL))
 			{
 				if (state == STATE_WAITING)
 				{
