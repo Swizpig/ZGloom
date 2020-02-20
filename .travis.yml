@@ -1,0 +1,20 @@
+language: cpp
+dist: bionic
+matrix:
+  include:
+  - name: Linux
+    addons:
+      apt_packages:
+      - libsdl2-dev
+      - libsdl2-mixer-dev
+      - libxmp-dev
+    script:
+    - make
+  - name: macOS
+    #compiler: clang
+    os: osx
+    osx_image: xcode10.2
+    before_script:
+    - brew install sdl2 sdl2_mixer libxmp
+    script:
+    - make
