@@ -3,6 +3,7 @@
 #include "monsterlogic.h"
 #include "soundhandler.h"
 #include "hud.h"
+#include "config.h"
 
 void GameLogic::Init(ObjectGraphics* ograph)
 {
@@ -708,25 +709,36 @@ bool GameLogic::Update(Camera* cam)
 
 		inc.SetVal(playerobj.data.ms.movspeed);
 
-		if (keystate[SDL_SCANCODE_UP])
+		//wire these up to controller as well at some point
+
+		bool controlfire  = keystate[Config::GetKey(Config::KEY_SHOOT)] != 0;
+		bool controlup = keystate[Config::GetKey(Config::KEY_UP)] != 0;
+		bool controldown = keystate[Config::GetKey(Config::KEY_DOWN)] != 0;
+		bool controlleft = keystate[Config::GetKey(Config::KEY_LEFT)] != 0;
+		bool controlright = keystate[Config::GetKey(Config::KEY_RIGHT)] != 0;
+		bool controlstrafeleft = keystate[Config::GetKey(Config::KEY_SLEFT)] != 0;
+		bool controlstraferight = keystate[Config::GetKey(Config::KEY_SRIGHT)] != 0;
+		bool controlstrafemod = keystate[Config::GetKey(Config::KEY_STRAFEMOD)] != 0;
+
+		if (controlup)
 		{
 			// U 
 			newx = cam->x - camrots[1] * inc;
 			newz = cam->z + camrots[0] * inc;
 			moved = true;
 		}
-		if (keystate[SDL_SCANCODE_DOWN])
+		if (controldown)
 		{
 			// D
 			newx = cam->x + camrots[1] * inc;
 			newz = cam->z - camrots[0] * inc;
 			moved = true;
 		}
-		if (keystate[SDL_SCANCODE_LEFT])
+		if (controlleft || controlstrafeleft)
 		{
 			//L
 			//TODO: Rotation acceleration
-			if (keystate[SDL_SCANCODE_LALT])
+			if (controlstrafemod || controlstrafeleft)
 			{
 				//strafe
 				newx = newx + camrotstrafe[1] * inc;
@@ -738,10 +750,10 @@ bool GameLogic::Update(Camera* cam)
 				cam->rotquick.SetInt(cam->rotquick.GetInt() - 4);
 			}
 		}
-		if (keystate[SDL_SCANCODE_RIGHT])
+		if (controlright || controlstraferight)
 		{
 			//R
-			if (keystate[SDL_SCANCODE_LALT])
+			if (controlstrafemod || controlstraferight)
 			{
 				//strafe
 				newx = newx - camrotstrafe[1] * inc;
@@ -798,7 +810,7 @@ bool GameLogic::Update(Camera* cam)
 			}
 		}
 
-		if (keystate[SDL_SCANCODE_LCTRL])
+		if (controlfire)
 		{
 			//Shoot!
 			if ((playerobj.data.ms.reloadcnt == 0) && (!firedown))

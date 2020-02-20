@@ -2,10 +2,13 @@
 #include "objectgraphics.h"
 #include "soundhandler.h"
 #include <string>
+#include <SDL2/SDL.h>
 
 namespace Config
 {
 	static bool zombiemassacremode = false;
+
+	static int configkeys[KEY_END];
 
 	void SetZM(bool zm)
 	{
@@ -183,5 +186,24 @@ namespace Config
 			soundfilenames[SoundHandler::SOUND_ROBODIE] = "sfxs/robodie.bin";
 			soundfilenames[SoundHandler::SOUND_DRAGON] = "sfxs/dragon.bin";
 		}
+
+		configkeys[KEY_SHOOT] = SDL_SCANCODE_LCTRL;
+		configkeys[KEY_UP] = SDL_SCANCODE_UP;
+		configkeys[KEY_DOWN] = SDL_SCANCODE_DOWN;
+		configkeys[KEY_LEFT] = SDL_SCANCODE_LEFT;
+		configkeys[KEY_RIGHT] = SDL_SCANCODE_RIGHT;
+		configkeys[KEY_SLEFT] = SDL_SCANCODE_A;
+		configkeys[KEY_SRIGHT] = SDL_SCANCODE_D;
+		configkeys[KEY_STRAFEMOD] = SDL_SCANCODE_LALT;
+	}
+
+	int GetKey(keyenum k)
+	{
+		return configkeys[k];
+	}
+
+	void SetKey(keyenum k, int newval)
+	{
+		configkeys[k] = newval; 
 	}
 }

@@ -21,11 +21,11 @@ private:
 	enum MENUSTATUS
 	{
 		MENUSTATUS_MAIN,
+		MENUSTATUS_KEYCONFIG
 	};
 
 	MENUSTATUS status;
 	int selection;
 	int timer;
-
 };
 
