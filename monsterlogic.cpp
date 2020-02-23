@@ -993,6 +993,18 @@ void WeaponGot(MapObject& thisobj, MapObject& otherobj, GameLogic* logic)
 	thisobj.killme = true;
 }
 
+void InvisGot(MapObject& thisobj, MapObject& otherobj, GameLogic* logic)
+{
+	SoundHandler::Play(SoundHandler::SOUND_TOKEN);
+
+	otherobj.data.ms.messtimer = -127;
+	otherobj.data.ms.mess = Hud::MESSAGES_INVISIBILITY;
+	otherobj.data.ms.invisible = 1500;
+	
+	thisobj.killme = true;
+}
+
+
 void PauseLogic2(MapObject& o, GameLogic* logic)
 {
 	/*

@@ -62,6 +62,7 @@ void GameLogic::ResetPlayer(MapObject& o)
 	o.x = origx;
 	o.z = origz;
 	o.data.ms.rotquick.SetInt(origrot);
+	o.data.ms.invisible = 0;
 }
 
 void GameLogic::InitLevel(GloomMap* gmapin, Camera* cam, ObjectGraphics* ograph)
@@ -382,7 +383,10 @@ uint8_t GameLogic::PickCalc(MapObject& o)
 	MapObject player = GetPlayerObj();
 	uint8_t ang = GloomMaths::CalcAngle(player.x.GetInt(), player.z.GetInt(), o.x.GetInt(), o.z.GetInt());
 
-	// TODO invisibility
+	if (player.data.ms.invisible)
+	{
+		ang = ang + (GloomMaths::RndW() & 63) - 32;
+	}
 	return ang;
 }
 
@@ -699,6 +703,7 @@ bool GameLogic::Update(Camera* cam)
 
 	MapObject playerobj = GetPlayerObj();
 	int16_t initialhealth = playerobj.data.ms.hitpoints;
+	bool squished = false;
 
 	if (playerobj.data.ms.logic == NullLogic)
 	{
@@ -869,6 +874,10 @@ bool GameLogic::Update(Camera* cam)
 				cam->x = newx;
 				cam->z = newz;
 			}
+			else
+			{
+				squished = true;
+			}
 		}
 
 		CheckSuck(cam);
@@ -998,6 +1007,12 @@ bool GameLogic::Update(Camera* cam)
 	playerobj.data.ms.mega = playerobjupdated.data.ms.mega;
 	playerobj.data.ms.mess = playerobjupdated.data.ms.mess;
 	playerobj.data.ms.messtimer = playerobjupdated.data.ms.messtimer;
+	playerobj.data.ms.invisible = playerobjupdated.data.ms.invisible;
+
+	if (squished)
+	{
+		playerobj.data.ms.hitpoints--;
+	}
 
 	if (playerobj.data.ms.mega)
 	{
@@ -1006,6 +1021,15 @@ bool GameLogic::Update(Camera* cam)
 		if (playerobj.data.ms.mega == 0)
 		{
 			playerobj.data.ms.mess = Hud::MESSAGES_MEGA_WEAPON_OUT;
+			playerobj.data.ms.messtimer = -127;
+		}
+	}
+	if (playerobj.data.ms.invisible)
+	{
+		playerobj.data.ms.invisible--;
+		if (playerobj.data.ms.invisible==0)
+		{
+			playerobj.data.ms.mess = Hud::MESSAGES_INVISIBILITY_OUT;
 			playerobj.data.ms.messtimer = -127;
 		}
 	}
@@ -1035,6 +1059,15 @@ bool GameLogic::Update(Camera* cam)
 
 	//do this after the above otherwise I don't pick up the player reset on death
 	playerobj.data.ms.logic = playerobjupdated.data.ms.logic;
+
+	if (squished &&  (playerobj.data.ms.hitpoints <= 0))
+	{
+		playerobj.data.ms.hitpoints = 0;
+		playerobj.data.ms.logic = PlayerDeath;
+
+		playerobj.data.ms.colltype = 0;
+		playerobj.data.ms.collwith = 0;
+	}
 
 	//kill pass
 

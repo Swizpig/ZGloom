@@ -41,6 +41,7 @@ class Hud
 
 		std::vector<Shape> gunshapes;
 		std::vector<SDL_Surface*> gunsurfaces;
+		std::vector<SDL_Surface*> gunsurfacesblend;
 
 		std::vector<std::string> messages;
 		

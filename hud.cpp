@@ -194,6 +194,7 @@ Hud::Hud()
 #endif
 
 	gunsurfaces.resize(gunshapes.size());
+	gunsurfacesblend.resize(gunshapes.size());
 
 	for (size_t i = 0; i < gunshapes.size(); i++)
 	{
@@ -216,12 +217,14 @@ Hud::Hud()
 		}
 
 		gunsurfaces[i] = SDL_CreateRGBSurface(0, gunshapes[i].w, gunshapes[i].h, 32, 0x00FF0000, 0x0000FF00, 0x000000FF, 0xFF000000);
+		gunsurfacesblend[i] = SDL_CreateRGBSurface(0, gunshapes[i].w, gunshapes[i].h, 32, 0x00FF0000, 0x0000FF00, 0x000000FF, 0xFF000000);
 
 		for (uint32_t y = 0; y < gunshapes[i].h; y++)
 		{
 			for (uint32_t x = 0; x < gunshapes[i].w; x++)
 			{
 				((uint32_t*)gunsurfaces[i]->pixels)[x + gunsurfaces[i]->pitch / 4 * y] = tempdata[y + x*gunshapes[i].h];
+				((uint32_t*)gunsurfacesblend[i]->pixels)[x + gunsurfaces[i]->pitch / 4 * y] = tempdata[y + x*gunshapes[i].h]?0xFF808080:0xFFFFFFFF;
 			}
 		}
 	}
@@ -324,6 +327,14 @@ void Hud::Render(SDL_Surface* surface, const MapObject& player, Font& font)
 
 		dstrect.y += 25;
 
-		SDL_BlitSurface(gunsurfaces[player.data.ms.fired?1:0], NULL, surface, &dstrect);
+		if (player.data.ms.invisible)
+		{
+			SDL_SetSurfaceBlendMode(gunsurfacesblend[player.data.ms.fired ? 1 : 0], SDL_BLENDMODE_MOD);
+			SDL_BlitSurface(gunsurfacesblend[player.data.ms.fired ? 1 : 0], NULL, surface, &dstrect);
+		}
+		else
+		{
+			SDL_BlitSurface(gunsurfaces[player.data.ms.fired ? 1 : 0], NULL, surface, &dstrect);
+		}
 	}
 }

@@ -818,6 +818,7 @@ MapObject::MapObject(Object m)
 	data.ms.punchrate = m.punchrate;
 	data.ms.scale = m.scale;
 	data.ms.fired = 0;
+	data.ms.invisible = 0;
 
 	switch (t)
 	{
@@ -897,6 +898,11 @@ MapObject::MapObject(Object m)
 			data.ms.hit = HealthGot;
 			data.ms.die = HealthGot;
 			break;
+		case ObjectGraphics::OLT_INVISI:
+			data.ms.logic = NullLogic;
+			data.ms.hit = InvisGot;
+			data.ms.die = InvisGot;
+			break;
 		default:
 			data.ms.logic = NullLogic;
 			data.ms.hit = NullLogicComp;
@@ -937,6 +943,7 @@ MapObject::MapObject()
 	data.ms.mess = 0;
 
 	data.ms.fired = 0;
+	data.ms.invisible = 0;
 
 	// avoid zero as I need to flag nothing
 	identifier = counter + 1;

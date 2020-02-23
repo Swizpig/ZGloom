@@ -9,6 +9,7 @@ void NullLogicComp(MapObject& thisobj, MapObject& otherobj, GameLogic* logic);
 void KillLogicComp(MapObject& thisobj, MapObject& otherobj, GameLogic* logic);
 void WeaponGot(MapObject& thisobj, MapObject& otherobj, GameLogic* logic);
 void HealthGot(MapObject& thisobj, MapObject& otherobj, GameLogic* logic);
+void InvisGot(MapObject& thisobj, MapObject& otherobj, GameLogic* logic);
 void WeaponLogic(MapObject& o, GameLogic* logic);
 void TerraLogic(MapObject& o, GameLogic* logic);
 void GhoulLogic(MapObject& o, GameLogic* logic);
@@ -30,5 +31,6 @@ void BlowDeath(MapObject& thisobj, MapObject& otherobj, GameLogic* logic);
 void HurtDeath(MapObject& thisobj, MapObject& otherobj, GameLogic* logic);
 void BlowDragon(MapObject& thisobj, MapObject& otherobj, GameLogic* logic);
 void DragonLogic(MapObject& o, GameLogic* logic);
+void PlayerDeath(MapObject& o, GameLogic* logic);
 
 void Shoot(MapObject& o, GameLogic* logic, int32_t colltype, int32_t collwith, int32_t hitpoints, int32_t damage, int32_t speed, std::vector<Shape>* shape, std::vector<Shape>* spark);
