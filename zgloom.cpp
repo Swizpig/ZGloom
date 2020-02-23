@@ -148,12 +148,9 @@ int main(int argc, char* argv[])
 		return 1;
 	}
 
-	int renderwidth = 320;
-	int renderheight = 256;
+	int renderwidth, renderheight, windowwidth, windowheight;
 
-	int windowwidth = 960;
-	int windowheight = 768;
-
+	Config::GetRenderSizes(renderwidth, renderheight, windowwidth, windowheight);
 
 	CrmFile titlemusic;
 	CrmFile intermissionmusic;
@@ -263,6 +260,14 @@ int main(int argc, char* argv[])
 	int screennum = 0;
 
 	Mix_Volume(-1, 32);
+
+	//try and blit title etc into the middle of the screen
+	SDL_Rect blitrect;
+
+	blitrect.w = 320;
+	blitrect.h = 256;
+	blitrect.x = (renderwidth - 320) / 2;
+	blitrect.y = (renderheight - 256) / 2;
 
 	while (notdone)
 	{
@@ -510,7 +515,7 @@ int main(int argc, char* argv[])
 
 		if ((state == STATE_WAITING) || (state == STATE_TITLE))
 		{
-			SDL_BlitSurface(render8, NULL, render32, NULL);
+			SDL_BlitSurface(render8, NULL, render32, &blitrect);
 		}
 
 		if (printscreen)
@@ -531,6 +536,8 @@ int main(int argc, char* argv[])
 	}
 
 	xmp_free_context(ctx);
+
+	Config::Save();
 
 	SDL_FreeSurface(render8);
 	SDL_FreeSurface(render32);

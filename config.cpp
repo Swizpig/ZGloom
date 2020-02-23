@@ -3,12 +3,20 @@
 #include "soundhandler.h"
 #include <string>
 #include <SDL2/SDL.h>
+#include <iostream>
+#include <fstream>
 
 namespace Config
 {
 	static bool zombiemassacremode = false;
 
 	static int configkeys[KEY_END];
+	static int renderwidth;
+	static int renderheight;
+	static int windowwidth;
+	static int windowheight;
+	int32_t focallength;
+
 
 	void SetZM(bool zm)
 	{
@@ -195,6 +203,66 @@ namespace Config
 		configkeys[KEY_SLEFT] = SDL_SCANCODE_A;
 		configkeys[KEY_SRIGHT] = SDL_SCANCODE_D;
 		configkeys[KEY_STRAFEMOD] = SDL_SCANCODE_LALT;
+
+		renderwidth = 320;
+		renderheight = 256;
+		windowwidth = 960;
+		windowheight = 768;
+
+		focallength = 128;
+
+		std::ifstream file;
+
+		file.open("config.txt");
+
+		if (file.is_open())
+		{
+			while (!file.eof())
+			{
+				std::string line;
+					
+				std::getline(file, line);
+
+				if (line.size() && (line[0] != ';'))
+				{
+					std::string command = line.substr(0, line.find(" "));
+					line = line.substr(line.find(" ")+1, std::string::npos);
+
+					//std::cout << "\"" << line << "\"" << std::endl;
+
+					if (command == "keys")
+					{
+						for (int i = 0; i < KEY_END; i++)
+						{
+							std::string val = line.substr(0, line.find(" "));
+
+							configkeys[i] = std::stoi(val);
+
+							if ((i + 1) << KEY_END)
+							{
+								line = line.substr(line.find(" ") + 1, std::string::npos);
+							}
+						}
+					}
+					if (command == "rendersize")
+					{
+						renderwidth = std::stoi(line.substr(0, line.find(" ")));
+						renderheight = std::stoi(line.substr(line.find(" ") + 1, std::string::npos));
+					}
+					if (command == "windowsize")
+					{
+						windowwidth = std::stoi(line.substr(0, line.find(" ")));
+						windowheight = std::stoi(line.substr(line.find(" ") + 1, std::string::npos));
+					}
+					if (command == "focallength")
+					{
+						focallength = std::stoi(line);
+					}
+				}
+			}
+
+			file.close();
+		}
 	}
 
 	int GetKey(keyenum k)
@@ -205,5 +273,56 @@ namespace Config
 	void SetKey(keyenum k, int newval)
 	{
 		configkeys[k] = newval; 
+	}
+
+	void Save()
+	{
+		std::ofstream file;
+
+		file.open("config.txt");
+
+		if (file.is_open())
+		{
+			file << ";ZGloom config\n\n";
+
+			file << ";SDL keyvals, up/down/left/right/strafeleft/straferight/strafemod/shoot\n";
+			file << "keys ";
+
+			for (int i = 0; i < KEY_END; i++)
+			{
+				file << configkeys[i];
+
+				if ((i + 1) != KEY_END)
+				{
+					file << " ";
+				}
+			}
+
+			file << "\n";
+
+			file << ";The size of the game render bitmap. Bumping this up may lead to more overflow issues in the renderer. But you can get, say, 16:9 by using 460x256 or something\n";
+			file << "rendersize " << renderwidth << " " << renderheight << "\n";
+
+			file << ";The size of the actual window/fullscreen res. Guess this should be a multiple of the above for pixel perfect\n";
+			file << "windowsize " << windowwidth << " " << windowheight << "\n";
+
+			file << ";focal length. Original used 128 for a 320x256 display, bump this up for higher resolution. Rule of thumb: for 90degree fov, = renderwidth/2\n";
+			file << "focallength " << focallength << "\n";
+
+			file.close();
+		}
+	}
+
+	void GetRenderSizes(int &rw, int &rh, int &ww, int& wh)
+	{
+		rw = renderwidth;
+		rh = renderheight;
+		ww = windowwidth;
+		wh = windowheight;
+	}
+
+	int32_t GetFocalLength()
+	{
+		return focallength;
 	}
 }

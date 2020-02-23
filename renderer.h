@@ -72,7 +72,7 @@ class Renderer
 		int32_t renderheight = 256;
 		int32_t halfrenderwidth = 160;
 		int32_t halfrenderheight = 128;
-		static const uint32_t focshift = 7;
+		int32_t focmult = 256;
 		std::vector<Quick> castgrads;
 		std::vector<int32_t> zbuff;
 

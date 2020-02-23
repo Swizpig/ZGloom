@@ -30,6 +30,9 @@ namespace Config
 	std::string GetMusicFilename(int i);
 	int GetKey(keyenum k);
 	void SetKey(keyenum k, int newval);
+	void GetRenderSizes(int &rw, int &rh, int &ww, int& wh);
+	int32_t GetFocalLength();
 
 	void Init();
+	void Save();
 };

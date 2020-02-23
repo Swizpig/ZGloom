@@ -3,6 +3,7 @@
 #include "quick.h"
 #include "gloommaths.h"
 #include "objectgraphics.h"
+#include "config.h"
 
 static void debugVline(int x, int y1, int y2, SDL_Surface* s, uint32_t c)
 {
@@ -170,12 +171,14 @@ void Renderer::Init(SDL_Surface* nrendersurface, GloomMap* ngloommap, ObjectGrap
 
 	walls.resize(gloommap->GetZones().size());
 
+	focmult = Config::GetFocalLength();
+
 	for (auto x = 0; x < renderwidth; x++)
 	{
 		Quick f;
 		Quick g;
 
-		f.SetVal(1 << focshift);
+		f.SetVal(focmult);
 		g.SetVal(x - halfrenderwidth);
 
 		castgrads[x] = g / f;
@@ -217,14 +220,14 @@ void Renderer::DrawFlat(std::vector<int32_t>& ceilend, std::vector<int32_t>& flo
 
 	for (int32_t y = 0; y < maxend; y++)
 	{
-		int32_t z = ((256 - camera->y) << focshift) / (halfrenderheight - y);
+		int32_t z = ((int32_t)(256 - camera->y) * focmult) / (halfrenderheight - y);
 
 		Quick qx, dx, qz, temp, dz;
 		Quick f;
 
-		f.SetInt(1 << focshift);
+		f.SetInt(focmult);
 
-		qx.SetInt(z*-halfrenderwidth / (1 << focshift));
+		qx.SetInt(z*-halfrenderwidth / (focmult));
 		qz.SetInt(z);
 
 		temp = qx;
@@ -270,14 +273,14 @@ void Renderer::DrawFlat(std::vector<int32_t>& ceilend, std::vector<int32_t>& flo
 
 	for (int32_t y = minstart; y < renderheight; y++)
 	{
-		int32_t z = (camera->y << focshift) / (y - halfrenderheight);
+		int32_t z = (int32_t)(camera->y * focmult) / (y - halfrenderheight);
 
 		Quick qx, dx, qz, temp, dz;
 		Quick f;
 
-		f.SetInt(1 << focshift);
+		f.SetInt(focmult);
 
-		qx.SetInt(z*-halfrenderwidth / (1 << focshift));
+		qx.SetInt(z*-halfrenderwidth / (focmult));
 		qz.SetInt(z);
 
 		temp = qx;
@@ -424,10 +427,10 @@ void Renderer::DrawBlood(Camera* camera)
 
 		if (iz > 0)
 		{
-			ix <<= focshift;
+			ix *= focmult;
 			ix /= iz;
 
-			iy <<= focshift;
+			iy *= focmult;
 			iy /= iz;
 
 			ix += halfrenderwidth;
@@ -494,8 +497,8 @@ void Renderer::DrawObjects(Camera* camera)
 	{
 		if (o.isstrip)
 		{
-			int32_t h = (256 << focshift) / o.rotz;
-			int32_t ystart = halfrenderheight - ((256 - camera->y) << focshift) / o.rotz;
+			int32_t h = (256 * focmult) / (int32_t)o.rotz;
+			int32_t ystart = halfrenderheight - ((int32_t)(256 - camera->y) * focmult) / o.rotz;
 
 			if (o.rotz < zbuff[o.rotx]) DrawColumn(o.rotx, ystart, h, o.data.ts.column, o.rotz, o.data.ts.palette);
 		}
@@ -554,16 +557,16 @@ void Renderer::DrawObjects(Camera* camera)
 					auto shapewidth = (*s)[frametouse].w;
 					auto shapeheight = (*s)[frametouse].h;
 
-					ix <<= focshift;
+					ix *= focmult;
 					ix /= iz;
 
 					// Add handle! otherwise bullets fill screen
 					iy -= (*s)[frametouse].h - (*s)[frametouse].yh - 1;
-					iy <<= focshift;
+					iy *= focmult;
 					iy /= iz;
 
-					int h = ((shapeheight * scale / 0x100) << focshift) / iz;
-					int w = ((shapewidth * scale / 0x100) << focshift) / iz;
+					int h = ((shapeheight * scale / 0x100) * focmult) / iz;
+					int w = ((shapewidth * scale / 0x100) * focmult) / iz;
 
 					if ((w > 0) && (h > 0))
 					{
@@ -726,6 +729,8 @@ void Renderer::Render(Camera* camera)
 	std::fill(zbuff.begin(), zbuff.end(), 30000);
 	strips.clear();
 
+	focmult = Config::GetFocalLength();
+
 	for (size_t z = 0; z < walls.size(); z++)
 	{
 		Zone zone = gloommap->GetZones()[z];
@@ -797,7 +802,7 @@ void Renderer::Render(Camera* camera)
 		{
 			if (walls[z].wl_lz > 0)
 			{
-				int32_t t = ((int32_t)walls[z].wl_lx << focshift) / walls[z].wl_lz;
+				int32_t t = ((int32_t)walls[z].wl_lx * focmult) / (int32_t)walls[z].wl_lz;
 
 				walls[z].wl_lsx = t;
 
@@ -822,7 +827,7 @@ void Renderer::Render(Camera* camera)
 
 			if (walls[z].wl_rz > 0)
 			{
-				int32_t t = ((int32_t)walls[z].wl_rx << focshift)  / walls[z].wl_rz;
+				int32_t t = ((int32_t)walls[z].wl_rx * focmult)  / (int32_t)walls[z].wl_rz;
 
 				walls[z].wl_rsx = t;
 
@@ -889,8 +894,8 @@ void Renderer::Render(Camera* camera)
 
 		if ((z>0) && (z<30000))
 		{
-			int32_t h = (256 << focshift) / z;
-			int32_t ystart = halfrenderheight - ((256 - camera->y) << focshift) / z;
+			int32_t h = (256 * focmult) / z;
+			int32_t ystart = halfrenderheight - ((256 - camera->y) * focmult) / z;
 
 			ceilend[x] = ystart;
 			floorstart[x] = ystart + h;
