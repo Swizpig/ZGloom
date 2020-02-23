@@ -195,6 +195,7 @@ int main(int argc, char* argv[])
 	SDL_Surface* intermissionscreen = SDL_CreateRGBSurface(0, 320, 256, 8, 0, 0, 0, 0);
 	SDL_Surface* titlebitmap = SDL_CreateRGBSurface(0, 320, 256, 8, 0, 0, 0, 0);
 	SDL_Surface* render32 = SDL_CreateRGBSurface(0, renderwidth, renderheight, 32, 0x00FF0000, 0x0000FF00, 0x000000FF, 0xFF000000);
+	SDL_Surface* screen32 = SDL_CreateRGBSurface(0, 320, 256, 32, 0x00FF0000, 0x0000FF00, 0x000000FF, 0xFF000000);
 
 	ObjectGraphics objgraphics;
 	Renderer renderer;
@@ -264,10 +265,13 @@ int main(int argc, char* argv[])
 	//try and blit title etc into the middle of the screen
 	SDL_Rect blitrect;
 
-	blitrect.w = 320;
-	blitrect.h = 256;
-	blitrect.x = (renderwidth - 320) / 2;
-	blitrect.y = (renderheight - 256) / 2;
+	int screenscale = renderheight / 256;
+	blitrect.w = 320 * screenscale;
+	blitrect.h = 256 * screenscale;
+	blitrect.x = (renderwidth - 320 * screenscale) / 2;
+	blitrect.y = (renderheight - 256 * screenscale) / 2;
+
+	SDL_SetRelativeMouseMode(SDL_TRUE);
 
 	while (notdone)
 	{
@@ -515,7 +519,9 @@ int main(int argc, char* argv[])
 
 		if ((state == STATE_WAITING) || (state == STATE_TITLE))
 		{
-			SDL_BlitSurface(render8, NULL, render32, &blitrect);
+			// SDL does not seem to like scaled 8->32 copy?
+			SDL_BlitSurface(render8, NULL, screen32, NULL);
+			SDL_BlitScaled(screen32, NULL, render32, &blitrect);
 		}
 
 		if (printscreen)

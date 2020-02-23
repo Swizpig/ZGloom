@@ -15,7 +15,8 @@ namespace Config
 	static int renderheight;
 	static int windowwidth;
 	static int windowheight;
-	int32_t focallength;
+	static int32_t focallength;
+	static int mousesens;
 
 
 	void SetZM(bool zm)
@@ -211,6 +212,8 @@ namespace Config
 
 		focallength = 128;
 
+		mousesens = 5;
+
 		std::ifstream file;
 
 		file.open("config.txt");
@@ -258,6 +261,10 @@ namespace Config
 					{
 						focallength = std::stoi(line);
 					}
+					if (command == "mousesensitivity")
+					{
+						mousesens = std::stoi(line);
+					}
 				}
 			}
 
@@ -274,6 +281,17 @@ namespace Config
 	{
 		configkeys[k] = newval; 
 	}
+
+	int GetMouseSens()
+	{
+		return mousesens;
+	}
+
+	void SetMouseSens(int sens)
+	{
+		mousesens = sens;
+	}
+
 
 	void Save()
 	{
@@ -300,7 +318,7 @@ namespace Config
 
 			file << "\n";
 
-			file << ";The size of the game render bitmap. Bumping this up may lead to more overflow issues in the renderer. But you can get, say, 16:9 by using 460x256 or something\n";
+			file << ";The size of the game render bitmap. Bumping this up may lead to more overflow issues in the renderer. But you can get, say, 16:9 by using 460x256 or something in a larger window\n";
 			file << "rendersize " << renderwidth << " " << renderheight << "\n";
 
 			file << ";The size of the actual window/fullscreen res. Guess this should be a multiple of the above for pixel perfect\n";
@@ -308,6 +326,9 @@ namespace Config
 
 			file << ";focal length. Original used 128 for a 320x256 display, bump this up for higher resolution. Rule of thumb: for 90degree fov, = renderwidth/2\n";
 			file << "focallength " << focallength << "\n";
+
+			file << ";Mouse sensitivity\n";
+			file << "mousesensitivity " << mousesens << "\n";
 
 			file.close();
 		}

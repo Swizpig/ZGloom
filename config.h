@@ -32,6 +32,8 @@ namespace Config
 	void SetKey(keyenum k, int newval);
 	void GetRenderSizes(int &rw, int &rh, int &ww, int& wh);
 	int32_t GetFocalLength();
+	int GetMouseSens();
+	void SetMouseSens(int sens);
 
 	void Init();
 	void Save();

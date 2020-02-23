@@ -725,6 +725,11 @@ bool GameLogic::Update(Camera* cam)
 		bool controlstraferight = keystate[Config::GetKey(Config::KEY_SRIGHT)] != 0;
 		bool controlstrafemod = keystate[Config::GetKey(Config::KEY_STRAFEMOD)] != 0;
 
+		if (SDL_GetMouseState(NULL, NULL))
+		{
+			controlfire = true;
+		}
+
 		if (controlup)
 		{
 			// U 
@@ -878,6 +883,14 @@ bool GameLogic::Update(Camera* cam)
 			{
 				squished = true;
 			}
+		}
+
+		if (1)
+		{
+			int mx, my;
+			SDL_GetRelativeMouseState(&mx, &my);
+
+			cam->rotquick.SetVal(cam->rotquick.GetVal() + mx*Config::GetMouseSens() * 800);
 		}
 
 		CheckSuck(cam);

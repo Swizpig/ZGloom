@@ -10,7 +10,13 @@ void MenuScreen::Render(SDL_Surface* src, SDL_Surface* dest, Font& font)
 	{
 		if (flash || (selection != 0)) font.PrintMessage("CONTINUE", 100, dest);
 		if (flash || (selection != 1)) font.PrintMessage("CONFIGURE KEYS", 120, dest);
-		if (flash || (selection != 2)) font.PrintMessage("QUIT TO TITLE", 140, dest);
+		if (flash || (selection != 2))
+		{
+			std::string mousestring = "MOUSE SENSITIVITY: ";
+			mousestring += std::to_string(Config::GetMouseSens());
+			font.PrintMessage(mousestring, 130, dest);
+		}
+		if (flash || (selection != 3)) font.PrintMessage("QUIT TO TITLE", 140, dest);
 	}
 	else if (status == MENUSTATUS_KEYCONFIG)
 	{
@@ -61,7 +67,7 @@ MenuScreen::MenuReturn MenuScreen::Update(SDL_Event& tevent)
 			{
 			case SDLK_DOWN:
 				selection++;
-				if (selection == 3) selection = 2;
+				if (selection == 4) selection = 3;
 				break;
 			case SDLK_UP:
 				selection--;
@@ -76,7 +82,13 @@ MenuScreen::MenuReturn MenuScreen::Update(SDL_Event& tevent)
 					status = MENUSTATUS_KEYCONFIG;
 					selection = Config::KEY_UP;
 				}
-				if (selection == 2) return MENURET_QUIT;
+				if (selection == 2)
+				{
+					int sens = Config::GetMouseSens() + 1;
+					if (sens == 10) sens = 0;
+					Config::SetMouseSens(sens);
+				}
+				if (selection == 3) return MENURET_QUIT;
 			default:
 				break;
 			}
