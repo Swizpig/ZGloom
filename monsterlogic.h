@@ -10,6 +10,7 @@ void KillLogicComp(MapObject& thisobj, MapObject& otherobj, GameLogic* logic);
 void WeaponGot(MapObject& thisobj, MapObject& otherobj, GameLogic* logic);
 void HealthGot(MapObject& thisobj, MapObject& otherobj, GameLogic* logic);
 void InvisGot(MapObject& thisobj, MapObject& otherobj, GameLogic* logic);
+void ThermoGot(MapObject& thisobj, MapObject& otherobj, GameLogic* logic);
 void WeaponLogic(MapObject& o, GameLogic* logic);
 void TerraLogic(MapObject& o, GameLogic* logic);
 void GhoulLogic(MapObject& o, GameLogic* logic);

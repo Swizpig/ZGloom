@@ -268,7 +268,7 @@ void Hud::Render(SDL_Surface* surface, const MapObject& player, Font& font)
 		font.PrintMessage(messages[player.data.ms.mess], 40, surface);
 	}
 
-	//GUN. This is largely guesswork, it's not in the available gloom deluxe soure as far as I can tell. There's not even a reference to gun.bin
+	//GUN. This is largely guesswork, it's not in the available gloom deluxe source as far as I can tell. There's not even a reference to gun.bin
 
 	if (gunshapes.size())
 	{

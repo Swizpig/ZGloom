@@ -39,6 +39,7 @@ static void debugline(int x1, int y1, int x2, int y2, SDL_Surface* s, uint32_t c
 	}
 
 	// can't be arsed implementing full brenhhnhnnnsnnann for just debug
+	// Also : TURNS OUT BLOODY SDL2 HAS A LINE FUNCTION NOW
 
 	float m = (float)(y2 - y1) / (float)(x2 - x1);
 	float fy = (float)y1;
@@ -436,17 +437,20 @@ void Renderer::DrawBlood(Camera* camera)
 			ix += halfrenderwidth;
 			iy = halfrenderheight - iy;
 
-			int32_t mask = b.color & 0xf;
-			mask |= (b.color & 0xF0) << 4;
-			mask |= (b.color & 0xF00) << 8;
-			mask |= mask << 4;
-			mask |= 0xFF000000;
+			uint32_t mask;
+			ColourModify((b.color & 0xf00) >> 4, b.color&0x0f0, (b.color&0xf)<<4, mask, iz);
 
-			if ((ix >= 0) && (ix < renderwidth))
+			for (int32_t dy = iy; dy < (iy + Config::GetBlood()); dy++)
 			{
-				if ((iy>0) && (iy < renderheight))
+				for (int32_t dx = ix; dx < (ix + Config::GetBlood()); dx++)
 				{
-					surface[ix + iy*renderwidth] &= mask;
+					if ((dx >= 0) && (dx < renderwidth))
+					{
+						if ((dy>0) && (dy < renderheight))
+						{
+							surface[dx + dy*renderwidth] = mask;
+						}
+					}
 				}
 			}
 		}
@@ -600,7 +604,16 @@ void Renderer::DrawObjects(Camera* camera)
 
 								for (int32_t sy = ystart; sy < (ystart + h); sy++)
 								{
-									if ((sx >= 0) && (iz > zbuff[sx])) break;
+									bool zfail = false;
+
+									if (thermo)
+									{
+										if ((sx >= 0) && (iz > zbuff[sx])) zfail = true;
+									}
+									else
+									{
+										if ((sx >= 0) && (iz > zbuff[sx])) break;
+									}
 									if (sy >= renderheight) break;
 
 									if ((sx >= 0) && (sy >= 0))
@@ -610,6 +623,9 @@ void Renderer::DrawObjects(Camera* camera)
 										if (col != 1)
 										{
 											uint32_t dimcol;
+
+											// thermoglasses effect. Need to look at this more carefully
+											if (zfail) col |= 0xFF;
 
 											ColourModify(0xFF & (col >> 16), 0xFF & (col >> 8), 0xFF & col, dimcol, o.rotz);
 
@@ -921,13 +937,13 @@ void Renderer::Render(Camera* camera)
 	DrawObjects(camera);
 	DrawBlood(camera);
 
-#if 1
+#if 0
 	//DEBUG
 
 	//DrawMap();
 #endif
 
-#if 1
+#if 0
 	for (size_t z = 0; z < walls.size(); z++)
 	{
 		if (walls[z].valid)

@@ -819,6 +819,7 @@ MapObject::MapObject(Object m)
 	data.ms.scale = m.scale;
 	data.ms.fired = 0;
 	data.ms.invisible = 0;
+	data.ms.thermo = 0;
 
 	switch (t)
 	{
@@ -903,6 +904,11 @@ MapObject::MapObject(Object m)
 			data.ms.hit = InvisGot;
 			data.ms.die = InvisGot;
 			break;
+		case ObjectGraphics::OLT_THERMO:
+			data.ms.logic = NullLogic;
+			data.ms.hit = ThermoGot;
+			data.ms.die = ThermoGot;
+			break;
 		default:
 			data.ms.logic = NullLogic;
 			data.ms.hit = NullLogicComp;
@@ -944,6 +950,7 @@ MapObject::MapObject()
 
 	data.ms.fired = 0;
 	data.ms.invisible = 0;
+	data.ms.thermo = 0;
 
 	// avoid zero as I need to flag nothing
 	identifier = counter + 1;

@@ -35,6 +35,8 @@ namespace Config
 	int32_t GetFocalLength();
 	int GetMouseSens();
 	void SetMouseSens(int sens);
+	int GetBlood();
+	void SetBlood(int b);
 
 	void Init();
 	void Save();

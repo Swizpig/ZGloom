@@ -1005,8 +1005,19 @@ void InvisGot(MapObject& thisobj, MapObject& otherobj, GameLogic* logic)
 
 	otherobj.data.ms.messtimer = -127;
 	otherobj.data.ms.mess = Hud::MESSAGES_INVISIBILITY;
-	otherobj.data.ms.invisible = 1500;
+	otherobj.data.ms.invisible += 1500;
 	
+	thisobj.killme = true;
+}
+
+void ThermoGot(MapObject& thisobj, MapObject& otherobj, GameLogic* logic)
+{
+	SoundHandler::Play(SoundHandler::SOUND_TOKEN);
+
+	otherobj.data.ms.messtimer = -127;
+	otherobj.data.ms.mess = Hud::MESSAGES_THERMO;
+	otherobj.data.ms.thermo += 1500;
+
 	thisobj.killme = true;
 }
 

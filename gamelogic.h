@@ -14,6 +14,7 @@ class GameLogic
 		void InitLevel(GloomMap* gmapin, Camera* cam, ObjectGraphics* ograph);
 		bool Update(Camera* cam);
 		int32_t GetTeleEffect();
+		bool GetThermo();
 		bool GetPlayerHit() { return playerhit; };
 		void WereDoneHere() { levelfinishednow = true; };
 

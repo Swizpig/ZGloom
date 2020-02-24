@@ -16,7 +16,13 @@ void MenuScreen::Render(SDL_Surface* src, SDL_Surface* dest, Font& font)
 			mousestring += std::to_string(Config::GetMouseSens());
 			font.PrintMessage(mousestring, 130, dest);
 		}
-		if (flash || (selection != 3)) font.PrintMessage("QUIT TO TITLE", 140, dest);
+		if (flash || (selection != 3))
+		{
+			std::string mousestring = "BLOOD SIZE: ";
+			mousestring += std::to_string(Config::GetBlood());
+			font.PrintMessage(mousestring, 140, dest);
+		}
+		if (flash || (selection != 4)) font.PrintMessage("QUIT TO TITLE", 150, dest);
 	}
 	else if (status == MENUSTATUS_KEYCONFIG)
 	{
@@ -67,7 +73,7 @@ MenuScreen::MenuReturn MenuScreen::Update(SDL_Event& tevent)
 			{
 			case SDLK_DOWN:
 				selection++;
-				if (selection == 4) selection = 3;
+				if (selection == 5) selection = 4;
 				break;
 			case SDLK_UP:
 				selection--;
@@ -85,10 +91,16 @@ MenuScreen::MenuReturn MenuScreen::Update(SDL_Event& tevent)
 				if (selection == 2)
 				{
 					int sens = Config::GetMouseSens() + 1;
-					if (sens == 10) sens = 0;
+					if (sens >= 10) sens = 0;
 					Config::SetMouseSens(sens);
 				}
-				if (selection == 3) return MENURET_QUIT;
+				if (selection == 3)
+				{
+					int sens = Config::GetBlood() + 1;
+					if (sens >= 5) sens = 0;
+					Config::SetBlood(sens);
+				}
+				if (selection == 4) return MENURET_QUIT;
 			default:
 				break;
 			}

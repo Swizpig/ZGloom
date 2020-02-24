@@ -17,6 +17,7 @@ namespace Config
 	static int windowheight;
 	static int32_t focallength;
 	static int mousesens;
+	static int bloodsize;
 
 
 	void SetZM(bool zm)
@@ -228,6 +229,7 @@ namespace Config
 		focallength = 128;
 
 		mousesens = 5;
+		bloodsize = 2;
 
 		std::ifstream file;
 
@@ -280,6 +282,10 @@ namespace Config
 					{
 						mousesens = std::stoi(line);
 					}
+					if (command == "bloodsize")
+					{
+						bloodsize = std::stoi(line);
+					}
 				}
 			}
 
@@ -306,6 +312,17 @@ namespace Config
 	{
 		mousesens = sens;
 	}
+
+	int GetBlood()
+	{
+		return bloodsize;
+	}
+
+	void SetBlood(int b)
+	{
+		bloodsize = b;
+	}
+
 
 
 	void Save()
@@ -344,6 +361,9 @@ namespace Config
 
 			file << ";Mouse sensitivity\n";
 			file << "mousesensitivity " << mousesens << "\n";
+
+			file << ";size of blood splatters in pixels\n";
+			file << "bloodsize " << bloodsize << "\n";
 
 			file.close();
 		}

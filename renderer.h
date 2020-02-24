@@ -50,6 +50,7 @@ class Renderer
 		void Render(Camera* Camera);
 		void SetTeleEffect(int32_t timer) {fadetimer = timer;};
 		void SetPlayerHit(bool hit) { playerhit = hit; };
+		void SetThermo(bool t) { thermo = t; };
 
 	private:
 		bool OriginSide(int16_t fx, int16_t fz, int16_t bx, int16_t bz);
@@ -82,6 +83,8 @@ class Renderer
 		int32_t fadetimer;
 		//for damage indication
 		bool playerhit;
+		// for thermo glasses effect
+		bool thermo;
 
 		void ColourModify(uint8_t rin, uint8_t gin, uint8_t bin, uint32_t& col, int32_t z)
 		{

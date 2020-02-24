@@ -538,6 +538,7 @@ int main(int argc, char* argv[])
 		{
 			renderer.SetTeleEffect(logic.GetTeleEffect());
 			renderer.SetPlayerHit(logic.GetPlayerHit());
+			renderer.SetThermo(logic.GetThermo());
 			renderer.Render(&cam);
 			MapObject pobj = logic.GetPlayerObj();
 			hud.Render(render32, pobj, smallfont);

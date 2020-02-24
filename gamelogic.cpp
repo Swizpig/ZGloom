@@ -63,6 +63,7 @@ void GameLogic::ResetPlayer(MapObject& o)
 	o.z = origz;
 	o.data.ms.rotquick.SetInt(origrot);
 	o.data.ms.invisible = 0;
+	o.data.ms.thermo = 0;
 }
 
 void GameLogic::InitLevel(GloomMap* gmapin, Camera* cam, ObjectGraphics* ograph)
@@ -1034,6 +1035,7 @@ bool GameLogic::Update(Camera* cam)
 	playerobj.data.ms.mess = playerobjupdated.data.ms.mess;
 	playerobj.data.ms.messtimer = playerobjupdated.data.ms.messtimer;
 	playerobj.data.ms.invisible = playerobjupdated.data.ms.invisible;
+	playerobj.data.ms.thermo = playerobjupdated.data.ms.thermo;
 
 	if (squished)
 	{
@@ -1056,6 +1058,15 @@ bool GameLogic::Update(Camera* cam)
 		if (playerobj.data.ms.invisible==0)
 		{
 			playerobj.data.ms.mess = Hud::MESSAGES_INVISIBILITY_OUT;
+			playerobj.data.ms.messtimer = -127;
+		}
+	}
+	if (playerobj.data.ms.thermo)
+	{
+		playerobj.data.ms.thermo--;
+		if (playerobj.data.ms.thermo == 0)
+		{
+			playerobj.data.ms.mess = Hud::MESSAGES_THERMO_OUT;
 			playerobj.data.ms.messtimer = -127;
 		}
 	}
@@ -1145,6 +1156,19 @@ int32_t GameLogic::GetTeleEffect()
 	}
 
 	return 0;
+}
+
+bool GameLogic::GetThermo()
+{
+	for (auto o : gmap->GetMapObjects())
+	{
+		if (o.t == ObjectGraphics::OLT_PLAYER1)
+		{
+			return o.data.ms.thermo != 0;
+		}
+	}
+
+	return false;
 }
 
 void GameLogic::ObjectCollision()
