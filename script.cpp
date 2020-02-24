@@ -92,6 +92,12 @@ Script::ScriptOp Script::NextLine(std::string& name)
 		line++;
 		return SOP_TEXT;
 	}
+	if (lines[line].substr(0, 5) == "song_")
+	{
+		name = lines[line].substr(5, std::string::npos);
+		line++;
+		return SOP_SONG;
+	}
 
 	line++;
 	if (line == lines.size())

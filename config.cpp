@@ -113,6 +113,21 @@ namespace Config
 		return result;
 	}
 
+	std::string GetMusicDir()
+	{
+		std::string result;
+		if (zombiemassacremode)
+		{
+			result = "musi/"; 
+		}
+		else
+		{
+			result = "sfxs/"; 
+		}
+
+		return result;
+	}
+
 	void Init()
 	{
 		if (zombiemassacremode)

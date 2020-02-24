@@ -973,10 +973,11 @@ void WeaponGot(MapObject& thisobj, MapObject& otherobj, GameLogic* logic)
 		otherobj.data.ms.mess = Hud::MESSAGES_NEW_WEAPON;
 		otherobj.data.ms.weapon = thisobj.data.ms.weapon;
 		otherobj.data.ms.reload = 5;
+		otherobj.data.ms.mega = 0;
 	}
 	else
 	{
-		//todo: megaweapon etc.. .
+		//megaweapon etc.. .
 		if (otherobj.data.ms.reload > 1)
 		{
 			otherobj.data.ms.messtimer = -127;
@@ -988,6 +989,11 @@ void WeaponGot(MapObject& thisobj, MapObject& otherobj, GameLogic* logic)
 			otherobj.data.ms.messtimer = -127;
 			otherobj.data.ms.mess = Hud::MESSAGES_MEGA_WEAPON_BOOST;
 			otherobj.data.ms.mega += 250;
+
+			if (otherobj.data.ms.mega >= (750 + 125))
+			{
+				otherobj.data.ms.mess = Hud::MESSAGES_ULTRA_MEGA_OVERKILL;
+			}
 		}
 	}
 	thisobj.killme = true;

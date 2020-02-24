@@ -28,6 +28,7 @@ namespace Config
 	std::string GetGoreFilename(ObjectGraphics::ObjectGraphicType i);
 	std::string GetSoundFilename(SoundHandler::Sounds i);
 	std::string GetMusicFilename(int i);
+	std::string GetMusicDir();
 	int GetKey(keyenum k);
 	void SetKey(keyenum k, int newval);
 	void GetRenderSizes(int &rw, int &rh, int &ww, int& wh);

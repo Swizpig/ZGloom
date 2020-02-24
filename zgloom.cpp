@@ -154,10 +154,12 @@ int main(int argc, char* argv[])
 
 	CrmFile titlemusic;
 	CrmFile intermissionmusic;
+	CrmFile ingamemusic;
 	CrmFile titlepic;
 
 	titlemusic.Load(Config::GetMusicFilename(0).c_str());
 	intermissionmusic.Load(Config::GetMusicFilename(1).c_str());
+
 
 	if (Mix_OpenAudio(22050, AUDIO_S16LSB, 2, 1024))
 	{
@@ -256,6 +258,7 @@ int main(int argc, char* argv[])
 	std::string intermissiontext;
 
 	bool intermissionmusplaying = false;
+	bool haveingamemusic = false;
 	bool fullscreen = false;
 	bool printscreen = false;
 	int screennum = 0;
@@ -289,6 +292,13 @@ int main(int argc, char* argv[])
 					scriptstring.insert(0, Config::GetPicsDir());
 					LoadPic(scriptstring, intermissionscreen);
 					SDL_SetPaletteColors(render8->format->palette, intermissionscreen->format->palette->colors, 0, 256);
+					break;
+				}
+				case Script::SOP_SONG:
+				{
+					scriptstring.insert(0, Config::GetMusicDir());
+					ingamemusic.Load(scriptstring.c_str());
+					haveingamemusic = (ingamemusic.data != nullptr);
 					break;
 				}
 				case Script::SOP_LOADFLAT:
@@ -342,6 +352,20 @@ int main(int argc, char* argv[])
 					renderer.Init(render32, &gmap, &objgraphics);
 					logic.InitLevel(&gmap, &cam, &objgraphics);
 					state = STATE_PLAYING;
+
+					if (haveingamemusic)
+					{
+						if (xmp_load_module_from_memory(ctx, ingamemusic.data, ingamemusic.size))
+						{
+							std::cout << "music error";
+						}
+
+						if (xmp_start_player(ctx, 22050, 0))
+						{
+							std::cout << "music error";
+						}
+						Mix_HookMusic(fill_audio, ctx);
+					}
 					break;
 				}
 				case Script::SOP_END:
@@ -487,6 +511,13 @@ int main(int argc, char* argv[])
 				{
 					if (logic.Update(&cam))
 					{
+						if (haveingamemusic)
+						{
+							Mix_HookMusic(nullptr, nullptr);
+							xmp_end_player(ctx);
+							xmp_release_module(ctx);
+							intermissionmusplaying = false;
+						}
 						state = STATE_PARSING;
 					}
 				}

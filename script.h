@@ -24,6 +24,7 @@ class Script
 			SOP_TEXT,
 			SOP_WAIT,
 			SOP_PLAY,
+			SOP_SONG,
 			SOP_END,
 			SOP_NOP
 		};

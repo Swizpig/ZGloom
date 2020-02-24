@@ -829,11 +829,24 @@ bool GameLogic::Update(Camera* cam)
 
 				if (playerobj.data.ms.mega)
 				{
-					playerobj.data.ms.rotquick.SetInt(playerobj.data.ms.rotquick.GetInt() + 4);
-					Shoot(playerobj, this, (playerobj.data.ms.collwith & 3) ^ 3, 0, wtable[wep].hitpoint, wtable[wep].damage, wtable[wep].speed, wtable[wep].shape, wtable[wep].spark);
-					playerobj.data.ms.rotquick.SetInt(playerobj.data.ms.rotquick.GetInt() - 8);
-					Shoot(playerobj, this, (playerobj.data.ms.collwith & 3) ^ 3, 0, wtable[wep].hitpoint, wtable[wep].damage, wtable[wep].speed, wtable[wep].shape, wtable[wep].spark);
-					playerobj.data.ms.rotquick.SetInt(playerobj.data.ms.rotquick.GetInt() + 4);
+					if (playerobj.data.ms.mega >= (750 + 125))
+					{
+						// ULTRA MEGA OVERKILL
+						playerobj.data.ms.rotquick.SetInt(playerobj.data.ms.rotquick.GetInt() + 8);
+						Shoot(playerobj, this, (playerobj.data.ms.collwith & 3) ^ 3, 0, wtable[wep].hitpoint, wtable[wep].damage, wtable[wep].speed, wtable[wep].shape, wtable[wep].spark);
+						playerobj.data.ms.rotquick.SetInt(playerobj.data.ms.rotquick.GetInt() - 16);
+						Shoot(playerobj, this, (playerobj.data.ms.collwith & 3) ^ 3, 0, wtable[wep].hitpoint, wtable[wep].damage, wtable[wep].speed, wtable[wep].shape, wtable[wep].spark);
+						playerobj.data.ms.rotquick.SetInt(playerobj.data.ms.rotquick.GetInt() + 8);
+						Shoot(playerobj, this, (playerobj.data.ms.collwith & 3) ^ 3, 0, wtable[wep].hitpoint, wtable[wep].damage, wtable[wep].speed, wtable[wep].shape, wtable[wep].spark);
+					}
+					else
+					{
+						playerobj.data.ms.rotquick.SetInt(playerobj.data.ms.rotquick.GetInt() + 4);
+						Shoot(playerobj, this, (playerobj.data.ms.collwith & 3) ^ 3, 0, wtable[wep].hitpoint, wtable[wep].damage, wtable[wep].speed, wtable[wep].shape, wtable[wep].spark);
+						playerobj.data.ms.rotquick.SetInt(playerobj.data.ms.rotquick.GetInt() - 8);
+						Shoot(playerobj, this, (playerobj.data.ms.collwith & 3) ^ 3, 0, wtable[wep].hitpoint, wtable[wep].damage, wtable[wep].speed, wtable[wep].shape, wtable[wep].spark);
+						playerobj.data.ms.rotquick.SetInt(playerobj.data.ms.rotquick.GetInt() + 4);
+					}
 				}
 				else
 				{
