@@ -912,8 +912,8 @@ MapObject::MapObject(Object m)
 			break;
 		case ObjectGraphics::OLT_BOUNCY:
 			data.ms.logic = BouncyLogic;
-			data.ms.hit = NullLogicComp;
-			data.ms.die = NullLogicComp;
+			data.ms.hit = BouncyGot;
+			data.ms.die = BouncyGot;
 			break;
 		default:
 			data.ms.logic = NullLogic;

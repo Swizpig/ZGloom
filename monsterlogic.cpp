@@ -6,6 +6,11 @@
 
 void BaldyPunch(MapObject& o, GameLogic* logic);
 int8_t CheckColl(MapObject& o1, MapObject &o2);
+void PutFire(MapObject& o, GameLogic* logic);
+
+//used to pass around collision data for bounce logic
+
+static int32_t clostestwall;
 
 void NullLogic(MapObject& o, GameLogic* logic)
 {
@@ -365,10 +370,12 @@ bool CheckVecs(MapObject& o, GameLogic* logic)
 			logic->AdjustPos(overshoot, newx, newz, 32, zone);
 			o.x = newx;
 			o.z = newz;
+			clostestwall = zone;
 			return false;
 		}
 		else
 		{
+			clostestwall = zone;
 			return false;
 		}
 	}
@@ -593,13 +600,139 @@ void MonsterLogic(MapObject& o, GameLogic* logic)
 
 }
 
+void CalcBounce(MapObject& o, GameLogic* logic)
+{
+
+	/*
+		calcbounce; calculate bounce vector...poly in a4, obj in a5
+		;
+		; R = 2 N(N dot V) - V
+		;
+		; where R = reflect vector, N = normal to poly, V = original vector
+		;
+		subq	#1, ob_bouncecnt(a5)
+		bge.s.nok
+		bsr	makesparksq
+		bra	killobject
+		.nok;
+		move.l	closewall(pc), a4
+		movem	ob_nxvec(a5), d0 - d1; normalized dir
+		movem	zo_na(a4), d2 - d3; normal to poly
+		neg	d2
+	*/
+
+	bool done = false;
+	while (!done)
+	{
+		o.data.ms.bouncecnt--;
+
+		if (o.data.ms.bouncecnt < 0)
+		{
+			o.killme = true;
+			MakeSparks(o, logic);
+			return;
+		}
+
+		int32_t nxvec, nzvec;
+		int32_t na, nb;
+
+		nxvec = o.data.ms.nxvec;
+		nzvec = o.data.ms.nzvec;
+		logic->GetNorm(clostestwall, na, nb);
+		na = -na;
+
+		/*
+			;
+			; calc dot product :
+			;
+			move	d0, d4
+			muls	d2, d4
+			move	d1, d5
+			muls	d3, d5
+			add.l	d5, d4
+			add.l	d4, d4
+			swap	d4; dot product ?
+
+			*/
+
+		int32_t dp = nxvec*na + nzvec*nb;
+		dp += dp;
+		dp >>= 16;
+
+		/*
+			;
+			muls	d4, d2
+			lsl.l	#2, d2
+			swap	d0
+			clr	d0
+			sub.l	d0, d2
+			swap	d2
+			;
+			muls	d4, d3
+			lsl.l	#2, d3
+			swap	d1
+			clr	d1
+			sub.l	d1, d3
+			swap	d3
+			;
+			*/
+
+		na *= dp;
+		na <<= 2;
+		nxvec <<= 16;
+		nxvec &= 0xFFFF0000;
+		na -= nxvec;
+		na >>= 16;
+
+		nb *= dp;
+		nb <<= 2;
+		nzvec <<= 16;
+		nzvec &= 0xFFFF0000;
+		nb -= nzvec;
+		nb >>= 16;
+		/*
+			movem	d2 - d3, ob_nxvec(a5)
+			;
+			neg	d2
+			muls	ob_movspeed(a5), d2
+			add.l	d2, d2
+			muls	ob_movspeed(a5), d3
+			add.l	d3, d3
+			;
+			movem.l	d2 - d3, ob_xvec(a5)
+			;
+			bsr	checkvecs
+			beq.s	putfire
+			bra	calcbounce
+		*/
+
+		o.data.ms.nxvec = na;
+		o.data.ms.nzvec = nb;
+
+		na = -na;
+
+		na *= o.data.ms.movspeed;
+		na += na;
+
+		nb *= o.data.ms.movspeed;
+		nb += nb;
+
+		o.data.ms.xvec = na;
+		o.data.ms.zvec = nb;
+
+		if (CheckVecs(o, logic))
+		{
+			PutFire(o, logic);
+			done = true;
+		}
+	}
+}
+
 void FireLogic(MapObject& o, GameLogic* logic)
 {
  	if (!CheckVecs(o, logic))
 	{
-		// todo: bounce, sparks
-		MakeSparks(o, logic);
-		o.killme = true;
+		CalcBounce(o, logic);
 	}
 	else
 	{
@@ -1877,6 +2010,37 @@ void BouncyLogic(MapObject& o, GameLogic* logic)
 
 	o.data.ms.delay++;
 	o.data.ms.frame = frames[(o.data.ms.delay >> 1) & 3] << 16;
+}
+
+void BouncyGot(MapObject& thisobj, MapObject& otherobj, GameLogic* logic)
+{
+	/*
+	bouncygot	bsr	playtsfx
+	cmp	#3,ob_bouncecnt(a0)
+	bcc.s	.rts
+	addq	#1,ob_bouncecnt(a0)
+	move.l	a5,-(a7)
+	move.l	a0,a5
+	bsr	message
+	dc.b	'bouncy bullets!',0
+	even
+	move.l	(a7)+,a5
+	bra	killobject
+	.rts	rts
+
+	*/
+
+	SoundHandler::Play(SoundHandler::SOUND_TOKEN);
+
+	if (otherobj.data.ms.bouncecnt < 3)
+	{
+		otherobj.data.ms.bouncecnt++;
+
+		otherobj.data.ms.messtimer = -127;
+		otherobj.data.ms.mess = Hud::MESSAGES_BOUNCY;
+
+		thisobj.killme = true;
+	}
 }
 
 void PlayerDead(MapObject& o, GameLogic* logic)

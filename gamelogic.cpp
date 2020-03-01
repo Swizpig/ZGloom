@@ -64,6 +64,7 @@ void GameLogic::ResetPlayer(MapObject& o)
 	o.data.ms.rotquick.SetInt(origrot);
 	o.data.ms.invisible = 0;
 	o.data.ms.thermo = 0;
+	o.data.ms.bouncecnt = 0;
 }
 
 void GameLogic::InitLevel(GloomMap* gmapin, Camera* cam, ObjectGraphics* ograph)
@@ -1039,6 +1040,7 @@ bool GameLogic::Update(Camera* cam)
 	playerobj.data.ms.messtimer = playerobjupdated.data.ms.messtimer;
 	playerobj.data.ms.invisible = playerobjupdated.data.ms.invisible;
 	playerobj.data.ms.thermo = playerobjupdated.data.ms.thermo;
+	playerobj.data.ms.bouncecnt = playerobjupdated.data.ms.bouncecnt;
 
 	if (squished)
 	{

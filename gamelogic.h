@@ -32,6 +32,7 @@ class GameLogic
 		bool Collision(bool event, int32_t x, int32_t z, int32_t r, int32_t& overshoot, int32_t& closestzone);
 		bool AdjustPos(int32_t& overshoot, Quick& x, Quick& z, int32_t r, int32_t& closestzone);
 		void AddObject(MapObject o, bool first) { if (first)  gmap->GetMapObjects().push_front(o);  else gmap->GetMapObjects().push_back(o); };
+		void GetNorm(int32_t zone, int32_t& na, int32_t& nb) { na = gmap->GetZones()[zone].na;  nb = gmap->GetZones()[zone].nb; };
 		void AddBlood(Blood b) { gmap->GetBlood().push_back(b); };
 		void ResetPlayer(MapObject& o);
 		uint8_t PickCalc(MapObject& o);
