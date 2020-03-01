@@ -24,9 +24,13 @@ There is a pre-compiled inside the [bin](bin) folder or you can use one of the [
 
 Gloom was made freely available by its developers [here](https://github.com/earok/GloomAmiga/archive/master.zip). Download, unzip and move the ZGloom binary inside the uncompressed directory before run it. 
 
-# Controls
+# Default Controls
 
 Cursors, left alt to strafe, left ctrl to fire. F1 skips level. F12 toggles fullscreen. PrintScreen dumps a bitmap. Escape pauses the action and shows the menu.
+
+# In-game music
+
+ZGloom can now add in-game music uning any module that XMP can play. Put the mods in the sfxs folder and add "song_blitz.mod" or whatever the module name is to the script. Multiple song_ commands are allowed, allowing per-level music.
 
 # TODO
 
@@ -37,7 +41,6 @@ Cursors, left alt to strafe, left ctrl to fire. F1 skips level. F12 toggles full
 * Very basic in-game menu. Much more stuff needs to be configurable
 * No defender sub-game
 * LibXMP's MED playback isn't great on some tunes
-* Most power-ups don't do anything yet
 
 # License
 
