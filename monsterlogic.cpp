@@ -1861,6 +1861,24 @@ void HealthGot(MapObject& thisobj, MapObject& otherobj, GameLogic* logic)
 	thisobj.killme = true;
 }
 
+void BouncyLogic(MapObject& o, GameLogic* logic)
+{
+	static const int frames[4] = { 3, 4, 3, 5 };
+
+	/*
+	bouncylogic	
+	addq	#1, ob_delay(a5)
+	move	ob_delay(a5), d0
+	lsr	#1, d0
+	and	#3, d0
+	move.bnc(pc, d0 * 2), ob_frame(a5)
+	rts
+	.bnc	dc	3, 4, 3, 5*/
+
+	o.data.ms.delay++;
+	o.data.ms.frame = frames[(o.data.ms.delay >> 1) & 3] << 16;
+}
+
 void PlayerDead(MapObject& o, GameLogic* logic)
 {
 	/*

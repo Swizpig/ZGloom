@@ -244,6 +244,10 @@ void Hud::Render(SDL_Surface* surface, const MapObject& player, Font& font)
 	srcrect.w = player.data.ms.hitpoints * 2 + 1;
 	srcrect.h = 9;
 
+	int scale = surface->h / 256;
+
+	if (scale < 1) scale = 1;
+
 	SDL_BlitSurface(healthbar, NULL, surface, &dstrect);
 	SDL_BlitSurface(healthbaron, &srcrect, surface, &dstrect);
 
@@ -272,10 +276,10 @@ void Hud::Render(SDL_Surface* surface, const MapObject& player, Font& font)
 
 	if (gunshapes.size())
 	{
-		dstrect.x = surface->w / 2 - gunshapes[0].xh;
-		dstrect.y = surface->h - gunshapes[0].h;
-		dstrect.w = gunshapes[0].w;
-		dstrect.h = gunshapes[0].h;
+		dstrect.x = surface->w / 2 - gunshapes[0].xh * scale;
+		dstrect.y = surface->h - gunshapes[0].h*scale;
+		dstrect.w = gunshapes[0].w*scale;
+		dstrect.h = gunshapes[0].h*scale;
 
 		if (player.data.ms.fired)
 		{
@@ -285,23 +289,23 @@ void Hud::Render(SDL_Surface* surface, const MapObject& player, Font& font)
 			if (gunshapes.size() > 2)
 			{
 				int wepshape = 2 + (player.data.ms.weapon + 1) / 2;
-				bullrect.x = (surface->w - gunshapes[wepshape].w) / 2;
-				bullrect.y = surface->h - gunshapes[wepshape].h;
-				bullrect.w = gunshapes[wepshape].w;
-				bullrect.h = gunshapes[wepshape].h;
+				bullrect.x = (surface->w - gunshapes[wepshape].w*scale) / 2;
+				bullrect.y = surface->h - gunshapes[wepshape].h*scale;
+				bullrect.w = gunshapes[wepshape].w*scale;
+				bullrect.h = gunshapes[wepshape].h*scale;
 
 				int zoom = GloomMaths::RndW() & 3;
 
-				bullrect.x -= zoom;
-				bullrect.y -= zoom;
-				bullrect.w += 2*zoom;
-				bullrect.h += 2*zoom;
+				bullrect.x -= zoom*scale;
+				bullrect.y -= zoom*scale;
+				bullrect.w += 2*zoom*scale;
+				bullrect.h += 2*zoom*scale;
 
 				SDL_BlitScaled(gunsurfaces[wepshape], NULL, surface, &bullrect);
 			}
 
 
-			dstrect.y += 10;
+			dstrect.y += 10 * scale;
 		}
 		else if (player.data.ms.bounce)
 		{
@@ -316,25 +320,25 @@ void Hud::Render(SDL_Surface* surface, const MapObject& player, Font& font)
 
 			xoffset >>= 16;
 
-			dstrect.x += xoffset;
+			dstrect.x += xoffset*scale;
 
 			int32_t yoffset = xoffset/2;
 
 			if (yoffset < 0) yoffset = -yoffset;
 
-			dstrect.y -= yoffset;
+			dstrect.y -= yoffset*scale;
 		}
 
-		dstrect.y += 25;
+		dstrect.y += 25 * scale;
 
 		if (player.data.ms.invisible)
 		{
 			SDL_SetSurfaceBlendMode(gunsurfacesblend[player.data.ms.fired ? 1 : 0], SDL_BLENDMODE_MOD);
-			SDL_BlitSurface(gunsurfacesblend[player.data.ms.fired ? 1 : 0], NULL, surface, &dstrect);
+			SDL_BlitScaled(gunsurfacesblend[player.data.ms.fired ? 1 : 0], NULL, surface, &dstrect);
 		}
 		else
 		{
-			SDL_BlitSurface(gunsurfaces[player.data.ms.fired ? 1 : 0], NULL, surface, &dstrect);
+			SDL_BlitScaled(gunsurfaces[player.data.ms.fired ? 1 : 0], NULL, surface, &dstrect);
 		}
 	}
 }

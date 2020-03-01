@@ -895,7 +895,10 @@ bool GameLogic::Update(Camera* cam)
 			}
 			else
 			{
-				squished = true;
+				if (Collision(false, cam->x.GetInt(), cam->z.GetInt(), 32, overshoot, closestzone))
+				{
+					squished = true;
+				}
 			}
 		}
 

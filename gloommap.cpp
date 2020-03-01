@@ -799,6 +799,7 @@ MapObject::MapObject(Object m)
 	data.ms.reloadcnt = 0;
 
 	data.ms.bounce = 0;
+	data.ms.bouncecnt = 0;
 	data.ms.mega = 0;
 
 	data.ms.messtimer = 0;
@@ -909,6 +910,11 @@ MapObject::MapObject(Object m)
 			data.ms.hit = ThermoGot;
 			data.ms.die = ThermoGot;
 			break;
+		case ObjectGraphics::OLT_BOUNCY:
+			data.ms.logic = BouncyLogic;
+			data.ms.hit = NullLogicComp;
+			data.ms.die = NullLogicComp;
+			break;
 		default:
 			data.ms.logic = NullLogic;
 			data.ms.hit = NullLogicComp;
@@ -944,6 +950,8 @@ MapObject::MapObject()
 	data.ms.scale = 0x200;
 	data.ms.rotspeed = 0;
 	data.ms.mega = 0;
+	data.ms.bounce = 0;
+	data.ms.bouncecnt = 0;
 
 	data.ms.messtimer = 0;
 	data.ms.mess = 0;
