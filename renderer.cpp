@@ -5,6 +5,24 @@
 #include "objectgraphics.h"
 #include "config.h"
 
+const uint32_t Renderer::darkpalettes[16][16] =
+{ { 0x00000000, 0x00000011, 0x00000022, 0x00000033, 0x00000044, 0x00000055, 0x00000066, 0x00000077, 0x00000088, 0x00000099, 0x000000aa, 0x000000bb, 0x000000cc, 0x000000dd, 0x000000ee, 0x000000ff },
+{ 0x00000000, 0x00000000, 0x00000011, 0x00000022, 0x00000033, 0x00000044, 0x00000055, 0x00000066, 0x00000077, 0x00000088, 0x00000099, 0x000000aa, 0x000000bb, 0x000000cc, 0x000000dd, 0x000000ee },
+{ 0x00000000, 0x00000000, 0x00000011, 0x00000022, 0x00000033, 0x00000044, 0x00000055, 0x00000066, 0x00000077, 0x00000077, 0x00000088, 0x00000099, 0x000000aa, 0x000000bb, 0x000000cc, 0x000000dd },
+{ 0x00000000, 0x00000000, 0x00000011, 0x00000022, 0x00000033, 0x00000044, 0x00000044, 0x00000055, 0x00000066, 0x00000077, 0x00000088, 0x00000088, 0x00000099, 0x000000aa, 0x000000bb, 0x000000cc },
+{ 0x00000000, 0x00000000, 0x00000011, 0x00000022, 0x00000033, 0x00000033, 0x00000044, 0x00000055, 0x00000066, 0x00000066, 0x00000077, 0x00000088, 0x00000099, 0x00000099, 0x000000aa, 0x000000bb },
+{ 0x00000000, 0x00000000, 0x00000011, 0x00000022, 0x00000022, 0x00000033, 0x00000044, 0x00000044, 0x00000055, 0x00000066, 0x00000066, 0x00000077, 0x00000088, 0x00000088, 0x00000099, 0x000000aa },
+{ 0x00000000, 0x00000000, 0x00000011, 0x00000011, 0x00000022, 0x00000033, 0x00000033, 0x00000044, 0x00000055, 0x00000055, 0x00000066, 0x00000066, 0x00000077, 0x00000088, 0x00000088, 0x00000099 },
+{ 0x00000000, 0x00000000, 0x00000011, 0x00000011, 0x00000022, 0x00000022, 0x00000033, 0x00000033, 0x00000044, 0x00000055, 0x00000055, 0x00000066, 0x00000066, 0x00000077, 0x00000077, 0x00000088 },
+{ 0x00000000, 0x00000000, 0x00000011, 0x00000011, 0x00000022, 0x00000022, 0x00000033, 0x00000033, 0x00000044, 0x00000044, 0x00000055, 0x00000055, 0x00000066, 0x00000066, 0x00000077, 0x00000077 },
+{ 0x00000000, 0x00000000, 0x00000000, 0x00000011, 0x00000011, 0x00000022, 0x00000022, 0x00000033, 0x00000033, 0x00000033, 0x00000044, 0x00000044, 0x00000055, 0x00000055, 0x00000066, 0x00000066 },
+{ 0x00000000, 0x00000000, 0x00000000, 0x00000011, 0x00000011, 0x00000011, 0x00000022, 0x00000022, 0x00000033, 0x00000033, 0x00000033, 0x00000044, 0x00000044, 0x00000044, 0x00000055, 0x00000055 },
+{ 0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000011, 0x00000011, 0x00000011, 0x00000022, 0x00000022, 0x00000022, 0x00000033, 0x00000033, 0x00000033, 0x00000044, 0x00000044, 0x00000044 },
+{ 0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000011, 0x00000011, 0x00000011, 0x00000011, 0x00000022, 0x00000022, 0x00000022, 0x00000022, 0x00000033, 0x00000033, 0x00000033, 0x00000033 },
+{ 0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000011, 0x00000011, 0x00000011, 0x00000011, 0x00000011, 0x00000022, 0x00000022, 0x00000022, 0x00000022, 0x00000022 },
+{ 0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000011, 0x00000011, 0x00000011, 0x00000011, 0x00000011, 0x00000011, 0x00000011, 0x00000011 },
+{ 0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000 } };
+
 static void debugVline(int x, int y1, int y2, SDL_Surface* s, uint32_t c)
 {
 	if ((x < 0) || (x >= s->w)) return;
@@ -143,6 +161,8 @@ void Renderer::Init(SDL_Surface* nrendersurface, GloomMap* ngloommap, ObjectGrap
 
 	castgrads.resize(renderwidth);
 	zbuff.resize(renderwidth);
+	ceilend.resize(renderwidth);
+	floorstart.resize(renderwidth);
 
 	walls.resize(gloommap->GetZones().size());
 
@@ -159,15 +179,18 @@ void Renderer::Init(SDL_Surface* nrendersurface, GloomMap* ngloommap, ObjectGrap
 		castgrads[x] = g / f;
 	}
 
-
 	// darkness tables
-	for (auto d = 0; d < 16; d++)
-	{
-		for (auto c = 0; c < 16; c++)
-		{
-			darkpalettes[d][c] = c * (16 - d) / 16;
-		}
-	}
+	//or (auto d = 0; d < 16; d++)
+	//
+	//	for (auto c = 0; c < 16; c++)
+	//	{
+	//		darkpalettes[d][c] = c * (16 - d) / 16;
+	//		darkpalettes[d][c] |= darkpalettes[d][c] << 4;
+	//
+	//		printf("0x%08x,", darkpalettes[d][c]);
+	//	}
+	//	printf("\n");
+	//
 }
 
 void Renderer::DrawFlat(std::vector<int32_t>& ceilend, std::vector<int32_t>& floorstart, Camera* camera)
@@ -196,6 +219,8 @@ void Renderer::DrawFlat(std::vector<int32_t>& ceilend, std::vector<int32_t>& flo
 	for (int32_t y = 0; y < maxend; y++)
 	{
 		int32_t z = ((int32_t)(256 - camera->y) * focmult) / (halfrenderheight - y);
+
+		uint32_t pal = GetDimPalette(z);
 
 		Quick qx, dx, qz, temp, dz;
 		Quick f;
@@ -235,7 +260,16 @@ void Renderer::DrawFlat(std::vector<int32_t>& ceilend, std::vector<int32_t>& flo
 
 				// dim it
 				uint32_t dimcol;
-				ColourModify(r, g, b, dimcol, z);
+
+				if (fadetimer)
+				{
+					ColourModifyFade(r, g, b, dimcol, pal);
+				}
+				else
+				{
+					ColourModify(r, g, b, dimcol, pal);
+				}
+
 				((uint32_t*)(rendersurface->pixels))[x + y*renderwidth] = dimcol;
 			}
 
@@ -249,6 +283,8 @@ void Renderer::DrawFlat(std::vector<int32_t>& ceilend, std::vector<int32_t>& flo
 	for (int32_t y = minstart; y < renderheight; y++)
 	{
 		int32_t z = (int32_t)(camera->y * focmult) / (y - halfrenderheight);
+
+		uint32_t pal = GetDimPalette(z);
 
 		Quick qx, dx, qz, temp, dz;
 		Quick f;
@@ -288,7 +324,14 @@ void Renderer::DrawFlat(std::vector<int32_t>& ceilend, std::vector<int32_t>& flo
 
 				// dim it
 				uint32_t dimcol;
-				ColourModify(r, g, b, dimcol, z);
+				if (fadetimer)
+				{
+					ColourModifyFade(r, g, b, dimcol, pal);
+				}
+				else
+				{
+					ColourModify(r, g, b, dimcol, pal);
+				}
 
 				((uint32_t*)(rendersurface->pixels))[x + y*renderwidth] = dimcol;
 			}
@@ -305,6 +348,7 @@ void Renderer::DrawColumn(int32_t x, int32_t ystart, int32_t h, Column* textured
 	Quick tscale;
 	Quick tstart;
 	int32_t yend = ystart + h;
+	uint32_t pal = GetDimPalette(z);
 
 	if (h == 0) return;
 	if (h > 65535) return; // this overflows a quick! Can happen in high res
@@ -353,7 +397,14 @@ void Renderer::DrawColumn(int32_t x, int32_t ystart, int32_t h, Column* textured
 			{
 				// dim it
 				uint32_t dimcol;
-				ColourModify(r, g, b, dimcol, z);
+				if (fadetimer)
+				{
+					ColourModifyFade(r, g, b, dimcol, pal);
+				}
+				else
+				{
+					ColourModify(r, g, b, dimcol, pal);
+				}
 				surface[x + y*renderwidth] = dimcol;
 			}
 		}
@@ -397,6 +448,7 @@ void Renderer::DrawBlood(Camera* camera)
 		int32_t iy = -b.y.GetInt();
 
 		if (iy<0) iy = -iy;// this encodes deathheads soul logic
+		uint32_t pal = GetDimPalette(iz);
 
 		iy -= camera->y;
 
@@ -412,7 +464,14 @@ void Renderer::DrawBlood(Camera* camera)
 			iy = halfrenderheight - iy;
 
 			uint32_t mask;
-			ColourModify((b.color & 0xf00) >> 4, b.color&0x0f0, (b.color&0xf)<<4, mask, iz);
+			if (fadetimer)
+			{
+				ColourModifyFade((b.color & 0xf00) >> 4, b.color & 0x0f0, (b.color & 0xf) << 4, mask, pal);
+			}
+			else
+			{
+				ColourModify((b.color & 0xf00) >> 4, b.color & 0x0f0, (b.color & 0xf) << 4, mask, pal);
+			}
 
 			for (int32_t dy = iy; dy < (iy + Config::GetBlood()); dy++)
 			{
@@ -569,6 +628,8 @@ void Renderer::DrawObjects(Camera* camera)
 
 						int32_t ystart = halfrenderheight - iy - h;
 
+						uint32_t pal = GetDimPalette(o.rotz);
+
 						if ((ix + halfrenderwidth + w / 2) > 0)
 						{
 							for (int32_t sx = ix + halfrenderwidth - w / 2; sx < (ix + halfrenderwidth + w / 2); sx++)
@@ -601,7 +662,14 @@ void Renderer::DrawObjects(Camera* camera)
 											// thermoglasses effect. Need to look at this more carefully
 											if (zfail) col |= 0xFF;
 
-											ColourModify(0xFF & (col >> 16), 0xFF & (col >> 8), 0xFF & col, dimcol, o.rotz);
+											if (fadetimer)
+											{
+												ColourModifyFade(0xFF & (col >> 16), 0xFF & (col >> 8), 0xFF & col, dimcol, pal);
+											}
+											else
+											{
+												ColourModify(0xFF & (col >> 16), 0xFF & (col >> 8), 0xFF & col, dimcol, pal);
+											}
 
 											//transparency flag!
 											if (!o.isstrip && (o.data.ms.blood & 0x8000))
@@ -710,6 +778,37 @@ int16_t Renderer::CastColumn(int32_t x, int16_t& zone, Quick& t)
 	}
 
 	return z.GetInt();
+}
+
+void Renderer::ProcessColumn(const uint32_t& x, const int16_t& y, std::vector<int32_t>& ceilend, std::vector<int32_t>& floorstart)
+{
+	int16_t hitzone;
+	Quick texpos;
+	int16_t z = CastColumn(x, hitzone, texpos);
+
+	if ((z>0) && (z<30000))
+	{
+		int32_t h = (256 * focmult) / z;
+		int32_t ystart = halfrenderheight - ((256 - y) * focmult) / z;
+
+		ceilend[x] = ystart;
+		floorstart[x] = ystart + h;
+
+		int basetexture;
+		Column* texcol = GetTexColumn(hitzone, texpos, basetexture);
+
+		if (texcol)
+		{
+			DrawColumn(x, ystart, h, texcol, z, basetexture / 20);
+		}
+		zbuff[x] = z;
+		//debugVline(x, ystart, ystart+h, rendersurface, 0xFFFF0000 + 255 - z / 16);
+	}
+	else
+	{
+		ceilend[x] = halfrenderheight;
+		floorstart[x] = halfrenderheight;
+	}
 }
 
 void Renderer::Render(Camera* camera)
@@ -884,41 +983,9 @@ void Renderer::Render(Camera* camera)
 		if (walls[z].wl_rsx >= renderwidth) walls[z].wl_rsx = renderwidth - 1;
 	}
 
-	std::vector<int32_t> ceilend;
-	std::vector<int32_t> floorstart;
-
-	ceilend.resize(renderwidth);
-	floorstart.resize(renderwidth);
-
 	for (int32_t x = 0; x < renderwidth; x++)
 	{
-		int16_t hitzone;
-		Quick texpos; 
-		int16_t z = CastColumn(x, hitzone, texpos);
-
-		if ((z>0) && (z<30000))
-		{
-			int32_t h = (256 * focmult) / z;
-			int32_t ystart = halfrenderheight - ((256 - camera->y) * focmult) / z;
-
-			ceilend[x] = ystart;
-			floorstart[x] = ystart + h;
-
-			int basetexture;
-			Column* texcol = GetTexColumn(hitzone, texpos, basetexture);	
-
-			if (texcol)
-			{
-				DrawColumn(x, ystart, h, texcol, z, basetexture / 20);
-			}
-			zbuff[x] = z;
-			//debugVline(x, ystart, ystart+h, rendersurface, 0xFFFF0000 + 255 - z / 16);
-		}
-		else
-		{
-			ceilend[x] = halfrenderheight;
-			floorstart[x] = halfrenderheight;
-		}
+		ProcessColumn(x, camera->y, ceilend, floorstart);
 	}
 
 	DrawFlat(ceilend, floorstart, camera);
