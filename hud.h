@@ -12,7 +12,7 @@ class Hud
 {
 	public:
 		Hud();
-		void Render(SDL_Surface* surface, const MapObject& player, Font& font);
+		void Render(SDL_Surface* surface, MapObject& player, Font& font);
 
 		enum MESSAGE
 		{

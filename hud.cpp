@@ -230,7 +230,7 @@ Hud::Hud()
 	}
 }
 
-void Hud::Render(SDL_Surface* surface, const MapObject& player, Font& font)
+void Hud::Render(SDL_Surface* surface, MapObject& player, Font& font)
 {
 	SDL_Rect dstrect;
 	SDL_Rect srcrect;
@@ -340,5 +340,22 @@ void Hud::Render(SDL_Surface* surface, const MapObject& player, Font& font)
 		{
 			SDL_BlitScaled(gunsurfaces[player.data.ms.fired ? 1 : 0], NULL, surface, &dstrect);
 		}
+	}
+
+	if (Config::GetDebug())
+	{
+		std::string pos = "position ";
+		std::string fps = "FPS ";
+
+		pos += std::to_string(player.x.GetInt());
+		pos += ' ';
+		pos += std::to_string(player.z.GetInt());
+		pos += ' ';
+		pos += std::to_string(player.data.ms.rotquick.GetInt());
+
+		fps += std::to_string(Config::GetFPS());
+
+		font.PrintMessage(pos, 0, surface);
+		font.PrintMessage(fps,10, surface);
 	}
 }

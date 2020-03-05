@@ -18,6 +18,28 @@ namespace Config
 	static int32_t focallength;
 	static int mousesens;
 	static int bloodsize;
+	static bool debug = false;
+	static uint32_t FPS;
+
+	void SetDebug(bool b)
+	{
+		debug = b;
+	}
+
+	bool GetDebug()
+	{
+		return debug;
+	}
+
+	void SetFPS(uint32_t f)
+	{
+		FPS = f;
+	}
+
+	uint32_t GetFPS()
+	{
+		return FPS;
+	}
 
 
 	void SetZM(bool zm)

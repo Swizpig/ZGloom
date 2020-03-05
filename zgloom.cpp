@@ -262,6 +262,8 @@ int main(int argc, char* argv[])
 	bool fullscreen = false;
 	bool printscreen = false;
 	int screennum = 0;
+	uint32_t fps = 0;
+	uint32_t fpscounter = 0;
 
 	Mix_Volume(-1, 32);
 
@@ -500,6 +502,11 @@ int main(int argc, char* argv[])
 				fullscreen = !fullscreen;
 			}
 
+			if ((sEvent.type == SDL_KEYDOWN) && sEvent.key.keysym.sym == SDLK_F11)
+			{
+				Config::SetDebug(!Config::GetDebug());
+			}
+
 			if ((sEvent.type == SDL_KEYDOWN) && sEvent.key.keysym.sym == SDLK_PRINTSCREEN)
 			{
 				printscreen = true;
@@ -529,6 +536,15 @@ int main(int argc, char* argv[])
 				{
 					menuscreen.Clock();
 				}
+
+				fpscounter++;
+
+				if (fpscounter >= 25)
+				{
+					Config::SetFPS(fps);
+					fpscounter = 0;
+					fps = 0;
+				}
 			}
 		}
 
@@ -539,9 +555,14 @@ int main(int argc, char* argv[])
 			renderer.SetTeleEffect(logic.GetTeleEffect());
 			renderer.SetPlayerHit(logic.GetPlayerHit());
 			renderer.SetThermo(logic.GetThermo());
+
+			//cam.x.SetInt(3969);
+			//cam.z.SetInt(5359);
+			//cam.rotquick.SetInt(254);
 			renderer.Render(&cam);
 			MapObject pobj = logic.GetPlayerObj();
 			hud.Render(render32, pobj, smallfont);
+			fps++;
 		}
 		if (state == STATE_MENU)
 		{

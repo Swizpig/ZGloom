@@ -37,6 +37,10 @@ namespace Config
 	void SetMouseSens(int sens);
 	int GetBlood();
 	void SetBlood(int b);
+	void SetDebug(bool b);
+	bool GetDebug();
+	void SetFPS(uint32_t f);
+	uint32_t GetFPS();
 
 	void Init();
 	void Save();

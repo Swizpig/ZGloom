@@ -23,8 +23,8 @@ static void debugline(int x1, int y1, int x2, int y2, SDL_Surface* s, uint32_t c
 {
 	if ((x1 < 0) && (x2 < 0)) return;
 	if ((y1 < 0) && (y2 < 0)) return;
-	if ((x1 >= 320) && (x2 >= 320)) return;
-	if ((y1 >= 240) && (y2 >= 240)) return;
+	if ((x1 >= s->w) && (x2 >= s->w)) return;
+	if ((y1 >= s->h) && (y2 >= s->h)) return;
 
 	if (x1 == x2)
 	{
@@ -39,7 +39,7 @@ static void debugline(int x1, int y1, int x2, int y2, SDL_Surface* s, uint32_t c
 	}
 
 	// can't be arsed implementing full brenhhnhnnnsnnann for just debug
-	// Also : TURNS OUT BLOODY SDL2 HAS A LINE FUNCTION NOW
+	// Also : TURNS OUT BLOODY SDL2 HAS A LINE FUNCTION NOW. Actually, no: only onto renderers, not surfaces?
 
 	float m = (float)(y2 - y1) / (float)(x2 - x1);
 	float fy = (float)y1;
@@ -82,60 +82,34 @@ bool Renderer::PointInFront(int16_t fx, int16_t fz, Wall& z)
 
 void Renderer::DrawMap()
 {
-	int16_t scale = 16;
+	int16_t scale = 8;
 	int16_t sx1, sx2, sz1, sz2;
 
 	int z = 0;
 	for (auto w : walls)
 	{
-		if (gloommap->GetZones()[z].ztype == 1)
+		if ((gloommap->GetZones()[z].ztype == 1) && (gloommap->GetZones()[z].a || gloommap->GetZones()[z].b))
 		{
-			sx1 = 160 + w.wl_lx / scale;
-			sz1 = 120 - w.wl_lz / scale;
-			sx2 = 160 + w.wl_rx / scale;
-			sz2 = 120 - w.wl_rz / scale;
+			sx1 = rendersurface->w/2 + w.wl_lx / scale;
+			sz1 = rendersurface->h/2 - w.wl_lz / scale;
+			sx2 = rendersurface->w/2 + w.wl_rx / scale;
+			sz2 = rendersurface->h/2 - w.wl_rz / scale;
 
-			debugline(sx1, sz1, sx2, sz2, rendersurface, 0xFFFFFF00);
+			uint32_t col;
+
+			if (w.valid)
+			{
+				col = 0xffffffff;
+			}
+			else
+			{
+				col = 0xff0000ff;
+			}
+
+			debugline(sx1, sz1, sx2, sz2, rendersurface, col);
 		}
 
 		++z;
-	}
-}
-
-void Renderer::ClipWalls()
-{
-	for (size_t i = 0; i < walls.size(); i++)
-	{
-		for (size_t j = 0; j < walls.size(); j++)
-		{
-			if (walls[i].valid && walls[j].valid && (i != j))
-			{
-				// clip left side
-				if (Intersect(walls[i].wl_lsx, walls[j].wl_lsx, walls[j].wl_rsx))
-				{
-					if (!PointInFront(walls[i].wl_lx, walls[i].wl_lz, walls[j]))
-					{
-						walls[i].wl_lsx = walls[j].wl_rsx;
-					}
-				}
-				// clip right side
-				if (Intersect(walls[i].wl_rsx, walls[j].wl_lsx, walls[j].wl_rsx))
-				{
-					if (!PointInFront(walls[i].wl_rx, walls[i].wl_rz, walls[j]))
-					{
-						walls[i].wl_rsx = walls[j].wl_lsx;
-					}
-				}
-			}
-		}
-	}
-
-	for (size_t i = 0; i < walls.size(); i++)
-	{
-		if (walls[i].valid)
-		{
-			if (walls[i].wl_rsx <= walls[i].wl_lsx) walls[i].valid = false;
-		}
 	}
 }
 
@@ -672,7 +646,7 @@ int16_t Renderer::CastColumn(int32_t x, int16_t& zone, Quick& t)
 	{
 		if (w.valid)
 		{
-			if ((x >= w.wl_lsx) && (x <= w.wl_rsx))
+			if ((x >= w.wl_lsx) && (x < w.wl_rsx))
 			{
 				Quick lx, lz, rx, rz, dx, dz, m, thisz;
 
@@ -697,7 +671,7 @@ int16_t Renderer::CastColumn(int32_t x, int16_t& zone, Quick& t)
 						thisz.SetInt(std::min(w.wl_lz, w.wl_rz));
 					}
 
-					if (thisz < z)
+					if ((thisz < z) && (thisz.GetVal()>0))
 					{
 						Quick len;
 
@@ -833,7 +807,15 @@ void Renderer::Render(Camera* camera)
 					t = -0x4000;
 				}
 
-				walls[z].wl_lsx = t + halfrenderwidth;
+				// some more overflow checking
+				if (t < 0x4000)
+				{
+					walls[z].wl_lsx = t + halfrenderwidth;
+				}
+				else
+				{
+					walls[z].wl_lsx = 0x4000;
+				}
 			}
 			else
 			{
@@ -857,7 +839,15 @@ void Renderer::Render(Camera* camera)
 				{
 					t = -0x4000;
 				}
-				walls[z].wl_rsx = t + halfrenderwidth;
+				// some more overflow checking
+				if (t < 0x4000)
+				{
+					walls[z].wl_rsx = t + halfrenderwidth;
+				}
+				else
+				{
+					walls[z].wl_rsx = 0x4000;
+				}
 			}
 			else
 			{
@@ -894,8 +884,6 @@ void Renderer::Render(Camera* camera)
 		if (walls[z].wl_rsx >= renderwidth) walls[z].wl_rsx = renderwidth - 1;
 	}
 
-	//ClipWalls();
-
 	std::vector<int32_t> ceilend;
 	std::vector<int32_t> floorstart;
 
@@ -924,7 +912,7 @@ void Renderer::Render(Camera* camera)
 				DrawColumn(x, ystart, h, texcol, z, basetexture / 20);
 			}
 			zbuff[x] = z;
-			//debugVline(x, 120 - h/2, 120 + h/2, rendersurface, 0xFFFF0000 + 255 - z / 16);
+			//debugVline(x, ystart, ystart+h, rendersurface, 0xFFFF0000 + 255 - z / 16);
 		}
 		else
 		{
@@ -937,11 +925,10 @@ void Renderer::Render(Camera* camera)
 	DrawObjects(camera);
 	DrawBlood(camera);
 
-#if 0
-	//DEBUG
-
-	//DrawMap();
-#endif
+	if (Config::GetDebug())
+	{
+		DrawMap();
+	}
 
 #if 0
 	for (size_t z = 0; z < walls.size(); z++)

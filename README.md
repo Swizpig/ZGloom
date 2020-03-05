@@ -30,7 +30,7 @@ Cursors, left alt to strafe, left ctrl to fire. F1 skips level. F12 toggles full
 
 # In-game music
 
-ZGloom can now add in-game music uning any module that XMP can play. Put the mods in the sfxs folder and add "song_blitz.mod" or whatever the module name is to the script. Multiple song_ commands are allowed, allowing per-level music.
+ZGloom can now add in-game music using any module that XMP can play. Put the mods in the sfxs folder and add "song_blitz.mod" or whatever the module name is to the script. Multiple song_ commands are allowed, allowing per-level music.
 
 # TODO
 

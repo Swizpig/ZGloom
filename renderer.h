@@ -56,7 +56,6 @@ class Renderer
 		bool OriginSide(int16_t fx, int16_t fz, int16_t bx, int16_t bz);
 		bool PointInFront(int16_t fx, int16_t fz, Wall& z);
 		bool Intersect(int16_t t, int16_t x0, int16_t x1) { return (t >= x0) && (t <= x1); };
-		void ClipWalls();
 		void DrawMap();
 		int16_t CastColumn(int32_t x, int16_t& zone, Quick& t);
 		void DrawColumn(int32_t x, int32_t ystart, int32_t h, Column* texturedata, int32_t z, int32_t palused);
