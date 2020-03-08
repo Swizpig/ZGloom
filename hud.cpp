@@ -248,28 +248,40 @@ void Hud::Render(SDL_Surface* surface, MapObject& player, Font& font)
 
 	if (scale < 1) scale = 1;
 
-	SDL_BlitSurface(healthbar, NULL, surface, &dstrect);
-	SDL_BlitSurface(healthbaron, &srcrect, surface, &dstrect);
+	dstrect.x *= scale;
+	dstrect.y *= scale;
+	dstrect.w *= scale;
+	dstrect.h *= scale;
 
-	dstrect.y += 12;
+	SDL_BlitScaled(healthbar, NULL, surface, &dstrect);
+	dstrect.w = srcrect.w*scale;
+	SDL_BlitScaled(healthbaron, &srcrect, surface, &dstrect);
+
+	dstrect.y += 12*scale;
 
 	srcrect.x = 0;
 	srcrect.y = 0;
 	srcrect.w = player.data.ms.mega ? player.data.ms.mega / 50 : 0;
 	srcrect.h = 9;
 
-	SDL_BlitSurface(weaponbar, NULL, surface, &dstrect);
-	SDL_BlitSurface(healthbaron, &srcrect, surface, &dstrect);
+	dstrect.w = (25 * 2 + 2)*scale;
+	SDL_BlitScaled(weaponbar, NULL, surface, &dstrect);
+	dstrect.w = srcrect.w*scale;
+	SDL_BlitScaled(healthbaron, &srcrect, surface, &dstrect);
 
 	for (int i = 0; i < (6 - player.data.ms.reload); i++)
 	{
 		dstrect.x = 11 + 40 - 10 * i;
-		SDL_BlitSurface(weaponsprites[player.data.ms.weapon], NULL, surface, &dstrect);
+		dstrect.w = weaponsprites[player.data.ms.weapon]->w * scale;
+		dstrect.h = weaponsprites[player.data.ms.weapon]->h * scale;
+
+		dstrect.x *= scale;
+		SDL_BlitScaled(weaponsprites[player.data.ms.weapon], NULL, surface, &dstrect);
 	}
 
 	if (player.data.ms.messtimer < 0)
 	{
-		font.PrintMessage(messages[player.data.ms.mess], 40, surface);
+		font.PrintMessage(messages[player.data.ms.mess], 40, surface, scale);
 	}
 
 	//GUN. This is largely guesswork, it's not in the available gloom deluxe source as far as I can tell. There's not even a reference to gun.bin
@@ -355,7 +367,7 @@ void Hud::Render(SDL_Surface* surface, MapObject& player, Font& font)
 
 		fps += std::to_string(Config::GetFPS());
 
-		font.PrintMessage(pos, 0, surface);
-		font.PrintMessage(fps,10, surface);
+		font.PrintMessage(pos, 0, surface, 1);
+		font.PrintMessage(fps,10, surface, 1);
 	}
 }

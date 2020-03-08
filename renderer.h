@@ -52,6 +52,25 @@ class Renderer
 		void SetPlayerHit(bool hit) { playerhit = hit; };
 		void SetThermo(bool t) { thermo = t; };
 
+		//EXPERIMENTAL MULTITHREAD BUILD!
+		SDL_Thread* floorthread;
+		SDL_Thread* wallthread;
+		SDL_sem* floorgo;
+		SDL_sem* wallgo;
+		Camera* camerastash;
+		bool killthread = false;
+		void DrawFloor(Camera* camera);
+		void RenderColumns(int32_t xstart, int32_t xinc)
+		{
+			for (int32_t x = xstart; x < renderwidth; x += xinc)
+			{
+				ProcessColumn(x, camerastash->y, ceilend, floorstart);
+			}
+		}
+
+		Renderer::Renderer();
+		Renderer::~Renderer();
+	
 	private:
 		bool OriginSide(int16_t fx, int16_t fz, int16_t bx, int16_t bz);
 		bool PointInFront(int16_t fx, int16_t fz, Wall& z);
@@ -59,7 +78,7 @@ class Renderer
 		void DrawMap();
 		int16_t CastColumn(int32_t x, int16_t& zone, Quick& t);
 		void DrawColumn(int32_t x, int32_t ystart, int32_t h, Column* texturedata, int32_t z, int32_t palused);
-		void DrawFlat(std::vector<int32_t>& ceilend, std::vector<int32_t>& floorstart, Camera* camera);
+		void DrawCeil(Camera* camera);
 		void DrawObjects(Camera* camera);
 		void DrawBlood(Camera* camera);
 		Column* GetTexColumn(int hitzone, Quick texpos, int& basetexture);
@@ -87,7 +106,6 @@ class Renderer
 		bool playerhit;
 		// for thermo glasses effect
 		bool thermo;
-
 
 		// I've split these out to enable inlining better
 		inline uint32_t GetDimPalette(int32_t z)
@@ -138,4 +156,7 @@ class Renderer
 		};
 
 		std::list<MapObject> strips;
+
+		// needed for pushing transparet strips
+		SDL_mutex* wallmutex;
 };

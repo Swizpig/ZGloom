@@ -6,51 +6,54 @@ void MenuScreen::Render(SDL_Surface* src, SDL_Surface* dest, Font& font)
 	SDL_BlitSurface(src, nullptr, dest, nullptr);
 	bool flash = (timer / 5) & 1;
 
+	int scale = dest->h / 256;
+	if (scale < 1) scale = 1;
+
 	if (status == MENUSTATUS_MAIN)
 	{
-		if (flash || (selection != 0)) font.PrintMessage("CONTINUE", 100, dest);
-		if (flash || (selection != 1)) font.PrintMessage("CONFIGURE KEYS", 120, dest);
+		if (flash || (selection != 0)) font.PrintMessage("CONTINUE", 100*scale, dest, scale);
+		if (flash || (selection != 1)) font.PrintMessage("CONFIGURE KEYS", 120 * scale, dest, scale);
 		if (flash || (selection != 2))
 		{
 			std::string mousestring = "MOUSE SENSITIVITY: ";
 			mousestring += std::to_string(Config::GetMouseSens());
-			font.PrintMessage(mousestring, 130, dest);
+			font.PrintMessage(mousestring, 130 * scale, dest, scale);
 		}
 		if (flash || (selection != 3))
 		{
 			std::string mousestring = "BLOOD SIZE: ";
 			mousestring += std::to_string(Config::GetBlood());
-			font.PrintMessage(mousestring, 140, dest);
+			font.PrintMessage(mousestring, 140 * scale, dest, scale);
 		}
-		if (flash || (selection != 4)) font.PrintMessage("QUIT TO TITLE", 150, dest);
+		if (flash || (selection != 4)) font.PrintMessage("QUIT TO TITLE", 150 * scale, dest, scale);
 	}
 	else if (status == MENUSTATUS_KEYCONFIG)
 	{
 		switch (selection)
 		{
 			case Config::KEY_UP:
-				font.PrintMessage("PRESS KEY FOR FORWARD", 120, dest);
+				font.PrintMessage("PRESS KEY FOR FORWARD", 120 * scale, dest, scale);
 				break;
 			case Config::KEY_DOWN:
-				font.PrintMessage("PRESS KEY FOR BACK", 120, dest);
+				font.PrintMessage("PRESS KEY FOR BACK", 120 * scale, dest, scale);
 				break;
 			case Config::KEY_LEFT:
-				font.PrintMessage("PRESS KEY FOR ROTATE LEFT", 120, dest);
+				font.PrintMessage("PRESS KEY FOR ROTATE LEFT", 120 * scale, dest, scale);
 				break;
 			case Config::KEY_RIGHT:
-				font.PrintMessage("PRESS KEY FOR ROTATE RIGHT", 120, dest);
+				font.PrintMessage("PRESS KEY FOR ROTATE RIGHT", 120 * scale, dest, scale);
 				break;
 			case Config::KEY_SLEFT:
-				font.PrintMessage("PRESS KEY FOR STRAFE LEFT", 120, dest);
+				font.PrintMessage("PRESS KEY FOR STRAFE LEFT", 120 * scale, dest, scale);
 				break;
 			case Config::KEY_SRIGHT:
-				font.PrintMessage("PRESS KEY FOR STRAFE RIGHT", 120, dest);
+				font.PrintMessage("PRESS KEY FOR STRAFE RIGHT", 120 * scale, dest, scale);
 				break;
 			case Config::KEY_STRAFEMOD:
-				font.PrintMessage("PRESS KEY FOR STRAFE MODIFIER", 120, dest);
+				font.PrintMessage("PRESS KEY FOR STRAFE MODIFIER", 120 * scale, dest, scale);
 				break;
 			case Config::KEY_SHOOT:
-				font.PrintMessage("PRESS KEY FOR SHOOT", 120, dest);
+				font.PrintMessage("PRESS KEY FOR SHOOT", 120 * scale, dest, scale);
 				break;
 		}
 	}

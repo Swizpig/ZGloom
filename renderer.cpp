@@ -23,6 +23,33 @@ const uint32_t Renderer::darkpalettes[16][16] =
 { 0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000011, 0x00000011, 0x00000011, 0x00000011, 0x00000011, 0x00000011, 0x00000011, 0x00000011 },
 { 0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000 } };
 
+
+static int FloorThreadKicker(void* data)
+{
+	Renderer* r = (Renderer*)data;
+	while (!r->killthread)
+	{
+		SDL_SemWait(r->floorgo);
+		r->DrawFloor(r->camerastash);
+		SDL_SemPost(r->floorgo);
+	}
+
+	return 0;
+}
+
+static int WallThreadKicker(void* data)
+{
+	Renderer* r = (Renderer*)data;
+	while (!r->killthread)
+	{
+		SDL_SemWait(r->wallgo);
+		r->RenderColumns(1, 2);
+		SDL_SemPost(r->wallgo);
+	}
+
+	return 0;
+}
+
 static void debugVline(int x, int y1, int y2, SDL_Surface* s, uint32_t c)
 {
 	if ((x < 0) || (x >= s->w)) return;
@@ -193,7 +220,7 @@ void Renderer::Init(SDL_Surface* nrendersurface, GloomMap* ngloommap, ObjectGrap
 	//
 }
 
-void Renderer::DrawFlat(std::vector<int32_t>& ceilend, std::vector<int32_t>& floorstart, Camera* camera)
+void Renderer::DrawCeil(Camera* camera)
 {
 	//TODO
 	// skip over invalid runs for performance
@@ -204,14 +231,11 @@ void Renderer::DrawFlat(std::vector<int32_t>& ceilend, std::vector<int32_t>& flo
 	}
 
 	Flat& ceil = gloommap->GetCeil();
-	Flat& floor = gloommap->GetFloor();
 
 	Quick camrots[4];
 
 	int32_t maxend = *std::max_element(ceilend.begin(), ceilend.end());
-	int32_t minstart = *std::min_element(floorstart.begin(), floorstart.end());
 
-	if (minstart <= halfrenderheight) minstart = halfrenderheight + 1;
 	if (maxend >= halfrenderheight) maxend = halfrenderheight - 1;
 
 	GloomMaths::GetCamRot(-camera->rotquick.GetInt(), camrots);
@@ -277,8 +301,27 @@ void Renderer::DrawFlat(std::vector<int32_t>& ceilend, std::vector<int32_t>& flo
 			qz = qz + dz;
 		}
 	}
+}
 
-	// and the same thing again for the floor
+void Renderer::DrawFloor(Camera* camera)
+{
+	//TODO
+	// skip over invalid runs for performance
+	// work out why tz needs a weird +32 to align properly
+	if (!gloommap->HasFlat())
+	{
+		return;
+	}
+
+	Flat& floor = gloommap->GetFloor();
+
+	Quick camrots[4];
+
+	int32_t minstart = *std::min_element(floorstart.begin(), floorstart.end());
+
+	if (minstart <= halfrenderheight) minstart = halfrenderheight + 1;
+
+	GloomMaths::GetCamRot(-camera->rotquick.GetInt(), camrots);
 
 	for (int32_t y = minstart; y < renderheight; y++)
 	{
@@ -316,7 +359,7 @@ void Renderer::DrawFlat(std::vector<int32_t>& ceilend, std::vector<int32_t>& flo
 			if (y >= floorstart[x])
 			{
 				auto ix = qx.GetInt() & 0x7F;
-				auto iz = (qz.GetInt()+32) & 0x7F;
+				auto iz = (qz.GetInt() + 32) & 0x7F;
 
 				uint8_t r = floor.palette[floor.data[ix][iz]][0];
 				uint8_t g = floor.palette[floor.data[ix][iz]][1];
@@ -761,7 +804,9 @@ int16_t Renderer::CastColumn(int32_t x, int16_t& zone, Quick& t)
 							o.data.ts.palette = basetexture / 20;
 							o.rotx = x;
 							o.rotz = thisz.GetInt();
+							if (Config::GetMT()) SDL_LockMutex(wallmutex);
 							strips.push_back(o);
+							if (Config::GetMT()) SDL_UnlockMutex(wallmutex);
 						}
 						else
 						{
@@ -979,16 +1024,39 @@ void Renderer::Render(Camera* camera)
 		//tidy up
 		if (walls[z].wl_lsx < 0) walls[z].wl_lsx = 0;
 		if (walls[z].wl_rsx < 0) walls[z].wl_rsx = 0;
-		if (walls[z].wl_lsx >= renderwidth) walls[z].wl_lsx = renderwidth - 1;
-		if (walls[z].wl_rsx >= renderwidth) walls[z].wl_rsx = renderwidth - 1;
+		if (walls[z].wl_lsx > renderwidth) walls[z].wl_lsx = renderwidth;
+		if (walls[z].wl_rsx > renderwidth) walls[z].wl_rsx = renderwidth;
 	}
 
-	for (int32_t x = 0; x < renderwidth; x++)
+	if (Config::GetMT())
 	{
-		ProcessColumn(x, camera->y, ceilend, floorstart);
+		camerastash = camera;
+		SDL_SemPost(wallgo);
+		for (int32_t x = 0; x < renderwidth; x+=2)
+		{
+			ProcessColumn(x, camera->y, ceilend, floorstart);
+		}
+		SDL_SemWait(wallgo);
+	}
+	else
+	{
+		for (int32_t x = 0; x < renderwidth; x++)
+		{
+			ProcessColumn(x, camera->y, ceilend, floorstart);
+		}
 	}
 
-	DrawFlat(ceilend, floorstart, camera);
+	if (Config::GetMT())
+	{
+		SDL_SemPost(floorgo);
+		DrawCeil(camera);
+		SDL_SemWait(floorgo);
+	}
+	else
+	{
+		DrawCeil(camera);
+		DrawFloor(camera);
+	}
 	DrawObjects(camera);
 	DrawBlood(camera);
 
@@ -1058,3 +1126,29 @@ Column* Renderer::GetTexColumn(int hitzone, Quick texpos, int& basetexture)
 
 	return result;
 }
+
+Renderer::Renderer()
+{
+	if (Config::GetMT())
+	{
+		floorgo = SDL_CreateSemaphore(0);
+		wallgo = SDL_CreateSemaphore(0);
+		wallmutex = SDL_CreateMutex();
+		wallthread = SDL_CreateThread(WallThreadKicker, "wallthread", this);
+		floorthread = SDL_CreateThread(FloorThreadKicker, "floorthread", this);
+	}
+}
+
+Renderer::~Renderer()
+{
+	if (Config::GetMT())
+	{
+		killthread = true;
+		SDL_SemPost(floorgo);
+		SDL_WaitThread(floorthread, NULL);
+		if (floorgo) SDL_DestroySemaphore(floorgo);
+		if (wallgo) SDL_DestroySemaphore(wallgo);
+		if (wallmutex) SDL_DestroyMutex(wallmutex);
+	}
+}
+

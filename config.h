@@ -41,6 +41,8 @@ namespace Config
 	bool GetDebug();
 	void SetFPS(uint32_t f);
 	uint32_t GetFPS();
+	bool GetMT();
+	bool GetVSync();
 
 	void Init();
 	void Save();

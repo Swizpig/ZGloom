@@ -41,7 +41,8 @@ bool Font::Load2(CrmFile& file)
 
 		width = modulo * 8;
 
-		surfaces[i] = SDL_CreateRGBSurface(0, width, height, 8, 0, 0, 0, 0);
+		surfaces[i]   = SDL_CreateRGBSurface(0, width, height, 8, 0, 0, 0, 0);
+		surfaces32[i] = SDL_CreateRGBSurface(0, width, height, 32, 0x00FF0000, 0x0000FF00, 0x000000FF, 0xFF000000);
 		SDL_SetColorKey(surfaces[i], 1, 0);
 
 		//printf("%i %i %i %i\n", shapepos, maskpos, width, height);
@@ -90,6 +91,9 @@ bool Font::Load2(CrmFile& file)
 				pos += 2;
 			}
 		}
+
+		// SDL does not like scaled blits from 8->32 surfaces
+		SDL_BlitSurface(surfaces[i], NULL, surfaces32[i], NULL);
 	}
 	return true;
 }
@@ -170,7 +174,7 @@ bool Font::Load(CrmFile& file)
 	return true;
 }
 
-void Font::Blit(int x, int y, int character, SDL_Surface* dest)
+void Font::Blit(int x, int y, int character, SDL_Surface* dest, int scale)
 {
 	SDL_Rect srcrect, dstrect;
 
@@ -179,17 +183,25 @@ void Font::Blit(int x, int y, int character, SDL_Surface* dest)
 	srcrect.x = 0;
 	srcrect.y = 0;
 
-	dstrect.w = w+1;
-	dstrect.h = h;
+	dstrect.w = (w+1)*scale;
+	dstrect.h = (h*scale);
 	dstrect.x = x;
 	dstrect.y = y;
 
-	SDL_BlitSurface(surfaces[character], &srcrect, dest, &dstrect);
+	if (scale == 1)
+	{
+		SDL_BlitSurface(surfaces[character], &srcrect, dest, &dstrect);
+	}
+	else
+	{
+		// these are ingame blits, and SDL does not like scaled 8->32 blits
+		SDL_BlitScaled(surfaces32[character], &srcrect, dest, &dstrect);
+	}
 }
 
-void Font::PrintMessage(std::string message, int y, SDL_Surface* dest)
+void Font::PrintMessage(std::string message, int y, SDL_Surface* dest, int scale)
 {
-	int xstart = dest->w/2 - message.length()*w / 2;
+	int xstart = dest->w/2 - (message.length()*w*scale) / 2;
 
 	for (auto c : message)
 	{
@@ -197,35 +209,35 @@ void Font::PrintMessage(std::string message, int y, SDL_Surface* dest)
 		{
 			if ((c >= '0') && (c <= '9'))
 			{
-				Blit(xstart, y, c - '0', dest);
+				Blit(xstart, y, c - '0', dest, scale);
 			}
 			else if ((c >= 'a') && (c <= 'z'))
 			{
-				Blit(xstart, y, c - 'a' + 10, dest);
+				Blit(xstart, y, c - 'a' + 10, dest, scale);
 			}
 			else if ((c >= 'A') && (c <= 'Z'))
 			{
-				Blit(xstart, y, c - 'A' + 10, dest);
+				Blit(xstart, y, c - 'A' + 10, dest, scale);
 			}
 			else if (c == '!')
 			{
-				Blit(xstart, y, 36, dest);
+				Blit(xstart, y, 36, dest, scale);
 			}
 			else if (c == '.')
 			{
-				Blit(xstart, y, 37, dest);
+				Blit(xstart, y, 37, dest, scale);
 			}
 			else if (c == ':')
 			{
-				Blit(xstart, y, 38, dest);
+				Blit(xstart, y, 38, dest, scale);
 			}
 			else if (c == 127) // what is this?
 			{
-				Blit(xstart, y, 39, dest);
+				Blit(xstart, y, 39, dest, scale);
 			}
 		}
 
-		xstart += w;
+		xstart += w*scale;
 	}
 }
 
@@ -239,12 +251,12 @@ void Font::PrintMultiLineMessage(std::string message, int y, SDL_Surface* dest)
 		{
 			if ((message[i] == ' ') && (i <= (int)charsinline))
 			{
-				PrintMessage(message.substr(0, i), y, dest);
+				PrintMessage(message.substr(0, i), y, dest, 1);
 				message = message.substr(i + 1, std::string::npos);
 				y += h;
 				break;
 			}
 		}
 	}
-	PrintMessage(message, y, dest);
+	PrintMessage(message, y, dest, 1);
 }

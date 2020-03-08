@@ -20,6 +20,8 @@ namespace Config
 	static int bloodsize;
 	static bool debug = false;
 	static uint32_t FPS;
+	bool multithread = false;
+	bool vsync = false;
 
 	void SetDebug(bool b)
 	{
@@ -253,6 +255,10 @@ namespace Config
 		mousesens = 5;
 		bloodsize = 2;
 
+		multithread = false;
+		debug = false;
+		vsync = false;
+
 		std::ifstream file;
 
 		file.open("config.txt");
@@ -308,6 +314,14 @@ namespace Config
 					{
 						bloodsize = std::stoi(line);
 					}
+					if (command == "multithread")
+					{
+						multithread = std::stoi(line)!=0;
+					}
+					if (command == "vsync")
+					{
+						vsync = std::stoi(line) != 0;
+					}
 				}
 			}
 
@@ -345,7 +359,15 @@ namespace Config
 		bloodsize = b;
 	}
 
+	bool GetMT()
+	{
+		return multithread;
+	}
 
+	bool GetVSync()
+	{
+		return vsync;
+	}
 
 	void Save()
 	{
@@ -378,6 +400,9 @@ namespace Config
 			file << ";The size of the actual window/fullscreen res. Guess this should be a multiple of the above for pixel perfect\n";
 			file << "windowsize " << windowwidth << " " << windowheight << "\n";
 
+			file << ";vsync on or off?\n";
+			file << "vsync " << (vsync ? 1 : 0) << "\n";
+
 			file << ";focal length. Original used 128 for a 320x256 display, bump this up for higher resolution. Rule of thumb: for 90degree fov, = renderwidth/2\n";
 			file << "focallength " << focallength << "\n";
 
@@ -386,6 +411,9 @@ namespace Config
 
 			file << ";size of blood splatters in pixels\n";
 			file << "bloodsize " << bloodsize << "\n";
+
+			file << ";multithreaded renderer (somewhat experimental)\n";
+			file << "multithread " << (multithread?1:0) << "\n";
 
 			file.close();
 		}
