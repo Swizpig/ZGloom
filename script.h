@@ -30,6 +30,7 @@ class Script
 		};
 
 		ScriptOp NextLine(std::string& name);
+		void GetLevelNames(std::vector<std::string>& names);
 
 	private:
 		uint32_t line = 0;

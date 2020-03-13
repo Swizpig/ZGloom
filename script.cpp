@@ -107,3 +107,17 @@ Script::ScriptOp Script::NextLine(std::string& name)
 	}
 	return SOP_NOP;
 }
+
+void Script::GetLevelNames(std::vector<std::string>& names)
+{
+	for (auto& s : lines)
+	{
+		if (s.length() > 5)
+		{
+			if (s.substr(0, 5) == "text_")
+			{
+				names.push_back(s.substr(5, std::string::npos));
+			}
+		}
+	}
+}
