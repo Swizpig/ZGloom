@@ -41,6 +41,9 @@ namespace Config
 	bool GetDebug();
 	void SetFPS(uint32_t f);
 	uint32_t GetFPS();
+	void SetFullscreen(bool f);
+	bool GetFullscreen();
+
 	bool GetMT();
 	bool GetVSync();
 

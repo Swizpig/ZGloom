@@ -22,6 +22,7 @@ namespace Config
 	static uint32_t FPS;
 	bool multithread = false;
 	bool vsync = false;
+	bool fullscreen = false;
 
 	void SetDebug(bool b)
 	{
@@ -41,6 +42,16 @@ namespace Config
 	uint32_t GetFPS()
 	{
 		return FPS;
+	}
+
+	void SetFullscreen(bool f)
+	{
+		fullscreen = f;
+	}
+
+	bool GetFullscreen()
+	{
+		return fullscreen;
 	}
 
 
@@ -258,6 +269,7 @@ namespace Config
 		multithread = false;
 		debug = false;
 		vsync = false;
+		fullscreen = false;
 
 		std::ifstream file;
 
@@ -321,6 +333,10 @@ namespace Config
 					if (command == "vsync")
 					{
 						vsync = std::stoi(line) != 0;
+					}
+					if (command == "fullscreen")
+					{
+						fullscreen = std::stoi(line) != 0;
 					}
 				}
 			}
@@ -402,6 +418,9 @@ namespace Config
 
 			file << ";vsync on or off?\n";
 			file << "vsync " << (vsync ? 1 : 0) << "\n";
+
+			file << ";fullscreen on or off?\n";
+			file << "fullscreen " << (fullscreen ? 1 : 0) << "\n";
 
 			file << ";focal length. Original used 128 for a 320x256 display, bump this up for higher resolution. Rule of thumb: for 90degree fov, = renderwidth/2\n";
 			file << "focallength " << focallength << "\n";

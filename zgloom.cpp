@@ -170,7 +170,7 @@ int main(int argc, char* argv[])
 
 	SoundHandler::Init();
 
-	SDL_Window* win = SDL_CreateWindow("ZGloom", 100, 100, windowwidth, windowheight, SDL_WINDOW_SHOWN /*| SDL_WINDOW_FULLSCREEN*/);
+	SDL_Window* win = SDL_CreateWindow("ZGloom", 100, 100, windowwidth, windowheight, SDL_WINDOW_SHOWN | (Config::GetFullscreen()?SDL_WINDOW_FULLSCREEN:0) );
 	if (win == nullptr)
 	{
 		std::cout << "SDL_CreateWindow Error: " << SDL_GetError() << std::endl;
@@ -260,7 +260,6 @@ int main(int argc, char* argv[])
 
 	bool intermissionmusplaying = false;
 	bool haveingamemusic = false;
-	bool fullscreen = false;
 	bool printscreen = false;
 	int screennum = 0;
 	uint32_t fps = 0;
@@ -542,7 +541,7 @@ int main(int argc, char* argv[])
 
 			if ((sEvent.type == SDL_KEYDOWN) && sEvent.key.keysym.sym == SDLK_F12)
 			{
-				if (!fullscreen)
+				if (!Config::GetFullscreen())
 				{
 					SDL_SetWindowFullscreen(win, SDL_WINDOW_FULLSCREEN);
 				}
@@ -551,10 +550,10 @@ int main(int argc, char* argv[])
 					SDL_SetWindowFullscreen(win, 0);
 				}
 
-				fullscreen = !fullscreen;
+				Config::SetFullscreen(!Config::GetFullscreen());
 			}
 
-			if ((sEvent.type == SDL_KEYDOWN) && sEvent.key.keysym.sym == SDLK_F11)
+			if ((sEvent.type == SDL_KEYDOWN) && sEvent.key.keysym.sym == SDLK_TAB)
 			{
 				Config::SetDebug(!Config::GetDebug());
 			}

@@ -11,21 +11,21 @@ void MenuScreen::Render(SDL_Surface* src, SDL_Surface* dest, Font& font)
 
 	if (status == MENUSTATUS_MAIN)
 	{
-		if (flash || (selection != 0)) font.PrintMessage("CONTINUE", 100*scale, dest, scale);
-		if (flash || (selection != 1)) font.PrintMessage("CONFIGURE KEYS", 120 * scale, dest, scale);
-		if (flash || (selection != 2))
+		if (flash || (selection != MENU_MAIN_CONTINUE)) font.PrintMessage("CONTINUE", 100 * scale, dest, scale);
+		if (flash || (selection != MENU_MAIN_KEYCONF )) font.PrintMessage("CONFIGURE KEYS", 120 * scale, dest, scale);
+		if (flash || (selection != MENU_MAIN_MOUSESENS))
 		{
 			std::string mousestring = "MOUSE SENSITIVITY: ";
 			mousestring += std::to_string(Config::GetMouseSens());
 			font.PrintMessage(mousestring, 130 * scale, dest, scale);
 		}
-		if (flash || (selection != 3))
+		if (flash || (selection != MENU_MAIN_BLOODSIZE))
 		{
 			std::string mousestring = "BLOOD SIZE: ";
 			mousestring += std::to_string(Config::GetBlood());
 			font.PrintMessage(mousestring, 140 * scale, dest, scale);
 		}
-		if (flash || (selection != 4)) font.PrintMessage("QUIT TO TITLE", 150 * scale, dest, scale);
+		if (flash || (selection != MENU_MAIN_QUIT)) font.PrintMessage("QUIT TO TITLE", 150 * scale, dest, scale);
 	}
 	else if (status == MENUSTATUS_KEYCONFIG)
 	{
@@ -76,7 +76,7 @@ MenuScreen::MenuReturn MenuScreen::Update(SDL_Event& tevent)
 			{
 			case SDLK_DOWN:
 				selection++;
-				if (selection == 5) selection = 4;
+				if (selection == MENU_MAIN_END) selection = MENU_MAIN_END-1;
 				break;
 			case SDLK_UP:
 				selection--;
@@ -85,25 +85,25 @@ MenuScreen::MenuReturn MenuScreen::Update(SDL_Event& tevent)
 			case SDLK_SPACE:
 			case SDLK_RETURN:
 			case SDLK_LCTRL:
-				if (selection == 0) return MENURET_PLAY;
-				if (selection == 1)
+				if (selection == MENU_MAIN_CONTINUE) return MENURET_PLAY;
+				if (selection == MENU_MAIN_KEYCONF)
 				{
 					status = MENUSTATUS_KEYCONFIG;
 					selection = Config::KEY_UP;
 				}
-				if (selection == 2)
+				if (selection == MENU_MAIN_MOUSESENS)
 				{
 					int sens = Config::GetMouseSens() + 1;
 					if (sens >= 10) sens = 0;
 					Config::SetMouseSens(sens);
 				}
-				if (selection == 3)
+				if (selection == MENU_MAIN_BLOODSIZE)
 				{
 					int sens = Config::GetBlood() + 1;
 					if (sens >= 5) sens = 0;
 					Config::SetBlood(sens);
 				}
-				if (selection == 4) return MENURET_QUIT;
+				if (selection == MENU_MAIN_QUIT) return MENURET_QUIT;
 			default:
 				break;
 			}

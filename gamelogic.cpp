@@ -73,6 +73,8 @@ void GameLogic::InitLevel(GloomMap* gmapin, Camera* cam, ObjectGraphics* ograph)
 	objectgraphics = ograph;
 	levelfinished = false;
 	levelfinishednow = false;
+	sucking = 0;
+	sucker = 0;
 	std::fill(animframe, animframe + 160, 0);
 
 	for (auto e = 0; e < 25; e++)
