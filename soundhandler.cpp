@@ -3,6 +3,7 @@
 #include "config.h"
 
 #include <string>
+#include <iostream>
 #include <SDL2/SDL.h>
 #include <SDL2/SDL_mixer.h>
 
@@ -95,8 +96,20 @@ namespace SoundHandler
 		return wavbuffer;
 	}
 
+	void Quit()
+	{
+		Mix_CloseAudio();
+	}
+
 	void Init()
 	{
+
+		if (Mix_OpenAudio(22050, AUDIO_S16LSB, 2, 1024))
+		{
+			std::cout << "openaudio error" << Mix_GetError() << std::endl;
+			return;
+		}
+
 		Mix_AllocateChannels(16);
 
 		for (auto i = 0; i < SOUND_END; i++)

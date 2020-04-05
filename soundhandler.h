@@ -32,5 +32,6 @@ namespace SoundHandler
 
 
 	void Init();
+	void Quit();
 	void Play(int i);
 }

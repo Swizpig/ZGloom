@@ -161,13 +161,6 @@ int main(int argc, char* argv[])
 	titlemusic.Load(Config::GetMusicFilename(0).c_str());
 	intermissionmusic.Load(Config::GetMusicFilename(1).c_str());
 
-
-	if (Mix_OpenAudio(22050, AUDIO_S16LSB, 2, 1024))
-	{
-		std::cout << "openaudio error" << Mix_GetError() << std::endl;
-		return -1;
-	}
-
 	SoundHandler::Init();
 
 	SDL_Window* win = SDL_CreateWindow("ZGloom", 100, 100, windowwidth, windowheight, SDL_WINDOW_SHOWN | (Config::GetFullscreen()?SDL_WINDOW_FULLSCREEN:0) );
@@ -652,6 +645,8 @@ int main(int argc, char* argv[])
 	xmp_free_context(ctx);
 
 	Config::Save();
+
+	SoundHandler::Quit();
 
 	SDL_FreeSurface(render8);
 	SDL_FreeSurface(render32);
