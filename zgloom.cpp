@@ -186,7 +186,6 @@ int main(int argc, char* argv[])
 
 	SDL_ShowCursor(SDL_DISABLE);
 
-	SDL_Surface* fontsurface = SDL_CreateRGBSurface(0, 320, 256, 8, 0, 0, 0, 0);
 	SDL_Surface* render8 = SDL_CreateRGBSurface(0, 320, 256, 8, 0, 0, 0, 0);
 	SDL_Surface* intermissionscreen = SDL_CreateRGBSurface(0, 320, 256, 8, 0, 0, 0, 0);
 	SDL_Surface* titlebitmap = SDL_CreateRGBSurface(0, 320, 256, 8, 0, 0, 0, 0);
@@ -650,6 +649,9 @@ int main(int argc, char* argv[])
 
 	SDL_FreeSurface(render8);
 	SDL_FreeSurface(render32);
+	SDL_FreeSurface(screen32);
+	SDL_FreeSurface(intermissionscreen);
+	SDL_FreeSurface(titlebitmap);
 	SDL_DestroyRenderer(ren);
 	SDL_DestroyWindow(win);
 	SDL_Quit();
