@@ -99,6 +99,8 @@ namespace SoundHandler
 	void Quit()
 	{
 		Mix_CloseAudio();
+		//is this strictly needed? I've not loaded any libs, Mix_init was not used.
+		Mix_Quit();
 	}
 
 	void Init()
