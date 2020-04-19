@@ -416,7 +416,9 @@ bool GloomMap::Load(const char* name, ObjectGraphics* nobj)
 
 	for (int t = 0; t < 8; t++)
 	{
-		texturestotal += textures[t].columns.size() / 64;
+		// G3 (and others?) occasionally have short textures
+		//texturestotal += textures[t].columns.size() / 64;
+		if (textures[t].columns.size()) texturestotal += 20;
 	}
 
 	for (auto i = 0; i < 160; i++)
