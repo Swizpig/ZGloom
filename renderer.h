@@ -131,7 +131,7 @@ class Renderer
 				g = 0; b = 0;
 			}
 
-			col = (r << 16) | (g << 8) | b;
+			col = 0xFF000000 | (r << 16) | (g << 8) | b;
 		};
 
 		inline void ColourModify(const uint8_t& rin, const uint8_t& gin, const uint8_t& bin, uint32_t& col, const int32_t& p)
@@ -152,7 +152,7 @@ class Renderer
 				g = 0; b = 0;
 			}
 
-			col = (r << 16) | (g << 8) | b;
+			col = 0xFF000000 | (r << 16) | (g << 8) | b;
 		};
 
 		std::list<MapObject> strips;

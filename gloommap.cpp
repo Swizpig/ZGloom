@@ -852,7 +852,7 @@ MapObject::MapObject(Object m)
 			data.ms.die = BlowObject;
 			break;
 		case ObjectGraphics::OLT_DEMON:
-			data.ms.logic = PhantomLogic;
+			data.ms.logic = DemonLogic;
 			data.ms.hit = HurtNGrunt;
 			data.ms.die = BlowObject;
 			break;
