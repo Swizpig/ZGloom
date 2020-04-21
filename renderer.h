@@ -68,8 +68,8 @@ class Renderer
 			}
 		}
 
-		Renderer::Renderer();
-		Renderer::~Renderer();
+		Renderer();
+		~Renderer();
 	
 	private:
 		bool OriginSide(int16_t fx, int16_t fz, int16_t bx, int16_t bz);
