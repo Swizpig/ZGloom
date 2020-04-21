@@ -3,6 +3,7 @@
 #include "soundhandler.h"
 #include <string>
 #include <SDL2/SDL.h>
+#include <SDL2/SDL_mixer.h>
 #include <iostream>
 #include <fstream>
 
@@ -23,6 +24,10 @@ namespace Config
 	bool multithread = false;
 	bool vsync = false;
 	bool fullscreen = false;
+
+	int sfxvol;
+	int musvol;
+	xmp_context musctx;
 
 	void SetDebug(bool b)
 	{
@@ -164,6 +169,11 @@ namespace Config
 		return result;
 	}
 
+	void RegisterMusContext(xmp_context ctx)
+	{
+		musctx = ctx;
+	}
+
 	void Init()
 	{
 		if (zombiemassacremode)
@@ -270,6 +280,9 @@ namespace Config
 		debug = false;
 		vsync = false;
 		fullscreen = false;
+
+		musvol = 5;
+		sfxvol = 5;
 
 		std::ifstream file;
 
@@ -383,6 +396,32 @@ namespace Config
 	bool GetVSync()
 	{
 		return vsync;
+	}
+
+	int GetSFXVol()
+	{
+		return sfxvol;
+	}
+
+	void SetSFXVol(int vol)
+	{
+		sfxvol = vol;
+		Mix_Volume(-1, vol * 12);
+	}
+
+	int GetMusicVol()
+	{
+		return musvol;
+	}
+	void SetMusicVol(int vol)
+	{
+		musvol = vol;
+		//this does not seem to work with Hook'ed audio? Can't find any documentation explicitly forbidding it
+		//Mix_VolumeMusic(vol * 12);
+		for (int i = 0; i < XMP_MAX_CHANNELS; i++)
+		{
+			xmp_channel_vol(musctx, i, vol * 7);
+		}
 	}
 
 	void Save()

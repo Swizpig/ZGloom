@@ -142,6 +142,7 @@ int main(int argc, char* argv[])
 	xmp_context ctx;
 
 	ctx = xmp_create_context();
+	Config::RegisterMusContext(ctx);
 
 	if (SDL_Init(SDL_INIT_EVERYTHING) != 0)
 	{
@@ -246,6 +247,7 @@ int main(int argc, char* argv[])
 			std::cout << "music error";
 		}
 		Mix_HookMusic(fill_audio, ctx);
+		Config::SetMusicVol(Config::GetMusicVol());
 	}
 
 	std::string intermissiontext;
@@ -257,7 +259,8 @@ int main(int argc, char* argv[])
 	uint32_t fps = 0;
 	uint32_t fpscounter = 0;
 
-	Mix_Volume(-1, 32);
+	Mix_Volume(-1, Config::GetSFXVol()*12);
+	Mix_VolumeMusic(Config::GetMusicVol() * 12);
 
 	//try and blit title etc into the middle of the screen
 	SDL_Rect blitrect;
@@ -269,7 +272,6 @@ int main(int argc, char* argv[])
 	blitrect.y = (renderheight - 256 * screenscale) / 2;
 
 	SDL_SetRelativeMouseMode(SDL_TRUE);
-	
 	
 	//set up the level select
 
@@ -330,6 +332,7 @@ int main(int argc, char* argv[])
 									 std::cout << "music error";
 								 }
 								 Mix_HookMusic(fill_audio, ctx);
+								 Config::SetMusicVol(Config::GetMusicVol());
 								 intermissionmusplaying = true;
 							 }
 
@@ -354,6 +357,7 @@ int main(int argc, char* argv[])
 								std::cout << "music error";
 							}
 							Mix_HookMusic(fill_audio, ctx);
+							Config::SetMusicVol(Config::GetMusicVol());
 							intermissionmusplaying = true;
 						}
 					}
@@ -399,6 +403,7 @@ int main(int argc, char* argv[])
 								std::cout << "music error";
 							}
 							Mix_HookMusic(fill_audio, ctx);
+							Config::SetMusicVol(Config::GetMusicVol());
 						}
 					}
 					break;
@@ -425,6 +430,7 @@ int main(int argc, char* argv[])
 							std::cout << "music error";
 						}
 						Mix_HookMusic(fill_audio, ctx);
+						Config::SetMusicVol(Config::GetMusicVol());
 					}
 					break;
 				}
@@ -519,6 +525,7 @@ int main(int argc, char* argv[])
 									std::cout << "music error";
 								}
 								Mix_HookMusic(fill_audio, ctx);
+								Config::SetMusicVol(Config::GetMusicVol());
 							}
 							break;
 						default:

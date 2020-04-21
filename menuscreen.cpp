@@ -11,21 +11,36 @@ void MenuScreen::Render(SDL_Surface* src, SDL_Surface* dest, Font& font)
 
 	if (status == MENUSTATUS_MAIN)
 	{
-		if (flash || (selection != MENU_MAIN_CONTINUE)) font.PrintMessage("CONTINUE", 100 * scale, dest, scale);
-		if (flash || (selection != MENU_MAIN_KEYCONF )) font.PrintMessage("CONFIGURE KEYS", 120 * scale, dest, scale);
+		int starty = 100 * scale;
+		int yinc = 10 * scale;
+
+		if (flash || (selection != MENU_MAIN_CONTINUE)) font.PrintMessage("CONTINUE", starty, dest, scale);
+		starty += yinc*2;
+
+		if (flash || (selection != MENU_MAIN_KEYCONF )) font.PrintMessage("CONFIGURE KEYS", starty, dest, scale);
+		starty += yinc;
+
+		if (flash || (selection != MENU_MAIN_SOUNDOPTIONS)) font.PrintMessage("SOUND OPTIONS", starty, dest, scale);
+		starty += yinc;
+
 		if (flash || (selection != MENU_MAIN_MOUSESENS))
 		{
 			std::string mousestring = "MOUSE SENSITIVITY: ";
 			mousestring += std::to_string(Config::GetMouseSens());
-			font.PrintMessage(mousestring, 130 * scale, dest, scale);
+			font.PrintMessage(mousestring, starty, dest, scale);
 		}
+		starty += yinc;
+
 		if (flash || (selection != MENU_MAIN_BLOODSIZE))
 		{
 			std::string mousestring = "BLOOD SIZE: ";
 			mousestring += std::to_string(Config::GetBlood());
-			font.PrintMessage(mousestring, 140 * scale, dest, scale);
+			font.PrintMessage(mousestring, starty, dest, scale);
 		}
-		if (flash || (selection != MENU_MAIN_QUIT)) font.PrintMessage("QUIT TO TITLE", 150 * scale, dest, scale);
+		starty += yinc;
+
+		if (flash || (selection != MENU_MAIN_QUIT)) font.PrintMessage("QUIT TO TITLE", starty, dest, scale);
+		starty += yinc;
 	}
 	else if (status == MENUSTATUS_KEYCONFIG)
 	{
@@ -57,6 +72,30 @@ void MenuScreen::Render(SDL_Surface* src, SDL_Surface* dest, Font& font)
 				break;
 		}
 	}
+	else if (status == MENUSTATUS_SOUNDOPTIONS)
+	{
+		int starty = 100 * scale;
+		int yinc = 10 * scale;
+
+		if (flash || (selection != MENU_SOUND_RETURN)) font.PrintMessage("RETURN", starty, dest, scale);
+		starty += yinc * 2;
+
+		if (flash || (selection != MENU_SOUND_SFXVOL))
+		{
+			std::string mousestring = "SFX VOLUME: ";
+			mousestring += std::to_string(Config::GetSFXVol());
+			font.PrintMessage(mousestring, starty, dest, scale);
+		}
+		starty += yinc;
+
+		if (flash || (selection != MENU_SOUND_MUSVOL))
+		{
+			std::string mousestring = "MUSIC VOLUME: ";
+			mousestring += std::to_string(Config::GetMusicVol());
+			font.PrintMessage(mousestring, starty, dest, scale);
+		}
+		starty += yinc;
+	}
 }
 
 MenuScreen::MenuScreen()
@@ -66,58 +105,125 @@ MenuScreen::MenuScreen()
 	timer = 0;
 }
 
-MenuScreen::MenuReturn MenuScreen::Update(SDL_Event& tevent)
+MenuScreen::MenuReturn MenuScreen::HandleMainMenu(SDL_Keycode sym)
 {
-	if (tevent.type == SDL_KEYDOWN)
+	switch (sym)
 	{
-		if (status == MENUSTATUS_MAIN)
-		{
-			switch (tevent.key.keysym.sym)
-			{
-			case SDLK_DOWN:
-				selection++;
-				if (selection == MENU_MAIN_END) selection = MENU_MAIN_END-1;
-				break;
-			case SDLK_UP:
-				selection--;
-				if (selection == -1) selection = 0;
-				break;
-			case SDLK_SPACE:
-			case SDLK_RETURN:
-			case SDLK_LCTRL:
-				if (selection == MENU_MAIN_CONTINUE) return MENURET_PLAY;
-				if (selection == MENU_MAIN_KEYCONF)
-				{
-					status = MENUSTATUS_KEYCONFIG;
-					selection = Config::KEY_UP;
-				}
-				if (selection == MENU_MAIN_MOUSESENS)
-				{
-					int sens = Config::GetMouseSens() + 1;
-					if (sens >= 10) sens = 0;
-					Config::SetMouseSens(sens);
-				}
-				if (selection == MENU_MAIN_BLOODSIZE)
-				{
-					int sens = Config::GetBlood() + 1;
-					if (sens >= 5) sens = 0;
-					Config::SetBlood(sens);
-				}
-				if (selection == MENU_MAIN_QUIT) return MENURET_QUIT;
-			default:
-				break;
-			}
-		}
-		else if (status == MENUSTATUS_KEYCONFIG)
-		{
-			Config::SetKey((Config::keyenum)selection, SDL_GetScancodeFromKey(tevent.key.keysym.sym));
+		case SDLK_DOWN:
 			selection++;
-			if (selection == Config::KEY_END)
+			if (selection == MENU_MAIN_END) selection = MENU_MAIN_END - 1;
+			break;
+		case SDLK_UP:
+			selection--;
+			if (selection == -1) selection = 0;
+			break;
+		case SDLK_SPACE:
+		case SDLK_RETURN:
+		case SDLK_LCTRL:
+			if (selection == MENU_MAIN_CONTINUE) return MENURET_PLAY;
+			if (selection == MENU_MAIN_KEYCONF)
+			{
+				status = MENUSTATUS_KEYCONFIG;
+				selection = Config::KEY_UP;
+			}
+			if (selection == MENU_MAIN_MOUSESENS)
+			{
+				int sens = Config::GetMouseSens() + 1;
+				if (sens >= 10) sens = 0;
+				Config::SetMouseSens(sens);
+			}
+			if (selection == MENU_MAIN_BLOODSIZE)
+			{
+				int sens = Config::GetBlood() + 1;
+				if (sens >= 5) sens = 0;
+				Config::SetBlood(sens);
+			}
+			if (selection == MENU_MAIN_SOUNDOPTIONS)
+			{
+				status = MENUSTATUS_SOUNDOPTIONS;
+				selection = 0;
+			}
+			if (selection == MENU_MAIN_QUIT) return MENURET_QUIT;
+		default:
+			break;
+	}
+
+	return MENURET_NOTHING;
+}
+
+void MenuScreen::HandleKeyMenu(SDL_Keycode sym)
+{
+	Config::SetKey((Config::keyenum)selection, SDL_GetScancodeFromKey(sym));
+	selection++;
+	if (selection == Config::KEY_END)
+	{
+		selection = 0;
+		status = MENUSTATUS_MAIN;
+	}
+}
+
+void MenuScreen::HandleSoundMenu(SDL_Keycode sym)
+{
+	switch (sym)
+	{
+		case SDLK_DOWN:
+			selection++;
+			if (selection == MENU_SOUND_END) selection = MENU_SOUND_END - 1;
+			break;
+		case SDLK_UP:
+			selection--;
+			if (selection == -1) selection = 0;
+			break;
+		case SDLK_SPACE:
+		case SDLK_RETURN:
+		case SDLK_LCTRL:
+			if (selection == MENU_SOUND_RETURN)
 			{
 				selection = 0;
 				status = MENUSTATUS_MAIN;
 			}
+			if (selection == MENU_SOUND_MUSVOL)
+			{
+				int sens = Config::GetMusicVol() + 1;
+				if (sens >= 10) sens = 0;
+				Config::SetMusicVol(sens);
+			}
+			if (selection == MENU_SOUND_SFXVOL)
+			{
+				int sens = Config::GetSFXVol() + 1;
+				if (sens >= 10) sens = 0;
+				Config::SetSFXVol(sens);
+			}
 
+		default:
+			break;
+	}
+}
+
+MenuScreen::MenuReturn MenuScreen::Update(SDL_Event& tevent)
+{
+	if (tevent.type == SDL_KEYDOWN)
+	{
+		switch (status)
+		{
+		case MENUSTATUS_MAIN:
+		{
+			return HandleMainMenu(tevent.key.keysym.sym);
+			break;
+		}
+		case MENUSTATUS_KEYCONFIG:
+		{
+			HandleKeyMenu(tevent.key.keysym.sym);
+			break;
+		}
+
+		case MENUSTATUS_SOUNDOPTIONS:
+		{
+			HandleSoundMenu(tevent.key.keysym.sym);
+		}
+
+		default:
+			break;
 		}
 	}
 

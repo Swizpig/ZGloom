@@ -3,6 +3,7 @@
 #include <string>
 #include "objectgraphics.h"
 #include "soundhandler.h"
+#include "xmp/include/xmp.h"
 
 namespace Config
 {
@@ -46,6 +47,13 @@ namespace Config
 
 	bool GetMT();
 	bool GetVSync();
+
+	// sound options
+	int GetSFXVol();
+	void SetSFXVol(int vol);
+	int GetMusicVol();
+	void SetMusicVol(int vol);
+	void RegisterMusContext(xmp_context ctx);
 
 	void Init();
 	void Save();
