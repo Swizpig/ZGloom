@@ -312,7 +312,7 @@ class Zone
 	int16_t	na;
 	int16_t	nb;
 	int16_t	ln;
-	int8_t t[8]; //8 textures to use!
+	uint8_t t[8]; //8 textures to use!
 	int16_t	sc;
 	int16_t ev;
 	int16_t open;

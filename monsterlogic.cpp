@@ -1922,7 +1922,7 @@ void DemonPause(MapObject& o, GameLogic* logic)
 			wep = 4;
 		}
 		Shoot(o, logic, 4, 0, logic->wtable[wep].hitpoint, logic->wtable[wep].damage*3/4, logic->wtable[wep].speed, logic->wtable[wep].shape, logic->wtable[wep].spark);
-		SoundHandler::Play(SoundHandler::SOUND_SHOOT + wep);
+		SoundHandler::Play(logic->wtable[wep].sound);
 	}
 	/*
 	;
