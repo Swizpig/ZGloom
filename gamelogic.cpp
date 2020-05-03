@@ -57,8 +57,10 @@ void GameLogic::ResetPlayer(MapObject& o)
 	o.data.ms.hitpoints = 25;
 	o.data.ms.eyey = -110;
 	o.data.ms.logic = NullLogic;
-	o.data.ms.colltype = 8;
-	o.data.ms.collwith = 4;
+	//o.data.ms.colltype = 8;
+	//o.data.ms.collwith = 4;
+	// 3 seconds invulnrability. Curiously, code comment state 2?
+	o.data.ms.delay = 75;
 	o.x = origx;
 	o.z = origz;
 	o.data.ms.rotquick.SetInt(origrot);
@@ -1103,6 +1105,22 @@ bool GameLogic::Update(Camera* cam)
 
 	//do this after the above otherwise I don't pick up the player reset on death
 	playerobj.data.ms.logic = playerobjupdated.data.ms.logic;
+
+	if (playerobj.data.ms.logic == NullLogic)
+	{
+		//invuln timer after death
+		if (playerobj.data.ms.delay)
+		{
+			playerobj.data.ms.delay--;
+
+			if (playerobj.data.ms.delay == 0)
+			{
+				//reset collision data so can be hit again
+				playerobj.data.ms.colltype = 8;
+				playerobj.data.ms.collwith = 4;
+			}
+		}
+	}
 
 	if (squished &&  (playerobj.data.ms.hitpoints <= 0))
 	{
