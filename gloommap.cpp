@@ -561,12 +561,13 @@ void GloomMap::ExecuteEvent(uint32_t e, bool& gotele, Teleport& teleout)
 			CalcVecs(mo);
 
 			// ordering seems needed for collison?
-			if ((mo.t == ObjectGraphics::OLT_PLAYER1) || (mo.t == ObjectGraphics::OLT_PLAYER1))
+			if (mo.t == ObjectGraphics::OLT_PLAYER1)
 			{
 				mapobjects.push_front(mo);
 			}
-			else
+			else if (mo.t != ObjectGraphics::OLT_PLAYER2)
 			{
+				// DO NOTHING FOR P2: Invisible P2 object causes enemies to be hurt!
 				mapobjects.push_back(mo);
 			}
 		}
