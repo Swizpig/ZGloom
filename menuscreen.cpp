@@ -11,36 +11,15 @@ void MenuScreen::Render(SDL_Surface* src, SDL_Surface* dest, Font& font)
 
 	if (status == MENUSTATUS_MAIN)
 	{
-		int starty = 100 * scale;
-		int yinc = 10 * scale;
-
-		if (flash || (selection != MENU_MAIN_CONTINUE)) font.PrintMessage("CONTINUE", starty, dest, scale);
-		starty += yinc*2;
-
-		if (flash || (selection != MENU_MAIN_KEYCONF )) font.PrintMessage("CONFIGURE KEYS", starty, dest, scale);
-		starty += yinc;
-
-		if (flash || (selection != MENU_MAIN_SOUNDOPTIONS)) font.PrintMessage("SOUND OPTIONS", starty, dest, scale);
-		starty += yinc;
-
-		if (flash || (selection != MENU_MAIN_MOUSESENS))
-		{
-			std::string mousestring = "MOUSE SENSITIVITY: ";
-			mousestring += std::to_string(Config::GetMouseSens());
-			font.PrintMessage(mousestring, starty, dest, scale);
-		}
-		starty += yinc;
-
-		if (flash || (selection != MENU_MAIN_BLOODSIZE))
-		{
-			std::string mousestring = "BLOOD SIZE: ";
-			mousestring += std::to_string(Config::GetBlood());
-			font.PrintMessage(mousestring, starty, dest, scale);
-		}
-		starty += yinc;
-
-		if (flash || (selection != MENU_MAIN_QUIT)) font.PrintMessage("QUIT TO TITLE", starty, dest, scale);
-		starty += yinc;
+		DisplayStandardMenu(mainmenu, flash, scale, dest, font);
+	}
+	else if (status == MENUSTATUS_SOUNDOPTIONS)
+	{
+		DisplayStandardMenu(soundmenu, flash, scale, dest, font);
+	}
+	else if (status == MENUSTATUS_CONTROLOPTIONS)
+	{
+		DisplayStandardMenu(controlmenu, flash, scale, dest, font);
 	}
 	else if (status == MENUSTATUS_KEYCONFIG)
 	{
@@ -72,30 +51,6 @@ void MenuScreen::Render(SDL_Surface* src, SDL_Surface* dest, Font& font)
 				break;
 		}
 	}
-	else if (status == MENUSTATUS_SOUNDOPTIONS)
-	{
-		int starty = 100 * scale;
-		int yinc = 10 * scale;
-
-		if (flash || (selection != MENU_SOUND_RETURN)) font.PrintMessage("RETURN", starty, dest, scale);
-		starty += yinc * 2;
-
-		if (flash || (selection != MENU_SOUND_SFXVOL))
-		{
-			std::string mousestring = "SFX VOLUME: ";
-			mousestring += std::to_string(Config::GetSFXVol());
-			font.PrintMessage(mousestring, starty, dest, scale);
-		}
-		starty += yinc;
-
-		if (flash || (selection != MENU_SOUND_MUSVOL))
-		{
-			std::string mousestring = "MUSIC VOLUME: ";
-			mousestring += std::to_string(Config::GetMusicVol());
-			font.PrintMessage(mousestring, starty, dest, scale);
-		}
-		starty += yinc;
-	}
 }
 
 MenuScreen::MenuScreen()
@@ -103,52 +58,21 @@ MenuScreen::MenuScreen()
 	status = MENUSTATUS_MAIN;
 	selection = 0;
 	timer = 0;
-}
 
-MenuScreen::MenuReturn MenuScreen::HandleMainMenu(SDL_Keycode sym)
-{
-	switch (sym)
-	{
-		case SDLK_DOWN:
-			selection++;
-			if (selection == MENU_MAIN_END) selection = MENU_MAIN_END - 1;
-			break;
-		case SDLK_UP:
-			selection--;
-			if (selection == -1) selection = 0;
-			break;
-		case SDLK_SPACE:
-		case SDLK_RETURN:
-		case SDLK_LCTRL:
-			if (selection == MENU_MAIN_CONTINUE) return MENURET_PLAY;
-			if (selection == MENU_MAIN_KEYCONF)
-			{
-				status = MENUSTATUS_KEYCONFIG;
-				selection = Config::KEY_UP;
-			}
-			if (selection == MENU_MAIN_MOUSESENS)
-			{
-				int sens = Config::GetMouseSens() + 1;
-				if (sens >= 10) sens = 0;
-				Config::SetMouseSens(sens);
-			}
-			if (selection == MENU_MAIN_BLOODSIZE)
-			{
-				int sens = Config::GetBlood() + 1;
-				if (sens >= 5) sens = 0;
-				Config::SetBlood(sens);
-			}
-			if (selection == MENU_MAIN_SOUNDOPTIONS)
-			{
-				status = MENUSTATUS_SOUNDOPTIONS;
-				selection = 0;
-			}
-			if (selection == MENU_MAIN_QUIT) return MENURET_QUIT;
-		default:
-			break;
-	}
+	mainmenu.push_back(MenuEntry("CONTINUE", ACTION_RETURN, MENURET_PLAY, nullptr, nullptr));
+	mainmenu.push_back(MenuEntry("CONTROL OPTIONS", ACTION_SWITCHMENU, MENUSTATUS_CONTROLOPTIONS, nullptr, nullptr));
+	mainmenu.push_back(MenuEntry("SOUND OPTIONS", ACTION_SWITCHMENU, MENUSTATUS_SOUNDOPTIONS, nullptr, nullptr));
+	mainmenu.push_back(MenuEntry("BLOOD SIZE: ", ACTION_INT, 5,Config::GetBlood, Config::SetBlood));
+	mainmenu.push_back(MenuEntry("QUIT TO TITLE", ACTION_RETURN, MENURET_QUIT, nullptr, nullptr));
 
-	return MENURET_NOTHING;
+	soundmenu.push_back(MenuEntry("RETURN", ACTION_SWITCHMENU, MENUSTATUS_MAIN, nullptr, nullptr));
+	soundmenu.push_back(MenuEntry("SFX VOLUME: ", ACTION_INT, 10, Config::GetSFXVol, Config::SetSFXVol));
+	soundmenu.push_back(MenuEntry("MUSIC VOLUME: ", ACTION_INT, 10, Config::GetMusicVol, Config::SetMusicVol));
+
+	controlmenu.push_back(MenuEntry("RETURN", ACTION_SWITCHMENU, MENUSTATUS_MAIN, nullptr, nullptr));
+	controlmenu.push_back(MenuEntry("CONFIGURE KEYS", ACTION_SWITCHMENU, MENUSTATUS_KEYCONFIG, nullptr, nullptr));
+	controlmenu.push_back(MenuEntry("MOUSE SENSITIVITY: ", ACTION_INT, 10, Config::GetMouseSens, Config::SetMouseSens));
+
 }
 
 void MenuScreen::HandleKeyMenu(SDL_Keycode sym)
@@ -162,42 +86,55 @@ void MenuScreen::HandleKeyMenu(SDL_Keycode sym)
 	}
 }
 
-void MenuScreen::HandleSoundMenu(SDL_Keycode sym)
+MenuScreen::MenuReturn MenuScreen::HandleStandardMenu(SDL_Keycode sym, std::vector<MenuEntry>& menu)
 {
 	switch (sym)
 	{
-		case SDLK_DOWN:
-			selection++;
-			if (selection == MENU_SOUND_END) selection = MENU_SOUND_END - 1;
-			break;
-		case SDLK_UP:
-			selection--;
-			if (selection == -1) selection = 0;
-			break;
-		case SDLK_SPACE:
-		case SDLK_RETURN:
-		case SDLK_LCTRL:
-			if (selection == MENU_SOUND_RETURN)
+	case SDLK_DOWN:
+		selection++;
+		if (selection == menu.size()) selection = menu.size() - 1;
+		break;
+	case SDLK_UP:
+		selection--;
+		if (selection == -1) selection = 0;
+		break;
+	case SDLK_SPACE:
+	case SDLK_RETURN:
+	case SDLK_LCTRL:
+		switch (menu[selection].action)
+		{
+			case ACTION_BOOL:
 			{
+				menu[selection].setval(!menu[selection].getval());
+				break;
+			}
+			case ACTION_INT:
+			{
+				int x = (menu[selection].getval() + 1);
+				if (x >= menu[selection].arg) x = 0;
+				menu[selection].setval(x);
+				break;
+			}
+			case ACTION_SWITCHMENU:
+			{
+				status = (MENUSTATUS)menu[selection].arg;
 				selection = 0;
-				status = MENUSTATUS_MAIN;
+				break;
 			}
-			if (selection == MENU_SOUND_MUSVOL)
+			case ACTION_RETURN:
 			{
-				int sens = Config::GetMusicVol() + 1;
-				if (sens >= 10) sens = 0;
-				Config::SetMusicVol(sens);
+				return (MenuReturn)menu[selection].arg;
+				break;
 			}
-			if (selection == MENU_SOUND_SFXVOL)
-			{
-				int sens = Config::GetSFXVol() + 1;
-				if (sens >= 10) sens = 0;
-				Config::SetSFXVol(sens);
-			}
+			default:
+				break;
+		}
 
-		default:
-			break;
+	default:
+		break;
 	}
+
+	return MENURET_NOTHING;
 }
 
 MenuScreen::MenuReturn MenuScreen::Update(SDL_Event& tevent)
@@ -208,7 +145,7 @@ MenuScreen::MenuReturn MenuScreen::Update(SDL_Event& tevent)
 		{
 		case MENUSTATUS_MAIN:
 		{
-			return HandleMainMenu(tevent.key.keysym.sym);
+			return HandleStandardMenu(tevent.key.keysym.sym, mainmenu);
 			break;
 		}
 		case MENUSTATUS_KEYCONFIG:
@@ -219,7 +156,12 @@ MenuScreen::MenuReturn MenuScreen::Update(SDL_Event& tevent)
 
 		case MENUSTATUS_SOUNDOPTIONS:
 		{
-			HandleSoundMenu(tevent.key.keysym.sym);
+			HandleStandardMenu(tevent.key.keysym.sym, soundmenu);
+		}
+
+		case MENUSTATUS_CONTROLOPTIONS:
+		{
+			HandleStandardMenu(tevent.key.keysym.sym, controlmenu);
 		}
 
 		default:
@@ -228,4 +170,28 @@ MenuScreen::MenuReturn MenuScreen::Update(SDL_Event& tevent)
 	}
 
 	return MENURET_NOTHING;
+}
+
+void MenuScreen::DisplayStandardMenu(std::vector<MenuEntry>& menu, bool flash, int scale, SDL_Surface* dest, Font& font)
+{
+	int starty = 100 * scale;
+	int yinc = 10 * scale;
+
+	for (size_t i = 0; i < menu.size(); i++)
+	{
+		if (menu[i].getval)
+		{
+			if (flash || (selection != i))
+			{
+				std::string menustring = menu[i].name;
+				menustring += std::to_string(menu[i].getval());
+				font.PrintMessage(menustring, starty, dest, scale);
+			}
+		}
+		else
+		{
+			if (flash || (selection != i)) font.PrintMessage(menu[i].name, starty, dest, scale);
+		}
+		starty += yinc * ((i==0)? 2 : 1);
+	}
 }
