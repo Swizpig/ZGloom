@@ -339,6 +339,14 @@ namespace Config
 					{
 						bloodsize = std::stoi(line);
 					}
+					if (command == "sfxvol")
+					{
+						sfxvol = std::stoi(line);
+					}
+					if (command == "musvol")
+					{
+						musvol = std::stoi(line);
+					}
 					if (command == "multithread")
 					{
 						multithread = std::stoi(line)!=0;
@@ -469,6 +477,10 @@ namespace Config
 
 			file << ";size of blood splatters in pixels\n";
 			file << "bloodsize " << bloodsize << "\n";
+
+			file << ";audio volumes\n";
+			file << "sfxvol " << sfxvol << "\n";
+			file << "musvol " << musvol << "\n";
 
 			file << ";multithreaded renderer (somewhat experimental)\n";
 			file << "multithread " << (multithread?1:0) << "\n";
