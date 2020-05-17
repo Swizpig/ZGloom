@@ -132,7 +132,7 @@ int main(int argc, char* argv[])
 		Config::SetZM(true);
 	}
 
-	if (SDL_Init(SDL_INIT_EVERYTHING) != 0)
+	if (SDL_Init(SDL_INIT_TIMER | SDL_INIT_AUDIO | SDL_INIT_VIDEO | SDL_INIT_GAMECONTROLLER) != 0)
 	{
 		std::cout << "SDL_Init Error: " << SDL_GetError() << std::endl;
 		return 1;
@@ -171,6 +171,8 @@ int main(int argc, char* argv[])
 		std::cout << "SDL_CreateWindow Error: " << SDL_GetError() << std::endl;
 		return 1;
 	}
+
+	Config::RegisterWin(win);
 
 	SDL_Renderer* ren = SDL_CreateRenderer(win, -1, SDL_RENDERER_ACCELERATED | (Config::GetVSync()?SDL_RENDERER_PRESENTVSYNC:0));
 	if (ren == nullptr)
@@ -484,6 +486,11 @@ int main(int argc, char* argv[])
 						sEvent.type = SDL_KEYDOWN;
 						sEvent.key.keysym.sym = SDLK_ESCAPE;
 					}
+					if (Config::GetControllerBack())
+					{
+						sEvent.type = SDL_KEYDOWN;
+						sEvent.key.keysym.sym = SDLK_TAB;
+					}
 				}
 
 			}
@@ -575,15 +582,6 @@ int main(int argc, char* argv[])
 
 			if ((sEvent.type == SDL_KEYDOWN) && sEvent.key.keysym.sym == SDLK_F12)
 			{
-				if (!Config::GetFullscreen())
-				{
-					SDL_SetWindowFullscreen(win, SDL_WINDOW_FULLSCREEN);
-				}
-				else
-				{
-					SDL_SetWindowFullscreen(win, 0);
-				}
-
 				Config::SetFullscreen(!Config::GetFullscreen());
 			}
 

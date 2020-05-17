@@ -22,13 +22,17 @@ namespace Config
 	static int bloodsize;
 	static bool debug = false;
 	static uint32_t FPS;
-	bool multithread = false;
-	bool vsync = false;
-	bool fullscreen = false;
+	static bool multithread = false;
+	static bool vsync = false;
+	static bool fullscreen = false;
+	static bool switchsticks = false;
 
-	int sfxvol;
-	int musvol;
-	xmp_context musctx;
+	static int sfxvol;
+	static int musvol;
+	static xmp_context musctx;
+
+	// needed to toggle fullscreen
+	static SDL_Window* win;
 
 	static SDL_GameController *controller = nullptr;
 
@@ -52,16 +56,34 @@ namespace Config
 		return FPS;
 	}
 
-	void SetFullscreen(bool f)
+	void SetFullscreen(int f)
 	{
-		fullscreen = f;
+		fullscreen = f?1:0;
+
+		if (fullscreen)
+		{
+			SDL_SetWindowFullscreen(win, SDL_WINDOW_FULLSCREEN);
+		}
+		else
+		{
+			SDL_SetWindowFullscreen(win, 0);
+		}
 	}
 
-	bool GetFullscreen()
+	int GetFullscreen()
 	{
-		return fullscreen;
+		return fullscreen?1:0;
 	}
 
+	int GetSwitchSticks()
+	{
+		return switchsticks ? 1 : 0;
+	}
+
+	void SetSwitchSticks(int s)
+	{
+		switchsticks = (s != 0);
+	}
 
 	void SetZM(bool zm)
 	{
@@ -177,6 +199,11 @@ namespace Config
 		musctx = ctx;
 	}
 
+	void RegisterWin(SDL_Window* _win)
+	{
+		win = _win;
+	}
+
 	void Init()
 	{
 		if (zombiemassacremode)
@@ -283,6 +310,7 @@ namespace Config
 		debug = false;
 		vsync = false;
 		fullscreen = false;
+		switchsticks = false;
 
 		musvol = 5;
 		sfxvol = 5;
@@ -478,6 +506,9 @@ namespace Config
 		if (SDL_GameControllerGetButton(controller, SDL_CONTROLLER_BUTTON_LEFTSHOULDER)) return true;
 		if (SDL_GameControllerGetButton(controller, SDL_CONTROLLER_BUTTON_RIGHTSHOULDER)) return true;
 
+		if (SDL_GameControllerGetAxis(controller, SDL_CONTROLLER_AXIS_TRIGGERLEFT) > 8000) return true;
+		if (SDL_GameControllerGetAxis(controller, SDL_CONTROLLER_AXIS_TRIGGERRIGHT) > 8000) return true;
+
 		return false;
 	}
 
@@ -493,6 +524,10 @@ namespace Config
 	bool GetControllerStart()
 	{
 		return SDL_GameControllerGetButton(controller, SDL_CONTROLLER_BUTTON_START)!=0;
+	}
+	bool GetControllerBack()
+	{
+		return SDL_GameControllerGetButton(controller, SDL_CONTROLLER_BUTTON_BACK) != 0;
 	}
 
 	void SetMusicVol(int vol)

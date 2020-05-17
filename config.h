@@ -45,8 +45,8 @@ namespace Config
 	bool GetDebug();
 	void SetFPS(uint32_t f);
 	uint32_t GetFPS();
-	void SetFullscreen(bool f);
-	bool GetFullscreen();
+	void SetFullscreen(int f);
+	int GetFullscreen();
 
 	bool GetMT();
 	bool GetVSync();
@@ -63,6 +63,10 @@ namespace Config
 	bool GetControllerDown();
 	bool GetControllerUp();
 	bool GetControllerStart();
+	bool GetControllerBack();
+
+	int GetSwitchSticks();
+	void SetSwitchSticks(int s);
 
 	// sound options
 	int GetSFXVol();
@@ -70,6 +74,9 @@ namespace Config
 	int GetMusicVol();
 	void SetMusicVol(int vol);
 	void RegisterMusContext(xmp_context ctx);
+	
+	
+	void RegisterWin(SDL_Window* _win);
 
 	void Init();
 	void Save();

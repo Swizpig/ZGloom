@@ -21,6 +21,10 @@ void MenuScreen::Render(SDL_Surface* src, SDL_Surface* dest, Font& font)
 	{
 		DisplayStandardMenu(controlmenu, flash, scale, dest, font);
 	}
+	else if (status == MENUSTATUS_DISPLAYOPTIONS)
+	{
+		DisplayStandardMenu(displaymenu, flash, scale, dest, font);
+	}
 	else if (status == MENUSTATUS_KEYCONFIG)
 	{
 		switch (selection)
@@ -62,7 +66,7 @@ MenuScreen::MenuScreen()
 	mainmenu.push_back(MenuEntry("CONTINUE", ACTION_RETURN, MENURET_PLAY, nullptr, nullptr));
 	mainmenu.push_back(MenuEntry("CONTROL OPTIONS", ACTION_SWITCHMENU, MENUSTATUS_CONTROLOPTIONS, nullptr, nullptr));
 	mainmenu.push_back(MenuEntry("SOUND OPTIONS", ACTION_SWITCHMENU, MENUSTATUS_SOUNDOPTIONS, nullptr, nullptr));
-	mainmenu.push_back(MenuEntry("BLOOD SIZE: ", ACTION_INT, 5,Config::GetBlood, Config::SetBlood));
+	mainmenu.push_back(MenuEntry("DISPLAY OPTIONS", ACTION_SWITCHMENU, MENUSTATUS_DISPLAYOPTIONS, nullptr, nullptr));
 	mainmenu.push_back(MenuEntry("QUIT TO TITLE", ACTION_RETURN, MENURET_QUIT, nullptr, nullptr));
 
 	soundmenu.push_back(MenuEntry("RETURN", ACTION_SWITCHMENU, MENUSTATUS_MAIN, nullptr, nullptr));
@@ -73,6 +77,10 @@ MenuScreen::MenuScreen()
 	controlmenu.push_back(MenuEntry("AUTOFIRE: ", ACTION_BOOL, 0, Config::GetAutoFire, Config::SetAutoFire));
 	controlmenu.push_back(MenuEntry("CONFIGURE KEYS", ACTION_SWITCHMENU, MENUSTATUS_KEYCONFIG, nullptr, nullptr));
 	controlmenu.push_back(MenuEntry("MOUSE SENSITIVITY: ", ACTION_INT, 10, Config::GetMouseSens, Config::SetMouseSens));
+
+	displaymenu.push_back(MenuEntry("RETURN", ACTION_SWITCHMENU, MENUSTATUS_MAIN, nullptr, nullptr));
+	displaymenu.push_back(MenuEntry("BLOOD SIZE: ", ACTION_INT, 5, Config::GetBlood, Config::SetBlood));
+	displaymenu.push_back(MenuEntry("FULLSCREEN: ", ACTION_BOOL, 0, Config::GetFullscreen, Config::SetFullscreen));
 
 }
 
@@ -164,6 +172,12 @@ MenuScreen::MenuReturn MenuScreen::Update(SDL_Event& tevent)
 		case MENUSTATUS_CONTROLOPTIONS:
 		{
 			HandleStandardMenu(tevent.key.keysym.sym, controlmenu);
+			break;
+		}
+
+		case MENUSTATUS_DISPLAYOPTIONS:
+		{
+			HandleStandardMenu(tevent.key.keysym.sym, displaymenu);
 			break;
 		}
 
