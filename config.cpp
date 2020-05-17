@@ -18,6 +18,7 @@ namespace Config
 	static int windowheight;
 	static int32_t focallength;
 	static int mousesens;
+	static bool autofire;
 	static int bloodsize;
 	static bool debug = false;
 	static uint32_t FPS;
@@ -28,6 +29,8 @@ namespace Config
 	int sfxvol;
 	int musvol;
 	xmp_context musctx;
+
+	static SDL_GameController *controller = nullptr;
 
 	void SetDebug(bool b)
 	{
@@ -284,6 +287,17 @@ namespace Config
 		musvol = 5;
 		sfxvol = 5;
 
+		autofire = false;
+
+		for (int i = 0; i < SDL_NumJoysticks(); ++i) 
+		{
+			if (SDL_IsGameController(i)) 
+			{
+				controller = SDL_GameControllerOpen(i);
+				break;
+			}
+		}
+
 		std::ifstream file;
 
 		file.open("config.txt");
@@ -421,6 +435,66 @@ namespace Config
 	{
 		return musvol;
 	}
+
+	int GetAutoFire()
+	{
+		return autofire ? 1 : 0;
+	}
+
+	void SetAutoFire(int a)
+	{
+		autofire = (a!=0);
+	}
+
+	bool HaveController()
+	{
+		return controller != nullptr;
+	}
+
+	Sint16 GetControllerRot()
+	{
+		return SDL_GameControllerGetAxis(controller, SDL_CONTROLLER_AXIS_RIGHTX);
+	}
+
+	Sint16 GetControllerY()
+	{
+		return SDL_GameControllerGetAxis(controller, SDL_CONTROLLER_AXIS_LEFTY);
+	}
+
+	Sint16 GetControllerX()
+	{
+		return SDL_GameControllerGetAxis(controller, SDL_CONTROLLER_AXIS_LEFTX);
+	}
+
+	bool GetControllerFire()
+	{
+		if (SDL_GameControllerGetButton(controller, SDL_CONTROLLER_BUTTON_A)) return true;
+		if (SDL_GameControllerGetButton(controller, SDL_CONTROLLER_BUTTON_B)) return true;
+		if (SDL_GameControllerGetButton(controller, SDL_CONTROLLER_BUTTON_X)) return true;
+		if (SDL_GameControllerGetButton(controller, SDL_CONTROLLER_BUTTON_Y)) return true;
+
+		if (SDL_GameControllerGetButton(controller, SDL_CONTROLLER_BUTTON_LEFTSTICK)) return true;
+		if (SDL_GameControllerGetButton(controller, SDL_CONTROLLER_BUTTON_RIGHTSTICK)) return true;
+		if (SDL_GameControllerGetButton(controller, SDL_CONTROLLER_BUTTON_LEFTSHOULDER)) return true;
+		if (SDL_GameControllerGetButton(controller, SDL_CONTROLLER_BUTTON_RIGHTSHOULDER)) return true;
+
+		return false;
+	}
+
+	// just for menus
+	bool GetControllerDown()
+	{
+		return SDL_GameControllerGetButton(controller, SDL_CONTROLLER_BUTTON_DPAD_DOWN)!=0;
+	}
+	bool GetControllerUp()
+	{
+		return SDL_GameControllerGetButton(controller, SDL_CONTROLLER_BUTTON_DPAD_UP)!=0;
+	}
+	bool GetControllerStart()
+	{
+		return SDL_GameControllerGetButton(controller, SDL_CONTROLLER_BUTTON_START)!=0;
+	}
+
 	void SetMusicVol(int vol)
 	{
 		musvol = vol;
@@ -434,6 +508,11 @@ namespace Config
 
 	void Save()
 	{
+		if (controller)
+		{
+			SDL_GameControllerClose(controller);
+		}
+
 		std::ofstream file;
 
 		file.open("config.txt");

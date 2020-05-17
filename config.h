@@ -5,6 +5,9 @@
 #include "soundhandler.h"
 #include "xmp/include/xmp.h"
 
+//just for controller defines
+#include <SDL2/SDL.h>
+
 namespace Config
 {
 	enum keyenum
@@ -47,6 +50,19 @@ namespace Config
 
 	bool GetMT();
 	bool GetVSync();
+
+	int GetAutoFire();
+	void SetAutoFire(int a);
+
+	//controller support
+	bool HaveController();
+	Sint16 GetControllerRot();
+	Sint16 GetControllerY();
+	Sint16 GetControllerX();
+	bool GetControllerFire();
+	bool GetControllerDown();
+	bool GetControllerUp();
+	bool GetControllerStart();
 
 	// sound options
 	int GetSFXVol();

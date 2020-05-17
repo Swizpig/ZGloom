@@ -70,6 +70,7 @@ MenuScreen::MenuScreen()
 	soundmenu.push_back(MenuEntry("MUSIC VOLUME: ", ACTION_INT, 10, Config::GetMusicVol, Config::SetMusicVol));
 
 	controlmenu.push_back(MenuEntry("RETURN", ACTION_SWITCHMENU, MENUSTATUS_MAIN, nullptr, nullptr));
+	controlmenu.push_back(MenuEntry("AUTOFIRE: ", ACTION_BOOL, 0, Config::GetAutoFire, Config::SetAutoFire));
 	controlmenu.push_back(MenuEntry("CONFIGURE KEYS", ACTION_SWITCHMENU, MENUSTATUS_KEYCONFIG, nullptr, nullptr));
 	controlmenu.push_back(MenuEntry("MOUSE SENSITIVITY: ", ACTION_INT, 10, Config::GetMouseSens, Config::SetMouseSens));
 
@@ -157,11 +158,13 @@ MenuScreen::MenuReturn MenuScreen::Update(SDL_Event& tevent)
 		case MENUSTATUS_SOUNDOPTIONS:
 		{
 			HandleStandardMenu(tevent.key.keysym.sym, soundmenu);
+			break;
 		}
 
 		case MENUSTATUS_CONTROLOPTIONS:
 		{
 			HandleStandardMenu(tevent.key.keysym.sym, controlmenu);
+			break;
 		}
 
 		default:
@@ -179,12 +182,21 @@ void MenuScreen::DisplayStandardMenu(std::vector<MenuEntry>& menu, bool flash, i
 
 	for (size_t i = 0; i < menu.size(); i++)
 	{
-		if (menu[i].getval)
+		if (menu[i].action == ACTION_INT)
 		{
 			if (flash || (selection != i))
 			{
 				std::string menustring = menu[i].name;
 				menustring += std::to_string(menu[i].getval());
+				font.PrintMessage(menustring, starty, dest, scale);
+			}
+		}
+		else if (menu[i].action == ACTION_BOOL)
+		{
+			if (flash || (selection != i))
+			{
+				std::string menustring = menu[i].name;
+				menustring += menu[i].getval() ? "ON" : "OFF";
 				font.PrintMessage(menustring, starty, dest, scale);
 			}
 		}

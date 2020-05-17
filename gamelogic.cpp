@@ -731,6 +731,19 @@ bool GameLogic::Update(Camera* cam)
 		bool controlstraferight = keystate[Config::GetKey(Config::KEY_SRIGHT)] != 0;
 		bool controlstrafemod = keystate[Config::GetKey(Config::KEY_STRAFEMOD)] != 0;
 
+		if (Config::HaveController())
+		{
+			Sint32 contX = Config::GetControllerX();
+			Sint32 contY = Config::GetControllerY();
+			
+			if (contX < -8000) controlstrafeleft = true;
+			if (contX >  8000) controlstraferight = true;
+			if (contY < -8000) controlup = true;
+			if (contY >  8000) controldown = true;
+
+			if (Config::GetControllerFire()) controlfire = true;
+		}
+
 		if (SDL_GetMouseState(NULL, NULL))
 		{
 			controlfire = true;
@@ -860,7 +873,7 @@ bool GameLogic::Update(Camera* cam)
 				}
 				SoundHandler::Play(wtable[wep].sound);
 				playerobj.data.ms.reloadcnt = playerobj.data.ms.reload;
-				firedown = true;
+				if (!Config::GetAutoFire()) firedown = true;
 				playerobj.data.ms.fired = 10;
 			}
 		}
@@ -907,13 +920,24 @@ bool GameLogic::Update(Camera* cam)
 			}
 		}
 
-		if (1)
+		// mouse control
 		{
 			int mx, my;
 			SDL_GetRelativeMouseState(&mx, &my);
 
 			cam->rotquick.SetVal(cam->rotquick.GetVal() + mx*Config::GetMouseSens() * 800);
 		}
+
+		//gamepad control
+		if (Config::HaveController())
+		{
+			Sint32 rot = Config::GetControllerRot();
+
+			if (abs(rot) < 8000) rot = 0;
+
+			cam->rotquick.SetVal(cam->rotquick.GetVal() + rot * 10);
+		}
+		
 
 		CheckSuck(cam);
 

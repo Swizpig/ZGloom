@@ -131,6 +131,13 @@ int main(int argc, char* argv[])
 		fclose(file);
 		Config::SetZM(true);
 	}
+
+	if (SDL_Init(SDL_INIT_EVERYTHING) != 0)
+	{
+		std::cout << "SDL_Init Error: " << SDL_GetError() << std::endl;
+		return 1;
+	}
+	// SDL needs to be inited before this to pick up gamepad
 	Config::Init();
 
 	GloomMap gmap;
@@ -143,12 +150,6 @@ int main(int argc, char* argv[])
 
 	ctx = xmp_create_context();
 	Config::RegisterMusContext(ctx);
-
-	if (SDL_Init(SDL_INIT_EVERYTHING) != 0)
-	{
-		std::cout << "SDL_Init Error: " << SDL_GetError() << std::endl;
-		return 1;
-	}
 
 	int renderwidth, renderheight, windowwidth, windowheight;
 
@@ -451,6 +452,40 @@ int main(int argc, char* argv[])
 				{
 					notdone = false;
 				}
+			}
+
+			if (Config::HaveController() && (sEvent.type == SDL_CONTROLLERBUTTONDOWN))
+			{
+				//fake up a key event
+				if ((state == STATE_TITLE) || (state == STATE_MENU) || (state == STATE_WAITING))
+				{
+					if (Config::GetControllerFire())
+					{
+						sEvent.type = SDL_KEYDOWN;
+						sEvent.key.keysym.sym = SDLK_SPACE;
+					}
+					if (Config::GetControllerUp())
+					{
+						sEvent.type = SDL_KEYDOWN;
+						sEvent.key.keysym.sym = SDLK_UP;
+					}
+					if (Config::GetControllerDown())
+					{
+						sEvent.type = SDL_KEYDOWN;
+						sEvent.key.keysym.sym = SDLK_DOWN;
+					}
+				}
+
+				if (state == STATE_PLAYING)
+				{
+					// call up menu
+					if (Config::GetControllerStart())
+					{
+						sEvent.type = SDL_KEYDOWN;
+						sEvent.key.keysym.sym = SDLK_ESCAPE;
+					}
+				}
+
 			}
 
 			if ((sEvent.type == SDL_KEYDOWN) && (sEvent.key.keysym.sym == SDLK_SPACE ||
