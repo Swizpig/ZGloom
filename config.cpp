@@ -438,9 +438,14 @@ namespace Config
 		bloodsize = b;
 	}
 
-	bool GetMT()
+	int GetMT()
 	{
-		return multithread;
+		return multithread?1:0;
+	}
+
+	void SetMT(int s)
+	{
+		multithread = (s != 0);
 	}
 
 	bool GetVSync()

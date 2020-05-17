@@ -81,6 +81,7 @@ MenuScreen::MenuScreen()
 	displaymenu.push_back(MenuEntry("RETURN", ACTION_SWITCHMENU, MENUSTATUS_MAIN, nullptr, nullptr));
 	displaymenu.push_back(MenuEntry("BLOOD SIZE: ", ACTION_INT, 5, Config::GetBlood, Config::SetBlood));
 	displaymenu.push_back(MenuEntry("FULLSCREEN: ", ACTION_BOOL, 0, Config::GetFullscreen, Config::SetFullscreen));
+	displaymenu.push_back(MenuEntry("MULTITHREAD RENDERER: ", ACTION_BOOL, 0, Config::GetMT, Config::SetMT));
 
 }
 

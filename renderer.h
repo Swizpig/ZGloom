@@ -55,10 +55,8 @@ class Renderer
 		//EXPERIMENTAL MULTITHREAD BUILD!
 		SDL_Thread* floorthread;
 		SDL_Thread* wallthread;
-		SDL_sem* floorgo;
-		SDL_sem* wallgo;
 		Camera* camerastash;
-		bool killthread = false;
+
 		void DrawFloor(Camera* camera);
 		void RenderColumns(int32_t xstart, int32_t xinc)
 		{
@@ -157,6 +155,6 @@ class Renderer
 
 		std::list<MapObject> strips;
 
-		// needed for pushing transparet strips
+		// needed for pushing transparent strips
 		SDL_mutex* wallmutex;
 };

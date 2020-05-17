@@ -27,26 +27,14 @@ const uint32_t Renderer::darkpalettes[16][16] =
 static int FloorThreadKicker(void* data)
 {
 	Renderer* r = (Renderer*)data;
-	while (!r->killthread)
-	{
-		SDL_SemWait(r->floorgo);
-		r->DrawFloor(r->camerastash);
-		SDL_SemPost(r->floorgo);
-	}
-
+	r->DrawFloor(r->camerastash);
 	return 0;
 }
 
 static int WallThreadKicker(void* data)
 {
 	Renderer* r = (Renderer*)data;
-	while (!r->killthread)
-	{
-		SDL_SemWait(r->wallgo);
-		r->RenderColumns(1, 2);
-		SDL_SemPost(r->wallgo);
-	}
-
+	r->RenderColumns(1, 2);
 	return 0;
 }
 
@@ -737,7 +725,6 @@ void Renderer::DrawObjects(Camera* camera)
 							}
 						}
 					}
-		
 				}
 			}
 		}
@@ -1031,12 +1018,12 @@ void Renderer::Render(Camera* camera)
 	if (Config::GetMT())
 	{
 		camerastash = camera;
-		SDL_SemPost(wallgo);
+		wallthread = SDL_CreateThread(WallThreadKicker, "wallthread", this);
 		for (int32_t x = 0; x < renderwidth; x+=2)
 		{
 			ProcessColumn(x, camera->y, ceilend, floorstart);
 		}
-		SDL_SemWait(wallgo);
+		SDL_WaitThread(wallthread, nullptr);
 	}
 	else
 	{
@@ -1048,9 +1035,9 @@ void Renderer::Render(Camera* camera)
 
 	if (Config::GetMT())
 	{
-		SDL_SemPost(floorgo);
+		floorthread = SDL_CreateThread(FloorThreadKicker, "floorthread", this);
 		DrawCeil(camera);
-		SDL_SemWait(floorgo);
+		SDL_WaitThread(floorthread, nullptr);
 	}
 	else
 	{
@@ -1129,26 +1116,12 @@ Column* Renderer::GetTexColumn(int hitzone, Quick texpos, int& basetexture)
 
 Renderer::Renderer()
 {
-	if (Config::GetMT())
-	{
-		floorgo = SDL_CreateSemaphore(0);
-		wallgo = SDL_CreateSemaphore(0);
-		wallmutex = SDL_CreateMutex();
-		wallthread = SDL_CreateThread(WallThreadKicker, "wallthread", this);
-		floorthread = SDL_CreateThread(FloorThreadKicker, "floorthread", this);
-	}
+	// create this always, in case of MT switch on the fly
+	wallmutex = SDL_CreateMutex();
 }
 
 Renderer::~Renderer()
 {
-	if (Config::GetMT())
-	{
-		killthread = true;
-		SDL_SemPost(floorgo);
-		SDL_WaitThread(floorthread, NULL);
-		if (floorgo) SDL_DestroySemaphore(floorgo);
-		if (wallgo) SDL_DestroySemaphore(wallgo);
-		if (wallmutex) SDL_DestroyMutex(wallmutex);
-	}
+	if (wallmutex) SDL_DestroyMutex(wallmutex);
 }
 

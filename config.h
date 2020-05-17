@@ -48,7 +48,8 @@ namespace Config
 	void SetFullscreen(int f);
 	int GetFullscreen();
 
-	bool GetMT();
+	int GetMT();
+	void SetMT(int s);
 	bool GetVSync();
 
 	int GetAutoFire();
