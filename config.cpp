@@ -401,6 +401,10 @@ namespace Config
 					{
 						fullscreen = std::stoi(line) != 0;
 					}
+					if (command == "autofire")
+					{
+						autofire = std::stoi(line) != 0;
+					}
 				}
 			}
 
@@ -603,6 +607,9 @@ namespace Config
 
 			file << ";multithreaded renderer (somewhat experimental)\n";
 			file << "multithread " << (multithread?1:0) << "\n";
+
+			file << ";rapidfire?\n";
+			file << "autofire " << (autofire ? 1 : 0) << "\n";
 
 			file.close();
 		}
