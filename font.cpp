@@ -260,3 +260,18 @@ void Font::PrintMultiLineMessage(std::string message, int y, SDL_Surface* dest)
 	}
 	PrintMessage(message, y, dest, 1);
 }
+
+Font::~Font()
+{
+	for (int i = 0; i < glyphs; i++)
+	{
+		if (surfaces[i])
+		{
+			SDL_FreeSurface(surfaces[i]);
+		}
+		if (surfaces32[i])
+		{
+			SDL_FreeSurface(surfaces32[i]);
+		}
+	}
+}

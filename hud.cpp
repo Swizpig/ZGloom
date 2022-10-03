@@ -230,6 +230,15 @@ Hud::Hud()
 	}
 }
 
+Hud::~Hud() {
+	SDL_FreeSurface(healthbar);
+	SDL_FreeSurface(healthbaron);
+	SDL_FreeSurface(weaponbar);
+	for (int i = 0; i < 5; i++) {
+		SDL_FreeSurface(weaponsprites[i]);
+	}
+}
+
 void Hud::Render(SDL_Surface* surface, MapObject& player, Font& font)
 {
 	SDL_Rect dstrect;
