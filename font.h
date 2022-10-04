@@ -6,7 +6,8 @@
 class Font
 {
 	public:
-		
+
+	~Font();
 	bool Load(CrmFile& file);
 	bool Load2(CrmFile& file);
 	void SetPal(SDL_Surface* palsurface); 
