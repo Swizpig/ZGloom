@@ -1,7 +1,6 @@
 
 #include "decrunchmania.h"
 
-
 static void writew(void *data, unsigned short w);
 static void writel(void *data, unsigned int l);
 static unsigned short readw(void *data);
@@ -180,7 +179,7 @@ sc3:
 }
 
 
-
+#define CRM2_TAG ('C' << 24 | 'r' << 16 | 'M' << 8 | '2')
 
 /*  returns size of decrunched data or 0 if it was not a valid file  */
 unsigned int GetSize(void *data)
@@ -188,7 +187,7 @@ unsigned int GetSize(void *data)
     if(data == 0)
         return 0;
 
-    return readl(data) == 'CrM2' ? readl((unsigned char*)data+6) : 0;
+    return readl(data) == CRM2_TAG ? readl((unsigned char*)data+6) : 0;
 }
 
 /*  returns MinSecDist, headroom needed for some files */
@@ -197,7 +196,7 @@ unsigned int GetSecDist(void *data)
 	if (data == 0)
 		return 0;
 
-	return readl(data) == 'CrM2' ? readw((unsigned char*)data + 4) : 0;
+	return readl(data) == CRM2_TAG ? readw((unsigned char*)data + 4) : 0;
 }
 
 
