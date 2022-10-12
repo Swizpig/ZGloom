@@ -1,7 +1,7 @@
 TARGET = ZGloom
 LIBS = -lSDL2 -lSDL2_mixer -lxmp
 CXX = g++
-CXXFLAGS = -g -fpermissive
+CXXFLAGS = -g
 
 .PHONY: default all clean
 

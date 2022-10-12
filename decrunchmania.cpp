@@ -11,7 +11,7 @@ static void readtab();
 static void readit();
 static void calccmptab();
 
-static unsigned char *a0, *a1, *a2, *a3, *a4, *a5, *a6;
+static unsigned char *a0, *a1, *a2, *a3, *a4, *a6;
 static unsigned short d0, d1, d2, d3, d4, d5, d6, d7;
 static unsigned int d0l, d1l, d2l, d3l, d4l, d5l, d6l, d7l;
 
@@ -98,7 +98,6 @@ void* Decrunch(void *in, void* out)
     d6 = d6l >>= d7;
     d7 = d0;
     d7--;
-    a5 = (unsigned char*)17;
 
 bufloop:
     a0 = oanzperbits+a6;
@@ -252,7 +251,7 @@ static int getbits()
     d7 -= d1;
     if(d7t >= (short)d1)
         goto gbnoloop;
-    d7 += (unsigned short)a5;
+    d7 += (unsigned short)17;
     d3 = d3l = 0;
     d3 = readw(a2 -= 2);
     d3l = (d3l&0xffff0000) | d3; d3 = d3l <<= d7;
@@ -272,7 +271,7 @@ gbnoloop:
 static void readtab()
 {
     unsigned int x, d1t, d2t, d3t, d4t, d5t;
-    unsigned char *a3t = a3;
+    unsigned int u3;
 
     d1t = d1l = (d1l&0xffff0000) | d1;
     d2t = d2l = (d2l&0xffff0000) | d2;
@@ -285,7 +284,7 @@ static void readtab()
     d5 = d0;
     d5--;
     d4 = d4l = 0;
-    a3 = 0;
+    u3 = 0;
 
 rtlop:
     d4++;
@@ -294,12 +293,12 @@ rtlop:
         d1 = d2;
     getbits();
     writew(a0, d0); a0 += 2;
-    a3 += (int)d0;
+    u3 += (int)d0;
     d5--;
     if(d5 != 0xffff)
         goto rtlop;
     
-    d5 = (unsigned short)a3;
+    d5 = (unsigned short)u3;
     d5--;
 
 rtlp2:
@@ -319,7 +318,6 @@ rtlp2:
     d3 = d3l = d3t;
     d4 = d4l = d4t;
     d5 = d5l = d5t;
-    a3 = a3t;
 }
 
 
