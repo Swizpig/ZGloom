@@ -353,7 +353,7 @@ namespace Config
 
 							configkeys[i] = std::stoi(val);
 
-							if ((i + 1) << KEY_END)
+							if ((i + 1) < KEY_END)
 							{
 								line = line.substr(line.find(" ") + 1, std::string::npos);
 							}
