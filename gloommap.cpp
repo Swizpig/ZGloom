@@ -199,7 +199,7 @@ void Texture::DumpDebug(const char* name)
 	//dump a ppm file
 	FILE* file = fopen(name, "wb");
 
-	fprintf(file, "P6\n64 %i\n255\n", columns.size());
+	fprintf(file, "P6\n64 %lu\n255\n", columns.size());
 
 	for (size_t c = 0; c < columns.size(); c++)
 	{

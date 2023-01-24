@@ -2215,7 +2215,7 @@ void DeathCharge(MapObject& o, GameLogic* logic)
 	DeathBounce(o, logic);
 	DeathAnim(o, logic);
 
-	int32_t ang = logic->PickCalc(o) & 255 - o.data.ms.rotquick.GetInt() & 255;
+	int32_t ang = (logic->PickCalc(o) & 255) - (o.data.ms.rotquick.GetInt() & 255);
 
 	if (ang < 0) ang = -ang;
 
@@ -2278,7 +2278,7 @@ void DeathLogic(MapObject& o, GameLogic* logic)
 
 	if (CheckVecs(o, logic))
 	{
-		int32_t ang = logic->PickCalc(o)&255 - o.data.ms.rotquick.GetInt()&255;
+		int32_t ang = (logic->PickCalc(o)&255) - (o.data.ms.rotquick.GetInt()&255);
 
 		if (ang < 0) ang = -ang;
 		

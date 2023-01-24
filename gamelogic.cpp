@@ -701,7 +701,7 @@ bool GameLogic::Update(Camera* cam)
 	Quick camrots[4], camrotstrafe[4];
 
 	GloomMaths::GetCamRot(cam->rotquick.GetInt()&0xFF, camrots);
-	GloomMaths::GetCamRot((cam->rotquick.GetInt())+64&0xFF, camrotstrafe);
+	GloomMaths::GetCamRot(((cam->rotquick.GetInt())+64)&0xFF, camrotstrafe);
 	const Uint8 *keystate = SDL_GetKeyboardState(NULL);
 
 	Quick newx = cam->x;
